@@ -1,0 +1,57 @@
+name: Bug report
+description: Something behaves differently from what the documentation says
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not report a security issue here.** Use
+        [private vulnerability reporting](https://github.com/webaroundlabs/openai-ads-toolkit/security/advisories/new)
+        instead — especially anything that could expose a Conversions API key or
+        raw personal data.
+
+        Never paste an API key, a raw email address or a real phone number into
+        an issue. Redact them, or use the digest.
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      options:
+        - packages/spec
+        - packages/php
+        - packages/js
+        - packages/laravel
+        - packages/wordpress
+        - packages/gtm-web
+        - packages/gtm-server
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what happened instead
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      description: The smallest code or configuration that shows it.
+      render: php
+    validations:
+      required: true
+  - type: textarea
+    id: versions
+    attributes:
+      label: Versions
+      description: PHP, Node, Laravel, WordPress, WooCommerce — whichever apply.
+    validations:
+      required: true
+  - type: checkboxes
+    id: dedup
+    attributes:
+      label: Does this affect measurement accuracy?
+      options:
+        - label: A conversion may be counted twice, or not at all
+        - label: Identity may be hashed differently from other packages in the toolkit

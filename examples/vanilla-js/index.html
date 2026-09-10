@@ -1,0 +1,89 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>OpenAI Ads toolkit — browser example</title>
+
+<!--
+  The browser half of a deduplicated conversion.
+
+  The interesting part is not the Pixel call. It is where the event id comes
+  from: the SERVER produced it when it accepted the lead, and handed it back.
+  Both sides then report the same conversion with the same id, so OpenAI matches
+  them instead of counting two.
+
+  Serve this over HTTPS. Identity hashing uses Web Crypto, which browsers only
+  expose in a secure context.
+-->
+
+<h1>Lead form</h1>
+
+<form id="lead-form">
+  <label>Email <input type="email" name="email" required></label>
+  <button type="submit">Request a call</button>
+</form>
+
+<p id="status" role="status"></p>
+
+<script type="module">
+  import { OpenAIAds, hashUser } from 'https://cdn.jsdelivr.net/npm/@webaroundlabs/openai-ads/dist/index.js';
+
+  // Route measurement failures somewhere you will see them. Nothing in the
+  // toolkit throws into the page: a broken pixel must not break a form.
+  OpenAIAds.configure({
+    onError: (error) => console.warn('[measurement]', error.message),
+  });
+
+  // Ask your consent mechanism first. A refusal means the SDK is never loaded
+  // and every later track() call is a silent no-op.
+  const consented = document.cookie.includes('marketing_consent=1');
+  OpenAIAds.consent(consented);
+
+  OpenAIAds.init({ pixelId: 'YOUR-PIXEL-ID' });
+
+  const form = document.getElementById('lead-form');
+  const status = document.getElementById('status');
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    status.textContent = 'Sending…';
+
+    const email = new FormData(form).get('email');
+
+    // The conversion happens on the server. Measure only once it says so.
+    const response = await fetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      status.textContent = 'Something went wrong. Nothing was measured.';
+      return;
+    }
+
+    // The server created the lead, sent the Conversions API event, and returned
+    // the id it used. Reusing it here is what makes this one conversion rather
+    // than two.
+    const { eventId } = await response.json();
+
+    // Attach identity once the visitor is known. It goes on init, not on the
+    // event, and it is hashed in the browser - raw values are never sent.
+    if (consented) {
+      OpenAIAds.init({ user: await hashUser({ email }) });
+    }
+
+    OpenAIAds.track('lead_created', undefined, { eventId });
+
+    status.textContent = 'Thanks. We will be in touch.';
+  });
+</script>
+
+<!--
+  If the server cannot hand back an id - a plain HTML form post, say - render it
+  into the confirmation page instead:
+
+    OpenAIAds.track('lead_created', undefined, { eventId: '<?= $eventId ?>' });
+
+  Only when neither is possible should the browser mint one with createEventId()
+  and send it up with the request. Mint once, never regenerate: a second id is a
+  second conversion.
+-->
