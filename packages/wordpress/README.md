@@ -4,7 +4,7 @@ The WordPress plugin, built on the shared toolkit. Measurement Pixel, Conversion
 API, and the deduplication between them.
 
 > **Pre-alpha, `0.1.0`.** Not on the WordPress plugin directory. Base plugin plus
-> Contact Form 7 and Elementor Forms. WooCommerce comes next.
+> Contact Form 7, Elementor Forms and WooCommerce.
 
 An independent community integration. Not created, certified, endorsed or
 supported by OpenAI.
@@ -158,6 +158,59 @@ add_filter( 'openai_ads_integrations', function ( array $integrations ) {
 
 Implement `Integrations\Integration`: `id()`, `label()`, `isAvailable()`,
 `register()`.
+
+## WooCommerce
+
+Four events, each at a boundary WooCommerce genuinely confirms:
+
+| Event | Boundary |
+|---|---|
+| `contents_viewed` | a single product page renders |
+| `items_added` | after the cart mutation succeeded |
+| `checkout_started` | the checkout form is reached |
+| `order_created` | payment completed, or the order reached a paid status |
+
+### The purchase, reported exactly once
+
+This is the one most integrations get wrong. `woocommerce_thankyou` fires for
+pending, failed and cancelled orders too, so hooking it blindly reports
+conversions that were never paid for. Instead the integration hooks
+`woocommerce_payment_complete` and the paid status transitions, and checks
+`is_paid()` before reporting anything.
+
+It then writes the event id to the order as `_openai_ads_event_id`. Gateways
+differ — some call `payment_complete()`, others move the order straight to a paid
+status, a webhook may be redelivered, and an order can go from processing to
+completed later. All of those reach the same handler, and without the guard the
+same purchase is reported three times. Both behaviours are mutation-tested.
+
+If nothing was recorded — measurement off, or consent refused — the meta is
+deliberately **not** written, so a later permitted attempt can still report the
+order rather than finding it marked as done.
+
+The order number becomes the deduplication id (`wc_1234`), and the order-received
+page emits the browser half with that same id. An order with no stored id emits
+nothing.
+
+### Amounts
+
+Minor units are a property of the **currency**, not of the store's display
+settings. A shop configured to show whole euros still deals in cents, and yen have
+no minor unit at all — so using WooCommerce's decimal-places setting would send
+`13` for a €12.99 order and `129900` for a ¥1299 one. `Amount` uses the ISO 4217
+exponent instead, and rounds before casting, because `(int) (0.29 * 100)` is 28 in
+binary floating point.
+
+### Line items
+
+Product SKU where set, otherwise the id; name; quantity; and the **line total**
+rather than the list price, so discounts are reflected. A variation additionally
+carries `group_id` (its parent product) and `variant_dict` (the chosen
+attributes) — both Conversions API only fields, which is exactly why they belong
+on the server event and not on anything the Pixel receives.
+
+Billing details become hashed identity: email, phone, name, city, region, postal
+code, country, plus the customer id as an external id.
 
 ## Delivery
 

@@ -6,6 +6,7 @@ namespace WebaroundLabs\OpenAIAds\WordPress;
 
 use WebaroundLabs\OpenAIAds\ActionSource;
 use WebaroundLabs\OpenAIAds\Clock;
+use WebaroundLabs\OpenAIAds\Content;
 use WebaroundLabs\OpenAIAds\Event;
 use WebaroundLabs\OpenAIAds\EventId;
 use WebaroundLabs\OpenAIAds\EventName;
@@ -32,9 +33,10 @@ final class EventBuilder
     }
 
     /**
-     * @param array<string, mixed> $data    Event data: amount, currency, ...
-     * @param array<string, mixed> $options event_id, custom_event_name, opt_out,
-     *                                      user, action_source, source_url, timestamp_ms
+     * @param array<string, mixed> $data    Event data: amount, currency.
+     * @param array<string, mixed> $options event_id, custom_event_name, opt_out, user,
+     *                                      action_source, source_url, timestamp_ms,
+     *                                      contents, plan_id.
      *
      * @throws InvalidArgument when the caller supplied something the API cannot accept
      */
@@ -72,6 +74,91 @@ final class EventBuilder
             customEventName: isset($options['custom_event_name'])
                 ? (string) $options['custom_event_name']
                 : null,
+            contents: $this->contents($options),
+            planId: isset($options['plan_id']) ? (string) $options['plan_id'] : null,
+        );
+    }
+
+    /**
+     * Line items, either already built or as plain arrays.
+     *
+     * The array form exists because the plugin's public API is a WordPress
+     * function taking arrays. Integrations inside the plugin build Content
+     * objects directly and skip the conversion entirely.
+     *
+     * @param array<string, mixed> $options
+     *
+     * @return list<Content>
+     *
+     * @throws InvalidArgument
+     */
+    private function contents(array $options): array
+    {
+        if (!isset($options['contents']) || !is_array($options['contents'])) {
+            return [];
+        }
+
+        $contents = [];
+
+        foreach ($options['contents'] as $item) {
+            if ($item instanceof Content) {
+                $contents[] = $item;
+
+                continue;
+            }
+
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $contents[] = $this->contentFromArray($item);
+        }
+
+        return $contents;
+    }
+
+    /**
+     * @param array<string, mixed> $item
+     *
+     * @throws InvalidArgument
+     */
+    private function contentFromArray(array $item): Content
+    {
+        $string = static fn (string $key): ?string => isset($item[$key])
+            && is_scalar($item[$key])
+            && (string) $item[$key] !== ''
+                ? (string) $item[$key]
+                : null;
+
+        $currency = $string('currency');
+        $amount = $item['amount'] ?? null;
+
+        if ($amount !== null && !is_int($amount) && !(is_string($amount) && ctype_digit(ltrim($amount, '-')))) {
+            throw new InvalidArgument(sprintf(
+                'A content item amount must be an integer in the minor unit of its currency; got %s.',
+                is_scalar($amount) ? var_export($amount, true) : gettype($amount),
+            ));
+        }
+
+        if ($amount !== null && $currency === null) {
+            throw new InvalidArgument('A content item with an amount must also carry a currency.');
+        }
+
+        /** @var array<string, string> $variantDict */
+        $variantDict = isset($item['variant_dict']) && is_array($item['variant_dict'])
+            ? array_map('strval', $item['variant_dict'])
+            : [];
+
+        return Content::create(
+            id: $string('id'),
+            groupId: $string('group_id'),
+            name: $string('name'),
+            contentType: $string('content_type'),
+            quantity: isset($item['quantity']) ? (int) $item['quantity'] : null,
+            value: $amount !== null && $currency !== null
+                ? Money::minor((int) $amount, $currency)
+                : null,
+            variantDict: $variantDict,
         );
     }
 
@@ -88,12 +175,14 @@ final class EventBuilder
 
         // No caller-supplied id means no deduplication is possible: the browser
         // cannot know what to match against. Mint one so the event is still
-        // usable server-side, and say so in debug output.
+        // usable server-side.
         return EventId::fromBusinessId(\wp_generate_uuid4());
     }
 
     /**
      * @param array<string, mixed> $data
+     *
+     * @throws InvalidArgument
      */
     private function money(array $data): ?Money
     {
@@ -105,7 +194,7 @@ final class EventBuilder
 
         if (!is_int($amount) && !(is_string($amount) && ctype_digit(ltrim($amount, '-')))) {
             throw new InvalidArgument(sprintf(
-                'amount must be an integer in the currency\'s minor unit; got %s. '
+                'amount must be an integer in the minor unit of its currency; got %s. '
                 . 'A price of 12.99 is 1299.',
                 is_scalar($amount) ? var_export($amount, true) : gettype($amount),
             ));
@@ -131,9 +220,11 @@ final class EventBuilder
         /** @var array<string, mixed> $raw */
         $raw = isset($options['user']) && is_array($options['user']) ? $options['user'] : [];
 
-        $string = static fn (string $key): ?string => isset($raw[$key]) && is_string($raw[$key]) && trim($raw[$key]) !== ''
-            ? $raw[$key]
-            : null;
+        $string = static fn (string $key): ?string => isset($raw[$key])
+            && is_string($raw[$key])
+            && trim($raw[$key]) !== ''
+                ? $raw[$key]
+                : null;
 
         return UserData::create(
             email: $string('email'),

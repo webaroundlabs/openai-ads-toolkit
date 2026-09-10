@@ -40,6 +40,16 @@ browser and server halves share one event id so the conversion is counted once.
 Neither plugin is required. Each can be switched off individually under
 Settings -> OpenAI Ads.
 
+= WooCommerce =
+
+Measures product views, add to cart, checkout start and paid orders. A purchase
+is reported only once payment is confirmed - never for a pending, failed or
+cancelled order - and never twice, however many times the gateway or a webhook
+triggers the same order.
+
+Amounts use the currency's own minor unit, so yen and dinars are correct as well
+as euros, and line items reflect discounts rather than list prices.
+
 = For developers =
 
 Record a conversion at a confirmed boundary:
@@ -89,4 +99,4 @@ test suite asserts this.
 = 0.1.0 =
 * First release: Pixel, Conversions API, deduplication, settings screen and a
   connection test.
-* Contact Form 7 and Elementor Forms integrations.
+* Contact Form 7, Elementor Forms and WooCommerce integrations.
