@@ -16,6 +16,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+// Several small host-plugin doubles share one file, which PSR-4 cannot autoload.
+require_once __DIR__ . '/Doubles.php';
+
 final class WpStubs
 {
     /** @var array<string, mixed> */
@@ -194,5 +197,43 @@ function wp_remote_request(string $url, array $args = []): mixed
 
 // error_log() is native to PHP and cannot be stubbed. Measurement only calls
 // it when debug logging is switched on, which the tests leave off.
+
+/**
+ * Contact Form 7's submission singleton.
+ *
+ * Note that WPCF7_ContactForm is deliberately NOT defined: that is what the
+ * integration's availability check looks for, and the tests assert it reports
+ * itself unavailable on a site without the plugin.
+ */
+final class Cf7SubmissionStub
+{
+    /** @var array<string, mixed> */
+    public static array $posted = [];
+}
+
+class WPCF7_Submission
+{
+    public static function get_instance(): self
+    {
+        return new self();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function get_posted_data(): array
+    {
+        return Cf7SubmissionStub::$posted;
+    }
+}
+
+function plugins_url(string $path = '', string $plugin = ''): string
+{
+    return 'https://shop.example.com/wp-content/plugins/openai-ads/' . ltrim($path, '/');
+}
+
+function wp_enqueue_script(string $handle, string $src = '', array $deps = [], mixed $ver = false, mixed $args = false): void
+{
+}
 
 WpStubs::reset();

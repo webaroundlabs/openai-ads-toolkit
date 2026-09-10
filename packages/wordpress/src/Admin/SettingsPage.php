@@ -6,6 +6,7 @@ namespace WebaroundLabs\OpenAIAds\WordPress\Admin;
 
 use WebaroundLabs\OpenAIAds\InvalidArgument;
 use WebaroundLabs\OpenAIAds\WordPress\EventBuilder;
+use WebaroundLabs\OpenAIAds\WordPress\Integrations\Registry;
 use WebaroundLabs\OpenAIAds\WordPress\Measurement;
 use WebaroundLabs\OpenAIAds\WordPress\Settings;
 
@@ -29,6 +30,7 @@ final class SettingsPage
         private readonly Settings $settings,
         private readonly Measurement $measurement,
         private readonly EventBuilder $builder,
+        private readonly ?Registry $integrations = null,
     ) {
     }
 
@@ -179,6 +181,38 @@ final class SettingsPage
                         </td>
                     </tr>
                 </table>
+
+                <?php $available = $this->integrations?->available() ?? []; ?>
+                <?php if ($available !== []) { ?>
+                    <h2><?php echo \esc_html__('Integrations', 'openai-ads'); ?></h2>
+                    <p class="description">
+                        <?php echo \esc_html__(
+                            'Detected on this site. Each one measures its own confirmed success boundary - a lead is recorded when the submission is accepted, not when the button is clicked.',
+                            'openai-ads',
+                        ); ?>
+                    </p>
+                    <table class="form-table" role="presentation">
+                        <?php foreach ($available as $integration) { ?>
+                            <tr>
+                                <th scope="row"><?php echo \esc_html($integration->label()); ?></th>
+                                <td>
+                                    <?php /* States which integrations this form covers, so an
+                                             unchecked box is recorded as off rather than
+                                             falling back to the default. */ ?>
+                                    <input type="hidden"
+                                           name="<?php echo \esc_attr(Settings::OPTION); ?>[integrations_present][]"
+                                           value="<?php echo \esc_attr($integration->id()); ?>">
+                                    <label>
+                                        <input type="checkbox"
+                                               name="<?php echo \esc_attr(Settings::OPTION); ?>[integrations][<?php echo \esc_attr($integration->id()); ?>]"
+                                               value="1" <?php \checked($this->settings->integrationEnabled($integration->id())); ?>>
+                                        <?php echo \esc_html__('Measure conversions from this plugin.', 'openai-ads'); ?>
+                                    </label>
+                                </td>
+                            </tr>
+                        <?php } ?>
+                    </table>
+                <?php } ?>
 
                 <h2><?php echo \esc_html__('Privacy and diagnostics', 'openai-ads'); ?></h2>
                 <table class="form-table" role="presentation">
