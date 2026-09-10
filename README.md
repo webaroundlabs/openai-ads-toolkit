@@ -4,8 +4,9 @@ One open-source toolkit for OpenAI Ads measurement — Measurement Pixel, Conver
 the deduplication between them — with adapters for PHP, JavaScript, Laravel, WordPress and
 Google Tag Manager.
 
-> **Pre-alpha.** Only the shared specification exists today. There is nothing installable yet.
-> The public API is unstable until `1.0`. See [Status](#status).
+> **Pre-alpha, `0.1.x`.** The specification and the PHP package are usable; JavaScript and the
+> adapters are not built yet. Nothing is published to Packagist or npm. The public API is
+> unstable until `1.0`. See [Status](#status).
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -33,7 +34,8 @@ OpenAIAds.track('lead_created');
 
 ```php
 // PHP — the server-side Conversions API
-$client->send([$event]);
+$client->send([$event]);          // returns a Response; only a failed round trip throws
+$client->validate([$event]);      // validate_only: the documented way to test an integration
 ```
 
 ```php
@@ -54,7 +56,7 @@ argues for some changes to them.
 | Package | State |
 |---|---|
 | `packages/spec` | **Done** — 13 events, identity mapping, golden fixtures |
-| `packages/php` | **Event model done** — 13 events, identity hashing, CAPI serializer, 90 tests. HTTP client next |
+| `packages/php` | **Done** — 13 events, identity hashing, Conversions API client, 123 tests |
 | `packages/js` | Not started |
 | `packages/laravel` | Not started |
 | `packages/wordpress` | Not started |

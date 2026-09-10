@@ -3,9 +3,8 @@
 OpenAI Ads measurement for PHP: typed events, identity normalization, and the
 Conversions API. No framework dependency.
 
-> **Pre-alpha, `0.1.x`.** The event model and the Conversions API serializer exist.
-> The HTTP client does not yet — see [Status](#status). The public API is unstable
-> until `1.0`.
+> **Pre-alpha, `0.1.x`.** The event model, identity hashing and the Conversions API
+> client are implemented. The public API is unstable until `1.0`.
 
 ## Requirements
 
@@ -62,6 +61,57 @@ Event::create(
 );
 ```
 
+## Sending
+
+The client takes PSR-18 and PSR-17 implementations rather than a concrete HTTP
+library, so it imposes no transport on you. Any PSR-18 client works — Guzzle,
+Symfony HttpClient, or a shim over `wp_remote_post`.
+
+```php
+use WebaroundLabs\OpenAIAds\Capi\Client;
+
+$client = new Client(
+    pixelId:  $pixelId,
+    apiKey:   $capiKey,        // server-side only, never in browser config
+    http:     $psr18Client,
+    requests: $psr17Factory,
+    streams:  $psr17Factory,
+    clock:    $clock,
+);
+
+$response = $client->send([$event]);
+
+if (!$response->isSuccessful()) {
+    // Log and move on. Reporting must never fail a checkout or a form submission.
+}
+```
+
+Test an integration without writing data — this is the documented feedback channel:
+
+```php
+$response = $client->validate([$event]);   // sends validate_only: true
+```
+
+**Errors work differently here than in most SDKs.** A completed HTTP round trip
+returns a `Response` whatever the status code; only a failed round trip throws
+(`TransportException`). Mapping status codes onto exception types would mean
+inventing a taxonomy OpenAI has not published — nothing about the response body,
+status codes, error shape or rate limits is documented. So `Response` exposes the
+status, the headers, the raw body and `isSuccessful()`, and nothing more.
+
+`InvalidArgument` is thrown *before* any request for a batch that is empty,
+larger than 1,000 events, or contains an event whose timestamp has fallen outside
+the accepted window. That last check is local on purpose: a batch fails as a
+whole, so one stale event would otherwise discard up to 999 good ones and return
+an error this library could not interpret.
+
+**There is no retry.** The documented deduplication key implies, but never states,
+that the API deduplicates on `events[].id`. Retrying a request that succeeded but
+whose response was lost could double-count conversions — invisible, and
+corrupting to the advertiser's optimization. Configure retries on the PSR-18
+client you injected, or on the queue wrapping the call, and reuse the same `Event`
+objects so the id and timestamp stay identical.
+
 ## Design notes
 
 **`toCapiArray()`, not `toArray()`.** The Pixel wants a different shape — singular
@@ -111,13 +161,12 @@ development-time asset, not a runtime dependency.
 ## Status
 
 Built: the 13 events, the four data shapes, `EventId`, `Money`, `UserData` with
-normalization and hashing, and the Conversions API serializer.
+normalization and hashing, the Conversions API serializer, and `Capi\Client`.
 
 Not built yet, deliberately — see `docs/api-design.md` §7 for the trigger that
-would justify each: `Capi\Client` and the HTTP transport, `Content` and the
-contents/plan data shapes, multi-value identity input, `Configuration`, and any
-retry policy. There is no `TransportInterface`: PSR-18's `ClientInterface` already
-is one, so the client will depend on that.
+would justify each: `Content` and the contents/plan data shapes, the Pixel
+serializer, multi-value identity input, `Configuration`, and any retry policy.
+There is no `TransportInterface`: PSR-18's `ClientInterface` already is one.
 
 ## License
 
