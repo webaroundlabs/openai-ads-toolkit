@@ -190,6 +190,96 @@ for side in ('wrong', 'correct'):
 if g['wrong']['sha256'] == g['correct']['sha256']:
     fail.append("divergence_guard is pointless: both digests are equal")
 
+# --- the GTM templates agree with the catalogue -----------------------------
+# The templates themselves cannot be executed here; that needs Google Tag
+# Manager. But the part most likely to drift silently is the event list in each
+# dropdown, and that can be checked exactly.
+
+def gtm_sections(path):
+    """Split a .tpl file into its ___SECTION___ blocks."""
+    raw = open(path, encoding='utf-8').read()
+    blocks, name, buffer = {}, None, []
+
+    for line in raw.splitlines():
+        stripped = line.strip()
+
+        if stripped.startswith('___') and stripped.endswith('___') and len(stripped) > 6:
+            if name is not None:
+                blocks[name] = '\n'.join(buffer)
+            name, buffer = stripped.strip('_'), []
+        else:
+            buffer.append(line)
+
+    if name is not None:
+        blocks[name] = '\n'.join(buffer)
+
+    return blocks
+
+
+for path, channel in [('packages/gtm-web/template.tpl', 'pixel'),
+                      ('packages/gtm-server/template.tpl', 'capi')]:
+    if not os.path.exists(path):
+        continue
+
+    try:
+        blocks = gtm_sections(path)
+    except Exception as exc:
+        fail.append('%s could not be parsed: %s' % (path, exc))
+        continue
+
+    for section in ('INFO', 'TEMPLATE_PARAMETERS', 'TESTS', 'NOTES'):
+        if section not in blocks:
+            fail.append('%s is missing the %s section' % (path, section))
+
+    if 'INFO' in blocks:
+        try:
+            info = json.loads(blocks['INFO'])
+            expected = 'WEB' if channel == 'pixel' else 'SERVER'
+
+            if info.get('containerContexts') != [expected]:
+                fail.append('%s should declare containerContexts ["%s"]' % (path, expected))
+        except Exception as exc:
+            fail.append('%s has unparseable INFO: %s' % (path, exc))
+
+    if 'TEMPLATE_PARAMETERS' not in blocks:
+        continue
+
+    try:
+        params = json.loads(blocks['TEMPLATE_PARAMETERS'])
+    except Exception as exc:
+        fail.append('%s has unparseable TEMPLATE_PARAMETERS: %s' % (path, exc))
+        continue
+
+    offered = set()
+
+    for param in params:
+        if param.get('name') == 'eventName':
+            offered = set(item['value'] for item in param['selectItems'])
+
+    if offered == set():
+        fail.append('%s has no eventName parameter' % path)
+        continue
+
+    supported = set(n for n, e in ev['events'].items() if e[channel])
+
+    if offered != supported:
+        fail.append('%s offers %s but the spec says %s' % (
+            path, sorted(offered ^ supported), sorted(supported)))
+
+    if channel == 'pixel':
+        # The browser SDK would accept and silently discard these.
+        for capi_only in ('app_installed', 'app_opened'):
+            if capi_only in offered:
+                fail.append('%s offers "%s", which the browser cannot send' % (path, capi_only))
+
+        # A Conversions API key in a web container is the one mistake that
+        # cannot be walked back once a container is published.
+        body = open(path, encoding='utf-8').read().lower()
+
+        for forbidden in ('apikey', 'api_key', 'bearer '):
+            if forbidden in body:
+                fail.append('%s references a credential (%r) in a web template' % (path, forbidden))
+
 print("checked %d spec files" % len(docs))
 if fail:
     print("\nFAILURES:")
