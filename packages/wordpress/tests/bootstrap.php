@@ -18,6 +18,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 // Several small host-plugin doubles share one file, which PSR-4 cannot autoload.
 require_once __DIR__ . '/Doubles.php';
+require_once __DIR__ . '/WooDoubles.php';
 
 final class WpStubs
 {
@@ -236,4 +237,36 @@ function wp_enqueue_script(string $handle, string $src = '', array $deps = [], m
 {
 }
 
+/**
+ * WooCommerce function stubs.
+ *
+ * Note that the WooCommerce class itself is deliberately NOT defined: that is
+ * what the integration's availability check looks for, and a test asserts it
+ * reports itself unavailable on a site without the plugin.
+ */
+final class WooStubs
+{
+    /** @var array<int, object> */
+    public static array $orders = [];
+
+    public static string $currency = 'EUR';
+
+    public static function reset(): void
+    {
+        self::$orders = [];
+        self::$currency = 'EUR';
+    }
+}
+
+function wc_get_order(mixed $id): mixed
+{
+    return WooStubs::$orders[(int) $id] ?? false;
+}
+
+function get_woocommerce_currency(): string
+{
+    return WooStubs::$currency;
+}
+
 WpStubs::reset();
+WooStubs::reset();

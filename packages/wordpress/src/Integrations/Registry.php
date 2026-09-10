@@ -41,6 +41,7 @@ final class Registry
         $integrations = [
             new ContactForm7($recorder),
             new ElementorForms($recorder),
+            new WooCommerce($this->plugin),
         ];
 
         /**
