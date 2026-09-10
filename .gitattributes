@@ -1,0 +1,46 @@
+# Normalize line endings to LF everywhere, in the repository AND in the working
+# tree. This is not cosmetic: the golden fixtures in packages/spec/fixtures are
+# asserted byte-for-byte, so a CRLF checkout on Windows and an LF checkout on CI
+# would disagree about identical content.
+* text=auto eol=lf
+
+*.php    text eol=lf diff=php
+*.json   text eol=lf
+*.md     text eol=lf
+*.js     text eol=lf
+*.ts     text eol=lf
+*.py     text eol=lf
+*.yml    text eol=lf
+*.yaml   text eol=lf
+*.xml    text eol=lf
+*.dist   text eol=lf
+.gitattributes text eol=lf
+.gitignore     text eol=lf
+LICENSE        text eol=lf
+
+*.png    binary
+*.jpg    binary
+*.gif    binary
+*.ico    binary
+*.woff   binary
+*.woff2  binary
+*.zip    binary
+
+# ---------------------------------------------------------------------------
+# Distribution
+# ---------------------------------------------------------------------------
+# Excluded from `composer archive` and from the dist tarball Packagist serves,
+# so `composer require` pulls the library and nothing else.
+#
+# Consequence worth knowing: packages/spec is dev-only, so the cross-runtime
+# parity tests can only run from a monorepo checkout, never from an installed
+# package. That is intended - the spec is not a runtime dependency.
+/.github/            export-ignore
+/docs/               export-ignore
+/examples/           export-ignore
+/packages/spec/      export-ignore
+/.gitattributes      export-ignore
+/.gitignore          export-ignore
+/CLAUDE.md           export-ignore
+tests/               export-ignore
+phpunit.xml.dist     export-ignore
