@@ -4,9 +4,10 @@ One open-source toolkit for OpenAI Ads measurement — Measurement Pixel, Conver
 the deduplication between them — with adapters for PHP, JavaScript, Laravel, WordPress and
 Google Tag Manager.
 
-> **Pre-alpha, `0.1.x`.** The specification, the PHP package and the JavaScript package are
-> usable; the framework adapters are not built yet. Nothing is published to Packagist or npm.
-> The public API is unstable until `1.0`. See [Status](#status).
+> **Pre-alpha, `0.1.x`.** The specification, the PHP and JavaScript packages, and the Laravel
+> adapter are usable; WordPress and GTM are not built yet. Nothing is published to Packagist,
+> npm or the WordPress plugin directory. The public API is unstable until `1.0`.
+> See [Status](#status).
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -40,7 +41,12 @@ $client->validate([$event]);      // validate_only: the documented way to test a
 
 ```php
 // Laravel
-OpenAIAds::track(Event::leadCreated());
+OpenAIAds::queue($event);         // delivered off the request cycle
+```
+
+```blade
+{{-- Laravel: the browser Pixel --}}
+@openaiAdsPixel
 ```
 
 ```php
@@ -58,7 +64,7 @@ argues for some changes to them.
 | `packages/spec` | **Done** — 13 events, identity mapping, golden fixtures |
 | `packages/php` | **Done** — 13 events, identity hashing, Conversions API client, 123 tests |
 | `packages/js` | **Done** — typed wrapper over the official `oaiq` SDK, 75 tests |
-| `packages/laravel` | Not started |
+| `packages/laravel` | **Done** — provider, facade, queued delivery, attribution, Blade Pixel, 54 tests |
 | `packages/wordpress` | Not started |
 | `packages/gtm-web`, `packages/gtm-server` | Not started |
 

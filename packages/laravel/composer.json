@@ -1,0 +1,71 @@
+{
+    "name": "webaroundlabs/openai-ads-laravel",
+    "description": "Laravel adapter for the OpenAI Ads toolkit: config, facade, queued delivery, request attribution and a Blade Pixel helper.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "laravel",
+        "openai",
+        "openai-ads",
+        "conversions-api",
+        "pixel",
+        "measurement"
+    ],
+    "homepage": "https://github.com/webaroundlabs/openai-ads-toolkit",
+    "support": {
+        "issues": "https://github.com/webaroundlabs/openai-ads-toolkit/issues",
+        "source": "https://github.com/webaroundlabs/openai-ads-toolkit"
+    },
+    "require": {
+        "php": ">=8.2",
+        "webaroundlabs/openai-ads": "^0.1",
+        "illuminate/support": "^11.0|^12.0",
+        "illuminate/contracts": "^11.0|^12.0",
+        "guzzlehttp/guzzle": "^7.8",
+        "guzzlehttp/psr7": "^2.6"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0|^10.0",
+        "phpunit/phpunit": "^11.0"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../php",
+            "options": {
+                "symlink": true,
+                "versions": {
+                    "webaroundlabs/openai-ads": "0.1.0"
+                }
+            }
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "WebaroundLabs\\OpenAIAds\\Laravel\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebaroundLabs\\OpenAIAds\\Laravel\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "WebaroundLabs\\OpenAIAds\\Laravel\\OpenAIAdsServiceProvider"
+            ],
+            "aliases": {
+                "OpenAIAds": "WebaroundLabs\\OpenAIAds\\Laravel\\Facades\\OpenAIAds"
+            }
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

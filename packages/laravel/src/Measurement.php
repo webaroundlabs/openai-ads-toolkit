@@ -1,0 +1,201 @@
+<?php
+
+declare(strict_types=1);
+
+namespace WebaroundLabs\OpenAIAds\Laravel;
+
+use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Contracts\Container\Container;
+use Psr\Log\LoggerInterface;
+use WebaroundLabs\OpenAIAds\Capi\Client;
+use WebaroundLabs\OpenAIAds\Capi\Response;
+use WebaroundLabs\OpenAIAds\Capi\TransportException;
+use WebaroundLabs\OpenAIAds\Event;
+use WebaroundLabs\OpenAIAds\InvalidArgument;
+use WebaroundLabs\OpenAIAds\Laravel\Jobs\SendConversionEvents;
+
+/**
+ * What the OpenAIAds facade resolves to.
+ *
+ * Thin by design. It decides three things - whether measurement is switched on,
+ * whether consent allows it, and whether to send now or on the queue - and then
+ * hands the work to the core. It contains no knowledge of the OpenAI Ads wire
+ * format.
+ *
+ * Nothing here throws. Analytics must never break the application, so a failure
+ * to report a conversion is logged and swallowed; the checkout or the form
+ * submission that triggered it still succeeds.
+ */
+final class Measurement
+{
+    public function __construct(
+        private readonly Container $container,
+        private readonly Config $config,
+        private readonly LoggerInterface $logger,
+    ) {
+    }
+
+    /**
+     * Send now, in the current request.
+     *
+     * Prefer `queue()` on a web request: this blocks until OpenAI answers.
+     *
+     * @return Response|null null when measurement did not happen at all - disabled,
+     *                       unconfigured, consent refused, or a delivery failure
+     */
+    public function send(Event ...$events): ?Response
+    {
+        if (!$this->allowed() || $events === []) {
+            return null;
+        }
+
+        try {
+            return $this->client()->send($events, (bool) $this->config->get('openai-ads.validate_only'));
+        } catch (InvalidArgument $e) {
+            // A malformed or stale event. Retrying will not fix it.
+            $this->logger->error('OpenAI Ads: event rejected before sending.', [
+                'reason' => $e->getMessage(),
+            ]);
+        } catch (TransportException $e) {
+            $this->logger->warning('OpenAI Ads: the request did not complete.', [
+                'reason' => $e->getMessage(),
+            ]);
+        }
+
+        return null;
+    }
+
+    /**
+     * Hand the events to the queue.
+     *
+     * The usual choice: the conversion has already succeeded, and the visitor
+     * should not wait for an ad platform. Falls back to sending inline when the
+     * queue is switched off.
+     */
+    public function queue(Event ...$events): void
+    {
+        if (!$this->allowed() || $events === []) {
+            return;
+        }
+
+        if (!$this->config->get('openai-ads.queue.enabled')) {
+            $this->send(...$events);
+
+            return;
+        }
+
+        $job = new SendConversionEvents($events);
+
+        $connection = $this->config->get('openai-ads.queue.connection');
+        $queue = $this->config->get('openai-ads.queue.queue');
+
+        if (is_string($connection) && $connection !== '') {
+            $job->onConnection($connection);
+        }
+
+        if (is_string($queue) && $queue !== '') {
+            $job->onQueue($queue);
+        }
+
+        dispatch($job);
+    }
+
+    /**
+     * Check the batch against the API without recording it.
+     *
+     * Uses the documented validation mode, which is the one honest way to prove
+     * an integration works end to end. Always sends inline, and ignores the
+     * `enabled` switch so it stays useful on a staging environment where
+     * measurement is off.
+     */
+    public function validate(Event ...$events): ?Response
+    {
+        if (!$this->configured() || $events === []) {
+            return null;
+        }
+
+        try {
+            return $this->client()->validate($events);
+        } catch (InvalidArgument | TransportException $e) {
+            $this->logger->warning('OpenAI Ads: validation failed.', ['reason' => $e->getMessage()]);
+        }
+
+        return null;
+    }
+
+    /** Attribution and identity context for the current request. */
+    public function context(): RequestContext
+    {
+        return $this->container->make(RequestContext::class);
+    }
+
+    /** The public Pixel ID, safe to render in a page. */
+    public function pixelId(): ?string
+    {
+        $pixelId = $this->config->get('openai-ads.pixel_id');
+
+        return is_string($pixelId) && trim($pixelId) !== '' ? trim($pixelId) : null;
+    }
+
+    /**
+     * Whether the browser Pixel should be rendered.
+     *
+     * Independent of the Conversions API: a site may run one without the other.
+     */
+    public function pixelEnabled(): bool
+    {
+        return (bool) $this->config->get('openai-ads.pixel_enabled')
+            && $this->pixelId() !== null
+            && $this->consented();
+    }
+
+    /**
+     * Whether the visitor has consented.
+     *
+     * Defers to the host application's own mechanism through the `consent`
+     * callback. With no callback configured this returns true, because the
+     * toolkit must not invent a privacy model - gating is the application's
+     * responsibility and its existing banner already knows the answer.
+     */
+    public function consented(): bool
+    {
+        $callback = $this->config->get('openai-ads.consent');
+
+        if (!is_callable($callback)) {
+            return true;
+        }
+
+        return (bool) $callback();
+    }
+
+    private function allowed(): bool
+    {
+        if (!$this->config->get('openai-ads.enabled')) {
+            return false;
+        }
+
+        if (!$this->configured()) {
+            $this->logger->warning(
+                'OpenAI Ads: measurement is enabled but OPENAI_ADS_PIXEL_ID or '
+                . 'OPENAI_ADS_CAPI_KEY is missing; nothing was sent.',
+            );
+
+            return false;
+        }
+
+        // A refused consent is a normal outcome, so it is silent.
+        return $this->consented();
+    }
+
+    private function configured(): bool
+    {
+        $key = $this->config->get('openai-ads.capi_key');
+
+        return $this->pixelId() !== null && is_string($key) && trim($key) !== '';
+    }
+
+    private function client(): Client
+    {
+        return $this->container->make(Client::class);
+    }
+}
