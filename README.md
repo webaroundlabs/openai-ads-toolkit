@@ -4,9 +4,9 @@ One open-source toolkit for OpenAI Ads measurement — Measurement Pixel, Conver
 the deduplication between them — with adapters for PHP, JavaScript, Laravel, WordPress and
 Google Tag Manager.
 
-> **Pre-alpha, `0.1.x`.** Everything but the two Google Tag Manager templates is built and
-> tested. Nothing is published to Packagist, npm or the WordPress plugin directory.
-> The public API is unstable until `1.0`. See [Status](#status).
+> **Pre-alpha, `0.1.x`.** All seven packages are built. Nothing is published to Packagist,
+> npm, the WordPress plugin directory or the GTM gallery. The public API is unstable
+> until `1.0`. See [Status](#status).
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -65,10 +65,15 @@ argues for some changes to them.
 | `packages/js` | **Done** — typed wrapper over the official `oaiq` SDK, 75 tests |
 | `packages/laravel` | **Done** — provider, facade, queued delivery, attribution, Blade Pixel, 54 tests |
 | `packages/wordpress` | **Done** — base plugin, Contact Form 7, Elementor Forms, WooCommerce. 82 tests |
-| `packages/gtm-web`, `packages/gtm-server` | Not started |
+| `packages/gtm-web` | **Template written** — catalogue verified here; tests run inside GTM |
+| `packages/gtm-server` | **Template written** — catalogue verified here; tests run inside GTM |
 
-Built in that order on purpose: the shared foundation first, WordPress last. Nothing is
-published to Packagist, npm or the WordPress plugin directory yet.
+Built in that order on purpose: the shared foundation first, the integrations last. Nothing is
+published anywhere yet.
+
+The GTM templates are the one part not covered by a runnable test suite here — their own tests
+run inside GTM's template editor. What this repository does verify is that their event
+dropdowns match the specification exactly, and that the web template contains no credential.
 
 The PHP and JavaScript packages are held to the same specification by parity tests, and both
 assert the identity digests in `packages/spec/fixtures/normalization.cases.json` — so a Pixel
