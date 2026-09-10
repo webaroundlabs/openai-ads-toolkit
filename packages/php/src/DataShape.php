@@ -17,4 +17,21 @@ enum DataShape: string
     case CustomerAction = 'customer_action';
     case PlanEnrollment = 'plan_enrollment';
     case Custom = 'custom';
+
+    /**
+     * Whether the shape carries a `contents` array.
+     *
+     * `customer_action` does not - a lead has no line items - and sending one
+     * anyway would be rejected by the API for the whole batch.
+     */
+    public function acceptsContents(): bool
+    {
+        return $this !== self::CustomerAction;
+    }
+
+    /** Only the subscription shapes and `custom` carry a plan identifier. */
+    public function acceptsPlanId(): bool
+    {
+        return $this === self::PlanEnrollment || $this === self::Custom;
+    }
 }

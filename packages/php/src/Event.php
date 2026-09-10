@@ -39,6 +39,9 @@ final class Event
         public readonly ?string $oppref,
         public readonly ?bool $optOut,
         public readonly ?string $customEventName,
+        /** @var list<Content> */
+        public readonly array $contents,
+        public readonly ?string $planId,
     ) {
     }
 
@@ -54,7 +57,10 @@ final class Event
      * @param bool|null   $optOut          Excludes the event from personalization.
      *                                     NOT a consent gate: if consent was
      *                                     refused, do not build the event at all.
-     * @param string|null $customEventName Required when $name is Custom, forbidden otherwise.
+     * @param string|null   $customEventName Required when $name is Custom, forbidden otherwise.
+     * @param list<Content> $contents        Line items. Rejected on data shapes that do
+     *                                       not carry them, such as customer_action.
+     * @param string|null   $planId          Only for plan_enrollment and custom.
      *
      * @throws InvalidArgument
      */
@@ -69,6 +75,8 @@ final class Event
         ?string $oppref = null,
         ?bool $optOut = null,
         ?string $customEventName = null,
+        array $contents = [],
+        ?string $planId = null,
     ): self {
         if ($timestampMs <= 0) {
             throw new InvalidArgument(sprintf(
@@ -95,10 +103,46 @@ final class Event
         $sourceUrl = self::validateSourceUrl($sourceUrl, $actionSource, $id);
         $customEventName = self::validateCustomEventName($customEventName, $name, $id);
 
-        // No check that the data shape accepts an amount: all four documented
-        // shapes do. What customer_action does NOT accept is a contents array or
-        // a plan id, and in this slice that is enforced by those parameters not
-        // existing yet - a better error than any runtime branch.
+        // Every documented shape accepts an amount, so there is nothing to check
+        // there. Contents and plan ids are another matter: sending either on a
+        // shape that does not carry it fails the whole batch at the API, so it
+        // is caught here with a message that says which shape and why.
+        $shape = $name->dataShape();
+
+        if ($contents !== [] && !$shape->acceptsContents()) {
+            throw new InvalidArgument(sprintf(
+                'Event "%s" uses the "%s" data shape, which carries no contents array (event "%s").',
+                $name->value,
+                $shape->value,
+                $id->value,
+            ));
+        }
+
+        foreach ($contents as $item) {
+            if (!$item instanceof Content) {
+                throw new InvalidArgument(sprintf(
+                    'contents must contain only %s instances (event "%s").',
+                    Content::class,
+                    $id->value,
+                ));
+            }
+        }
+
+        if ($planId !== null && !$shape->acceptsPlanId()) {
+            throw new InvalidArgument(sprintf(
+                'Event "%s" uses the "%s" data shape, which carries no plan id (event "%s").',
+                $name->value,
+                $shape->value,
+                $id->value,
+            ));
+        }
+
+        if ($planId !== null && trim($planId) === '') {
+            throw new InvalidArgument(sprintf(
+                'planId was provided but is empty; pass null instead (event "%s").',
+                $id->value,
+            ));
+        }
 
         if ($oppref !== null && trim($oppref) === '') {
             throw new InvalidArgument(sprintf(
@@ -118,6 +162,8 @@ final class Event
             $oppref,
             $optOut,
             $customEventName,
+            array_values($contents),
+            $planId,
         );
     }
 
@@ -179,9 +225,20 @@ final class Event
     {
         $data = ['type' => $this->name->dataShape()->value];
 
+        if ($this->planId !== null) {
+            $data['plan_id'] = $this->planId;
+        }
+
         if ($this->value !== null) {
             $data['amount'] = $this->value->minorUnits;
             $data['currency'] = $this->value->currency;
+        }
+
+        if ($this->contents !== []) {
+            $data['contents'] = array_map(
+                static fn (Content $item): array => $item->toCapiArray(),
+                $this->contents,
+            );
         }
 
         return $data;
