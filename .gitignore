@@ -1,0 +1,118 @@
+# ---------------------------------------------------------------------------
+# Claude Code / AI assistant local state
+# ---------------------------------------------------------------------------
+# CLAUDE.md IS tracked on purpose - it is the project's coding charter and is
+# meant to be shared. Only per-developer, machine-local state is ignored here.
+.claude/settings.local.json
+.claude/local/
+CLAUDE.local.md
+.claude-scratch/
+.aider*
+.cursorignore
+.cursor/rules/local/
+
+# ---------------------------------------------------------------------------
+# Secrets and credentials
+# ---------------------------------------------------------------------------
+# The CAPI key is server-side only and must never reach the repository.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+!packages/**/fixtures/*.key
+auth.json
+secrets.json
+
+# ---------------------------------------------------------------------------
+# PHP / Composer
+# ---------------------------------------------------------------------------
+vendor/
+# composer.lock is intentionally NOT committed: these are libraries, and
+# pinning a lock file would hide incompatibilities with consumers' dependency
+# graphs. The applications in examples/ may commit their own.
+composer.lock
+!examples/**/composer.lock
+.phpunit.result.cache
+.phpunit.cache/
+.php-cs-fixer.cache
+.phpcs-cache
+phpstan.neon
+!phpstan.neon.dist
+phpunit.xml
+!phpunit.xml.dist
+build/logs/
+
+# ---------------------------------------------------------------------------
+# JavaScript / TypeScript
+# ---------------------------------------------------------------------------
+node_modules/
+dist/
+lib/
+es/
+*.tsbuildinfo
+.eslintcache
+.rollup.cache/
+.turbo/
+.parcel-cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# ---------------------------------------------------------------------------
+# Test output and coverage
+# ---------------------------------------------------------------------------
+coverage/
+.coverage
+.nyc_output/
+clover.xml
+coverage.xml
+junit.xml
+*.lcov
+
+# ---------------------------------------------------------------------------
+# WordPress adapter (added in a later phase)
+# ---------------------------------------------------------------------------
+# Never commit a WordPress install used for local plugin testing.
+packages/wordpress/wordpress/
+packages/wordpress/vendor/
+packages/wordpress/*.zip
+wp-cli.local.yml
+
+# ---------------------------------------------------------------------------
+# Build and release artifacts
+# ---------------------------------------------------------------------------
+*.tgz
+*.zip
+!packages/gtm-*/**/*.zip
+release/
+.tmp/
+tmp/
+
+# ---------------------------------------------------------------------------
+# Editors and IDEs
+# ---------------------------------------------------------------------------
+.idea/
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.shared.json
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# ---------------------------------------------------------------------------
+# Operating system
+# ---------------------------------------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/

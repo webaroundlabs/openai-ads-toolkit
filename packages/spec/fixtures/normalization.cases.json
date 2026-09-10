@@ -1,0 +1,114 @@
+{
+  "about": "Pinned normalization and hashing results. Every runtime must reproduce these exactly. This file is the enforcement of the rule that two adapters must never normalize the same value differently; it is written before any implementation exists, and a change to it is a behavioural change to deduplication requiring a changelog entry.",
+  "verified": {
+    "on": "2026-09-10",
+    "with": ["Python 3.12.6 hashlib", "PHP 8.2.12 hash('sha256')"],
+    "note": "Both produced identical digests for every case below."
+  },
+
+  "valid": [
+    {
+      "field": "email",
+      "raw": " Ada@Example.COM ",
+      "normalized": "ada@example.com",
+      "sha256": "b5fc85e55755f9e0d030a10ab4429b6b2944855f9a0d60077fe832becbc41d72",
+      "asserts": "Trim and lowercase."
+    },
+    {
+      "field": "email",
+      "raw": "ada@example.com",
+      "normalized": "ada@example.com",
+      "sha256": "b5fc85e55755f9e0d030a10ab4429b6b2944855f9a0d60077fe832becbc41d72",
+      "asserts": "Normalization is idempotent - an already-clean value hashes identically."
+    },
+    {
+      "field": "phone",
+      "raw": "+40 746 123 456",
+      "normalized": "40746123456",
+      "sha256": "af9e136cc1c34ac87999ef8bd28b3d15c08a75b9ae1c2018b39c0f37c23296bd",
+      "asserts": "Leading plus and spaces removed; 11 digits retained."
+    },
+    {
+      "field": "phone",
+      "raw": "+00 44 (0)20 7946 0958",
+      "normalized": "4402079460958",
+      "sha256": "40f19965b0d0ebba641dbd9309c3ac18542d9ad976c47f8d35347daea67ee2c2",
+      "asserts": "The pinned step order: strip every non-digit first, then leading zeroes. The inner zero from '(0)' is deliberately retained - the toolkit does not parse dialling plans."
+    },
+    {
+      "field": "external_id",
+      "raw": "  CUST-00042  ",
+      "normalized": "CUST-00042",
+      "sha256": "382211e688c29ae2dcce0b401999831aec27161d9bc0ffd092545a828a18bbc8",
+      "asserts": "Trimmed but case-preserved, and the hyphen and internal zeroes are untouched."
+    },
+    {
+      "field": "first_name",
+      "raw": "Ion",
+      "normalized": "ion",
+      "sha256": "d6806158f75334002321a9333b6b02b9b84b51433400afb68bb197bddc2db6a5",
+      "asserts": "Plain ASCII lowercase."
+    },
+    {
+      "field": "last_name",
+      "raw": "Ștefănescu",
+      "normalized": "ștefănescu",
+      "sha256": "1c43886f1047ed5dfae59c0945ff61475b7df3a912312a6484ce80429df049a1",
+      "asserts": "REGRESSION GUARD. Unicode-aware lowercasing that preserves non-ASCII. See the divergence case below."
+    },
+    {
+      "field": "last_name",
+      "raw": "O'Neill",
+      "normalized": "oneill",
+      "sha256": "fa0fd24b2d0175a5c48e1b82f4d707a8a95f5279c4abdc43fa2f19d8e30eb47d",
+      "asserts": "ASCII punctuation removed."
+    },
+    {
+      "field": "last_name",
+      "raw": " Van  Der Berg ",
+      "normalized": "vanderberg",
+      "sha256": "aad607ca3121d5d843c2cd64e8c73c2a24fa3a4cb890ed8d40a1efa8af7a14d5",
+      "asserts": "All whitespace removed, including repeated internal spaces."
+    }
+  ],
+
+  "divergence_guard": {
+    "about": "The concrete bug this fixture set exists to prevent. PHP's byte-wise strtolower() leaves 'Ștefănescu' unchanged; a Unicode-aware lowercase does not. The two produce different digests for the same person, so the Pixel and the Conversions API would fail to match and nothing would report an error.",
+    "raw": "Ștefănescu",
+    "wrong": {
+      "using": "PHP strtolower() - byte-wise",
+      "normalized": "Ștefănescu",
+      "sha256": "5cd78cf39c768f1bbaab7cdc01670f73742a89647f674df8629a79bef972bea7"
+    },
+    "correct": {
+      "using": "PHP mb_strtolower($v, 'UTF-8') / JS toLowerCase()",
+      "normalized": "ștefănescu",
+      "sha256": "1c43886f1047ed5dfae59c0945ff61475b7df3a912312a6484ce80429df049a1"
+    },
+    "assert": "A runtime that produces the 'wrong' digest must fail its test suite."
+  },
+
+  "rejected": [
+    {
+      "field": "phone",
+      "raw": "+40 74",
+      "normalized": "4074",
+      "reason": "Fewer than 8 digits after normalization.",
+      "asserts": "Rejection message must name the constraint and must NOT contain the raw number."
+    },
+    {
+      "field": "phone",
+      "raw": "+1 234 567 890 123 456 789",
+      "normalized": "1234567890123456789",
+      "reason": "More than 15 digits after normalization.",
+      "asserts": "Rejection message must name the constraint and must NOT contain the raw number."
+    },
+    {
+      "field": "phone",
+      "raw": "not-a-phone",
+      "normalized": "",
+      "reason": "No digits remain after normalization.",
+      "asserts": "An empty normalization result is a rejection, never an empty hash."
+    }
+  ]
+}

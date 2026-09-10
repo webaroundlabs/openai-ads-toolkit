@@ -1,0 +1,42 @@
+{
+  "about": "A fully-populated UserData serialized for the Conversions API. The key set here must equal every fields[*].capi.key in user.json - that equality is parity assertion 3. Note the plural keys and array values; compare with user.full.pixel.json, which is the same input in the Pixel's singular scalar form.",
+
+  "input": {
+    "email": " Ada@Example.COM ",
+    "phone": "+40 746 123 456",
+    "external_id": "  CUST-00042  ",
+    "first_name": "Ion",
+    "last_name": "Ștefănescu",
+    "country": "RO",
+    "city": "București",
+    "region": "București",
+    "postal_code": "010101",
+    "obref": "123e4567-e89b-42d3-a456-426614174000",
+    "ip_address": "203.0.113.1",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    "android_advertising_id": "38400000-8cf0-11bd-b23e-10b96e40000d"
+  },
+
+  "expected": {
+    "emails_sha256": ["b5fc85e55755f9e0d030a10ab4429b6b2944855f9a0d60077fe832becbc41d72"],
+    "phone_numbers_sha256": ["af9e136cc1c34ac87999ef8bd28b3d15c08a75b9ae1c2018b39c0f37c23296bd"],
+    "external_ids_sha256": ["382211e688c29ae2dcce0b401999831aec27161d9bc0ffd092545a828a18bbc8"],
+    "first_names_sha256": ["d6806158f75334002321a9333b6b02b9b84b51433400afb68bb197bddc2db6a5"],
+    "last_names_sha256": ["1c43886f1047ed5dfae59c0945ff61475b7df3a912312a6484ce80429df049a1"],
+    "countries": ["RO"],
+    "cities": ["București"],
+    "regions": ["București"],
+    "postal_codes": ["010101"],
+    "obref": "123e4567-e89b-42d3-a456-426614174000",
+    "ip_address": "203.0.113.1",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    "android_advertising_id": "38400000-8cf0-11bd-b23e-10b96e40000d"
+  },
+
+  "asserts": [
+    "Every hashable field is a list, even with a single value.",
+    "obref, ip_address, user_agent and android_advertising_id are scalars and are never hashed.",
+    "obref is passed through byte-for-byte.",
+    "Geographic values are not hashed and not case-folded."
+  ]
+}
