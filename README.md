@@ -4,10 +4,10 @@ One open-source toolkit for OpenAI Ads measurement — Measurement Pixel, Conver
 the deduplication between them — with adapters for PHP, JavaScript, Laravel, WordPress and
 Google Tag Manager.
 
-> **Pre-alpha, `0.1.x`.** The specification, the PHP and JavaScript packages, and the Laravel
-> adapter are usable; WordPress and GTM are not built yet. Nothing is published to Packagist,
-> npm or the WordPress plugin directory. The public API is unstable until `1.0`.
-> See [Status](#status).
+> **Pre-alpha, `0.1.x`.** The specification, the PHP and JavaScript packages, the Laravel
+> adapter and the WordPress base plugin are usable; the form/commerce integrations and GTM are
+> not built yet. Nothing is published to Packagist, npm or the WordPress plugin directory.
+> The public API is unstable until `1.0`. See [Status](#status).
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -51,7 +51,7 @@ OpenAIAds::queue($event);         // delivered off the request cycle
 
 ```php
 // WordPress
-openai_ads_track( 'lead_created' );
+openai_ads_track( 'lead_created', [], [ 'event_id' => $lead_id ] );
 ```
 
 Signatures are proposals under review — see [`docs/api-design.md`](docs/api-design.md), which
@@ -65,7 +65,7 @@ argues for some changes to them.
 | `packages/php` | **Done** — 13 events, identity hashing, Conversions API client, 123 tests |
 | `packages/js` | **Done** — typed wrapper over the official `oaiq` SDK, 75 tests |
 | `packages/laravel` | **Done** — provider, facade, queued delivery, attribution, Blade Pixel, 54 tests |
-| `packages/wordpress` | Not started |
+| `packages/wordpress` | **Base plugin done** — Pixel, CAPI, settings, connection test, 42 tests. CF7/Elementor/Woo next |
 | `packages/gtm-web`, `packages/gtm-server` | Not started |
 
 Built in that order on purpose: the shared foundation first, WordPress last. Nothing is
