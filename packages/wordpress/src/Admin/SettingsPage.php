@@ -240,6 +240,21 @@ final class SettingsPage
                                    placeholder="<?php echo \esc_attr((string) $s->canonicalOrigin()); ?>">
                         </td>
                     </tr>
+                    <?php if (function_exists('as_enqueue_async_action')) { ?>
+                        <tr>
+                            <th scope="row"><?php echo \esc_html__('Deferred delivery', 'openai-ads'); ?></th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="<?php echo \esc_attr(Settings::OPTION); ?>[use_scheduler]"
+                                           value="1" <?php \checked($s->useScheduler()); ?>>
+                                    <?php echo \esc_html__(
+                                        'Hand conversions to Action Scheduler so they survive the request that created them. Recommended. Turn off if this site has no working cron.',
+                                        'openai-ads',
+                                    ); ?>
+                                </label>
+                            </td>
+                        </tr>
+                    <?php } ?>
                     <tr>
                         <th scope="row"><?php echo \esc_html__('Debug logging', 'openai-ads'); ?></th>
                         <td>
