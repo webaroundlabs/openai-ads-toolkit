@@ -23,7 +23,12 @@ final class WooCommerceTest extends TestCase
     {
         WpStubs::reset();
         WooStubs::reset();
-        WpStubs::$options[Settings::OPTION] = ['pixel_id' => 'px-1', 'capi_key' => 'secret'];
+        WpStubs::$options[Settings::OPTION] = [
+            'pixel_id' => 'px-1',
+            'capi_key' => 'secret',
+            // These tests exercise inline delivery; the deferred path has its own suite.
+            'use_scheduler' => false,
+        ];
         Plugin::reset();
     }
 

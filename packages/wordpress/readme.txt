@@ -81,8 +81,15 @@ For a stronger setup, define the key in `wp-config.php` instead of the database:
 
 = Does this slow down my site? =
 
-Conversions are sent after the page has been delivered to the visitor, so the
-browser is never waiting on an outbound request.
+No. Conversions are never sent while the visitor is waiting. On a WooCommerce
+site they are handed to Action Scheduler and delivered in a later request; on
+other sites they are sent after the page has been delivered.
+
+= Do I need WooCommerce for this? =
+
+No. WooCommerce is optional. If it happens to be installed, the plugin reuses the
+background queue it already ships so conversions survive a request that dies
+early. Without it, nothing changes.
 
 = Will a measurement failure break my checkout? =
 

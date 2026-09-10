@@ -8,6 +8,7 @@ use WebaroundLabs\OpenAIAds\Event;
 use WebaroundLabs\OpenAIAds\InvalidArgument;
 use WebaroundLabs\OpenAIAds\SystemClock;
 use WebaroundLabs\OpenAIAds\WordPress\Admin\SettingsPage;
+use WebaroundLabs\OpenAIAds\WordPress\Delivery\ScheduledDelivery;
 use WebaroundLabs\OpenAIAds\WordPress\Integrations\Registry;
 
 /**

@@ -268,5 +268,54 @@ function get_woocommerce_currency(): string
     return WooStubs::$currency;
 }
 
+/**
+ * Action Scheduler stubs.
+ *
+ * Not defined by default: the plugin feature-detects as_enqueue_async_action(),
+ * and a site without WooCommerce simply keeps the in-request shutdown flush. The
+ * scheduler tests define it themselves to exercise the other path.
+ */
+final class SchedulerStubs
+{
+    /** @var list<array{hook: string, args: array<int, mixed>, group: string}> */
+    public static array $scheduled = [];
+
+    public static bool $available = false;
+
+    public static function reset(): void
+    {
+        self::$scheduled = [];
+        self::$available = false;
+    }
+}
+
+if (!function_exists('as_enqueue_async_action')) {
+    function as_enqueue_async_action(string $hook, array $args = [], string $group = ''): int
+    {
+        SchedulerStubs::$scheduled[] = ['hook' => $hook, 'args' => $args, 'group' => $group];
+
+        return count(SchedulerStubs::$scheduled);
+    }
+}
+
+function add_option(string $name, mixed $value, string $deprecated = '', bool|string $autoload = true): bool
+{
+    if (array_key_exists($name, WpStubs::$options)) {
+        return false;
+    }
+
+    WpStubs::$options[$name] = $value;
+
+    return true;
+}
+
+function delete_option(string $name): bool
+{
+    unset(WpStubs::$options[$name]);
+
+    return true;
+}
+
 WpStubs::reset();
 WooStubs::reset();
+SchedulerStubs::reset();

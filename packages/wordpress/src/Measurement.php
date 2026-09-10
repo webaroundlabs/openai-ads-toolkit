@@ -12,6 +12,7 @@ use WebaroundLabs\OpenAIAds\Clock;
 use WebaroundLabs\OpenAIAds\Event;
 use WebaroundLabs\OpenAIAds\InvalidArgument;
 use WebaroundLabs\OpenAIAds\SystemClock;
+use WebaroundLabs\OpenAIAds\WordPress\Delivery\ScheduledDelivery;
 use WebaroundLabs\OpenAIAds\WordPress\Http\WpTransport;
 
 /**
@@ -24,11 +25,12 @@ use WebaroundLabs\OpenAIAds\WordPress\Http\WpTransport;
  * Batching falls out naturally, which matters because the API takes up to 1,000
  * events at once and fails a batch as a whole.
  *
- * This is not durable: a fatal error before shutdown loses the batch. Durable
- * retries need a real queue, which on WordPress means Action Scheduler - and
- * that arrives with the WooCommerce integration, where it is actually present.
- * Nothing here retries, matching the core's position that repeating a request
- * whose outcome is unknown risks double-counting conversions.
+ * Where the site has Action Scheduler - which every WooCommerce site does - the
+ * batch is handed to it instead, so it survives this request ending rather than
+ * being lost to a fatal error before shutdown. See ScheduledDelivery.
+ *
+ * Nothing retries in either mode, matching the core's position that repeating a
+ * request whose outcome is unknown risks double-counting conversions.
  *
  * Nothing throws. A conversion that fails to report must never break the
  * checkout, form submission or registration that produced it.
@@ -45,6 +47,7 @@ final class Measurement
     public function __construct(
         private readonly Settings $settings,
         private readonly Clock $clock = new SystemClock(),
+        private readonly ScheduledDelivery $scheduler = new ScheduledDelivery(),
     ) {
     }
 
@@ -93,8 +96,33 @@ final class Measurement
 
         $events = $this->pending;
         $this->pending = [];
+        $validateOnly = $this->settings->validateOnly();
 
-        return $this->deliver($events, $this->settings->validateOnly());
+        // Where the site has Action Scheduler - which every WooCommerce site
+        // does - hand the batch over so it survives this request ending. There
+        // is nothing to report back in that case.
+        if ($this->settings->useScheduler() && $this->scheduler->enqueue($events, $validateOnly)) {
+            return null;
+        }
+
+        return $this->deliver($events, $validateOnly);
+    }
+
+    /**
+     * Deliver a batch that was queued in an earlier request.
+     *
+     * Called by Action Scheduler. The batch is claimed before the attempt, so a
+     * reclaimed or repeated action finds nothing left to send twice.
+     */
+    public function deliverScheduledBatch(string $key): void
+    {
+        $batch = $this->scheduler->claim($key);
+
+        if ($batch === null) {
+            return;
+        }
+
+        $this->deliver($batch['events'], $batch['validate_only']);
     }
 
     /**

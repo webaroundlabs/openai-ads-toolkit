@@ -158,6 +158,17 @@ final class Settings
         return (bool) $integrations[$id];
     }
 
+    /**
+     * Whether to hand batches to Action Scheduler when the site has it.
+     *
+     * On by default: it costs nothing where the queue is absent, and where it is
+     * present it stops a fatal error mid-request from losing the conversion.
+     */
+    public function useScheduler(): bool
+    {
+        return $this->bool('use_scheduler', true);
+    }
+
     public function stripQueryString(): bool
     {
         return $this->bool('strip_query_string', true);
@@ -205,6 +216,7 @@ final class Settings
             'validate_only' => !empty($input['validate_only']),
             'debug' => !empty($input['debug']),
             'strip_query_string' => !empty($input['strip_query_string']),
+            'use_scheduler' => !empty($input['use_scheduler']),
             'integration_source' => $integrationSource,
             'canonical_origin' => $canonical,
             'timeout' => max(1, min(30, (int) ($input['timeout'] ?? 5))),

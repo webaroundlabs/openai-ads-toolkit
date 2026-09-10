@@ -214,15 +214,45 @@ code, country, plus the customer id as an external id.
 
 ## Delivery
 
-Events collect in memory during the request and are sent on `shutdown`, after
-`fastcgi_finish_request()` where the server supports it — so the visitor's
-browser is never waiting on an ad platform, and batching falls out naturally.
+Events collect in memory during the request. What happens next depends on whether
+the site has **Action Scheduler** — the background job queue that ships inside
+WooCommerce.
 
-**This is not durable.** A fatal error before shutdown loses the batch. Durable
-retries need a real queue, which on WordPress means Action Scheduler, and that
-arrives with the WooCommerce integration where it is actually installed. Nothing
-retries today, matching the core's position that repeating a request whose
-outcome is unknown risks double-counting conversions.
+| Site | Behaviour |
+|---|---|
+| Has Action Scheduler (any WooCommerce site) | The batch is stored and queued, and delivered in a later request. It survives this request ending. |
+| No Action Scheduler | The batch is sent on `shutdown`, after `fastcgi_finish_request()` where the server supports it. |
+
+Either way the visitor's browser never waits on an ad platform, and batching
+falls out naturally — which matters because the API takes up to 1,000 events at
+once and fails a batch as a whole.
+
+The plugin **never bundles Action Scheduler**. Two copies in one site conflict,
+so it only uses one that is already there, detected with `function_exists()`. A
+site without WooCommerce is entirely unaffected.
+
+### What deferred delivery does and does not give you
+
+**Does:** a fatal error after the conversion but before shutdown no longer loses
+the batch.
+
+**Does not:** retries. The batch is *claimed* — removed from storage — before the
+send is attempted, so a failure loses it rather than repeating it. That is
+deliberate and matches the core's position: repeating a request whose outcome is
+unknown risks reporting a conversion twice, and silently inflated conversion data
+is worse than a missing event, because it corrupts the advertiser's optimization
+invisibly and cannot be undone. Mutation-tested — without the claim, a reclaimed
+action sends the batch a second time.
+
+### One caveat worth knowing
+
+Action Scheduler runs jobs through WP‑Cron or loopback requests. On a site with
+`DISABLE_WP_CRON` and no real system cron, queued actions can sit unprocessed.
+Batches older than six days are therefore dropped unsent, because the API refuses
+events older than seven and would fail the whole batch.
+
+If that describes the site, untick **Deferred delivery** under Settings → OpenAI
+Ads and events are sent in-request as before.
 
 ## Security and privacy
 
