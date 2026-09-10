@@ -54,7 +54,7 @@ argues for some changes to them.
 | Package | State |
 |---|---|
 | `packages/spec` | **Done** — 13 events, identity mapping, golden fixtures |
-| `packages/php` | Next — `lead_created` vertical slice |
+| `packages/php` | **Event model done** — 13 events, identity hashing, CAPI serializer, 90 tests. HTTP client next |
 | `packages/js` | Not started |
 | `packages/laravel` | Not started |
 | `packages/wordpress` | Not started |

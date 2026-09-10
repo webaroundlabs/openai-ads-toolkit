@@ -1,0 +1,38 @@
+{
+    "name": "webaroundlabs/openai-ads",
+    "description": "OpenAI Ads measurement for PHP: typed events, identity normalization and the Conversions API. Framework-independent.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["openai", "openai-ads", "conversions-api", "capi", "measurement", "analytics"],
+    "homepage": "https://github.com/webaroundlabs/openai-ads-toolkit",
+    "support": {
+        "issues": "https://github.com/webaroundlabs/openai-ads-toolkit/issues",
+        "source": "https://github.com/webaroundlabs/openai-ads-toolkit"
+    },
+    "require": {
+        "php": ">=8.2",
+        "ext-json": "*",
+        "ext-mbstring": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "WebaroundLabs\\OpenAIAds\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebaroundLabs\\OpenAIAds\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
