@@ -1,13 +1,13 @@
 # PHP public API — design proposal
 
-**Status:** proposal, for review before implementation.
-**Scope:** the `lead_created` vertical slice. No code exists yet.
+**Status:** implemented in `packages/php`, except the Conversions API client (§5), which is next.
+**Scope:** the event model and the Conversions API serializer.
 
 This document exists because the public surface of a library is expensive to change once
-people depend on it. Everything below is reviewable now and cheap to argue with; after
-`0.2.0` most of it costs a major version.
+people depend on it. It records not just what was built but why, and what was deliberately
+left out; after `0.2.0` most of these decisions cost a major version to revisit.
 
-Three of the proposals below deviate from the original brief. Each says so and gives the
+Three of the decisions below deviate from the original brief. Each says so and gives the
 reasoning.
 
 ---
@@ -277,13 +277,35 @@ cannot honour semantic versioning: every Phase 2 addition would otherwise be a b
 or an awkward workaround. 1.0 waits until all 13 events and both serializers exist. That is what
 buys the freedom to defer everything in §7.
 
-## 9. Open questions for review
+## 9. Questions resolved in implementation
 
-1. `Money` breaks the second-use rule deliberately. Accept, or use two nullable parameters plus
-   a hand-written conditional?
-2. Non-2xx returning rather than throwing is unconventional. Confirm.
-3. Freshness checked in `send()` — and what should adapters do with a stale event: drop with a
-   log, or fail the job?
-4. `UserData::create(email: ?string)` will need to widen when someone has multiple emails (the API
-   takes the first three). Prefer a second named constructor for multi-value input over widening
-   `?string` to `string|list<string>`, which would be a signature change.
+1. **`Money` breaking the second-use rule — kept.** It makes "amount without
+   currency" unconstructible and turns `Money::minor(12.99, 'EUR')` into a
+   `TypeError` at the call site under `strict_types`. Both are pinned by tests.
+2. **`UserData` multi-value input — deferred, with the escape hatch chosen.** When
+   a caller needs several emails (the API reads the first three unique values per
+   list field), it arrives as a *second named constructor*, not by widening
+   `?string` to `string|list<string>`, which would be a signature change. The CAPI
+   serializer already emits lists, so that change is additive.
+3. **Geographic values are lenient, identity values are strict.** A blank city is
+   treated as absent; a blank email throws. Hashing an empty string yields a
+   valid-looking digest that matches nobody, so silently sending one would degrade
+   matching with no signal — whereas throwing on a half-filled checkout address
+   would break conversions for no benefit.
+4. **`source_url` is validated, not rewritten.** The core requires a scheme and a
+   host and restricts the scheme to http/https (stated toolkit policy, not an API
+   rule). It does **not** strip query strings or fragments: that is privacy policy
+   belonging to the adapters, which know the site's canonical origin, and doing it
+   silently in the core would surprise callers.
+
+## Still open, and blocking nothing today
+
+These concern `Capi\Client`, which does not exist yet:
+
+- **Non-2xx returning a `Response` rather than throwing.** Unconventional; needs a
+  decision before the client ships, and belongs in the README's first
+  error-handling paragraph either way.
+- **What adapters do with an event that has gone stale in a queue** — drop it with
+  a log, or fail the job. The freshness check itself is settled: it belongs in
+  `send()`, immediately before transmission, because the window is relative to
+  send time and one stale event fails an entire 1,000-event batch.
