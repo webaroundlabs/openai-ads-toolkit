@@ -8,6 +8,7 @@ Google Tag Manager.
 > npm, the WordPress plugin directory or the GTM gallery. The public API is unstable
 > until `1.0`. See [Status](#status).
 
+[![CI](https://github.com/webaroundlabs/openai-ads-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/webaroundlabs/openai-ads-toolkit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ## Why
@@ -115,12 +116,50 @@ privacy law and their own consent policy.
 Analytics must never break the application. A reporting failure cannot fail a checkout, a form
 submission, or a signup.
 
+## Examples
+
+[`examples/`](examples/) shows the two things that are easy to get wrong: firing at a
+**confirmed** boundary, and using one event id on both sides. There is a framework-free PHP
+script, a browser page that takes its event id from the server response, a Laravel controller,
+and a WordPress snippet for a form plugin the toolkit does not ship support for.
+
+## Development
+
+```bash
+python packages/spec/verify.py        # the specification and the GTM templates
+python scripts/check-secrets.py       # credential exposure
+
+cd packages/php       && composer install && composer test
+cd packages/js        && npm install      && npm test
+cd packages/laravel   && composer install && composer test
+cd packages/wordpress && composer install && composer test
+```
+
+CI runs all of that across PHP 8.2–8.4, Laravel 11 and 12, and Node 22, and scans the **built**
+JavaScript bundle for anything credential-shaped — the artefact browsers actually receive.
+
+The adapters reach the core through a Composer path repository, and their tests read
+`packages/spec` by relative path, so they run from a monorepo checkout only. That is intended:
+the specification is a development-time asset, not a runtime dependency.
+
+## Versioning
+
+Semantic versioning, but the version is `0.x` and the public API may change in any release
+until `1.0`. `1.0` waits until all 13 events and both serializers are stable in every package.
+
+A change to identity normalization, hashing or event id generation is a **behavioural change to
+deduplication** even when no type signature moves, and is treated as such: a pinned test and a
+changelog entry.
+
 ## Contributing
 
-The project is in its foundation phase; the specification and the public API design are the
-useful things to argue with right now. [`CLAUDE.md`](CLAUDE.md) is the coding charter —
-proportional engineering, no speculative abstraction, and no implementing behaviour that
-OpenAI has not documented.
+[`CONTRIBUTING.md`](CONTRIBUTING.md) has the details. [`CLAUDE.md`](CLAUDE.md) is the coding
+charter — proportional engineering, no speculative abstraction, and no implementing behaviour
+that OpenAI has not documented; it explains most review comments in advance.
+
+Security issues go through
+[private vulnerability reporting](https://github.com/webaroundlabs/openai-ads-toolkit/security/advisories/new),
+never a public issue — see [`SECURITY.md`](SECURITY.md).
 
 ## License
 

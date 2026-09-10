@@ -1,0 +1,30 @@
+name: Feature request
+description: Support for another platform, or a capability the toolkit lacks
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Worth knowing before you write: this project does not implement API
+        behaviour OpenAI has not documented. If a request depends on a response
+        shape, a status code or a retry rule that is not in the official docs,
+        it will probably be declined — with reasoning. See
+        [CLAUDE.md](../../CLAUDE.md).
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to measure?
+      description: The conversion, not the API call. It often changes the answer.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like the toolkit to do?
+    validations:
+      required: true
+  - type: input
+    id: docs
+    attributes:
+      label: Link to the OpenAI documentation that covers it
+      description: Leave blank if there is none — that is useful to know too.

@@ -1,0 +1,19 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+
+  - package-ecosystem: npm
+    directory: /packages/js
+    schedule:
+      interval: monthly
+    # Dev-only: the published package has no runtime dependencies, and keeping
+    # it that way is deliberate.
+    versioning-strategy: increase-if-necessary
+
+  - package-ecosystem: composer
+    directory: /packages/php
+    schedule:
+      interval: monthly
