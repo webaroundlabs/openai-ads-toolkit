@@ -61,6 +61,10 @@ yarn-error.log*
 pnpm-debug.log*
 .pnpm-store/
 
+# package-lock.json IS committed, unlike composer.lock: npm ignores a
+# dependency's lockfile entirely, so it constrains nobody downstream, and it
+# makes CI installs reproducible.
+
 # ---------------------------------------------------------------------------
 # Test output and coverage
 # ---------------------------------------------------------------------------

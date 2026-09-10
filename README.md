@@ -4,9 +4,9 @@ One open-source toolkit for OpenAI Ads measurement — Measurement Pixel, Conver
 the deduplication between them — with adapters for PHP, JavaScript, Laravel, WordPress and
 Google Tag Manager.
 
-> **Pre-alpha, `0.1.x`.** The specification and the PHP package are usable; JavaScript and the
-> adapters are not built yet. Nothing is published to Packagist or npm. The public API is
-> unstable until `1.0`. See [Status](#status).
+> **Pre-alpha, `0.1.x`.** The specification, the PHP package and the JavaScript package are
+> usable; the framework adapters are not built yet. Nothing is published to Packagist or npm.
+> The public API is unstable until `1.0`. See [Status](#status).
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -29,7 +29,7 @@ shared specification  →  PHP / JavaScript cores  →  framework adapters  → 
 ```js
 // JavaScript — a typed wrapper over OpenAI's official oaiq browser SDK
 OpenAIAds.init({ pixelId: 'YOUR-PIXEL-ID' });
-OpenAIAds.track('lead_created');
+OpenAIAds.track('lead_created', undefined, { eventId: leadId });   // same id the server sends
 ```
 
 ```php
@@ -57,13 +57,17 @@ argues for some changes to them.
 |---|---|
 | `packages/spec` | **Done** — 13 events, identity mapping, golden fixtures |
 | `packages/php` | **Done** — 13 events, identity hashing, Conversions API client, 123 tests |
-| `packages/js` | Not started |
+| `packages/js` | **Done** — typed wrapper over the official `oaiq` SDK, 75 tests |
 | `packages/laravel` | Not started |
 | `packages/wordpress` | Not started |
 | `packages/gtm-web`, `packages/gtm-server` | Not started |
 
 Built in that order on purpose: the shared foundation first, WordPress last. Nothing is
 published to Packagist, npm or the WordPress plugin directory yet.
+
+The PHP and JavaScript packages are held to the same specification by parity tests, and both
+assert the identity digests in `packages/spec/fixtures/normalization.cases.json` — so a Pixel
+event and its Conversions API twin provably describe the same person.
 
 ## What the specification captures
 

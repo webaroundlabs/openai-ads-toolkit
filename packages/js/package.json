@@ -1,0 +1,51 @@
+{
+  "name": "@webaroundlabs/openai-ads",
+  "version": "0.1.0",
+  "description": "OpenAI Ads Measurement Pixel for the browser: a typed, consent-aware wrapper over the official oaiq SDK, with Pixel/Conversions API deduplication.",
+  "keywords": [
+    "openai",
+    "openai-ads",
+    "pixel",
+    "oaiq",
+    "conversions-api",
+    "measurement",
+    "analytics"
+  ],
+  "homepage": "https://github.com/webaroundlabs/openai-ads-toolkit",
+  "bugs": "https://github.com/webaroundlabs/openai-ads-toolkit/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/webaroundlabs/openai-ads-toolkit.git",
+    "directory": "packages/js"
+  },
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.2",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}
