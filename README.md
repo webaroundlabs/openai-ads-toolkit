@@ -65,7 +65,7 @@ argues for some changes to them.
 | `packages/php` | **Done** — 13 events, identity hashing, Conversions API client, 123 tests |
 | `packages/js` | **Done** — typed wrapper over the official `oaiq` SDK, 75 tests |
 | `packages/laravel` | **Done** — provider, facade, queued delivery, attribution, Blade Pixel, 54 tests |
-| `packages/wordpress` | **Base plugin done** — Pixel, CAPI, settings, connection test, 42 tests. CF7/Elementor/Woo next |
+| `packages/wordpress` | **Base plugin + Contact Form 7 + Elementor Forms** — 62 tests. WooCommerce next |
 | `packages/gtm-web`, `packages/gtm-server` | Not started |
 
 Built in that order on purpose: the shared foundation first, WordPress last. Nothing is

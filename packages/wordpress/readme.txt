@@ -31,6 +31,15 @@ endorsed or supported by OpenAI. "OpenAI" and "ChatGPT" are trademarks of OpenAI
 * Defers to your existing consent mechanism. It ships no cookie banner and makes
   no privacy decisions for you.
 
+= Form integrations =
+
+Contact Form 7 and Elementor Forms are detected automatically. A lead is recorded
+when the submission is accepted, never when the button is clicked, and the
+browser and server halves share one event id so the conversion is counted once.
+
+Neither plugin is required. Each can be switched off individually under
+Settings -> OpenAI Ads.
+
 = For developers =
 
 Record a conversion at a confirmed boundary:
@@ -80,3 +89,4 @@ test suite asserts this.
 = 0.1.0 =
 * First release: Pixel, Conversions API, deduplication, settings screen and a
   connection test.
+* Contact Form 7 and Elementor Forms integrations.

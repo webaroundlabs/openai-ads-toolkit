@@ -3,8 +3,8 @@
 The WordPress plugin, built on the shared toolkit. Measurement Pixel, Conversions
 API, and the deduplication between them.
 
-> **Pre-alpha, `0.1.0`.** Not on the WordPress plugin directory. The base plugin
-> only — Contact Form 7, Elementor Forms and WooCommerce come next.
+> **Pre-alpha, `0.1.0`.** Not on the WordPress plugin directory. Base plugin plus
+> Contact Form 7 and Elementor Forms. WooCommerce comes next.
 
 An independent community integration. Not created, certified, endorsed or
 supported by OpenAI.
@@ -84,6 +84,80 @@ flows with no stable id — mint once, use on both sides, never regenerate.
 | `openai_ads_sent` | After a batch is delivered |
 | `openai_ads_failed` | On a delivery or validation failure |
 | `openai_ads_invalid_event` | When a caller passed something the API cannot accept |
+
+## Form integrations
+
+Contact Form 7 and Elementor Forms are detected automatically and appear under
+**Integrations** on the settings screen. Neither is a dependency: a site running
+neither pays for neither, because an integration only registers when its host
+plugin is actually active.
+
+### The success boundary
+
+A lead is recorded when the submission is *accepted*, never when the button is
+clicked:
+
+| Host | Hook | Why this one |
+|---|---|---|
+| Contact Form 7 | `wpcf7_mail_sent` | Fires only after validation, spam checks and delivery all succeeded. `wpcf7_before_send_mail` runs before the outcome is known. |
+| Elementor Forms | `elementor_pro/forms/new_record` | Runs after validation and after the form's own actions were accepted. |
+
+A test asserts that a response which is not a successful send carries no
+conversion — verified by removing the check and watching the test fail.
+
+### The deduplication bridge
+
+Both plugins submit over AJAX, so the browser half cannot simply be printed into
+the page. The server mints one event id, sends the Conversions API event with it,
+and returns the same id in the form's own JSON response; the bundled
+`assets/js/forms.js` reads it back and fires the Pixel event with that id.
+
+Same Pixel ID, same event name, same event id — matched, not counted twice. The
+script is enqueued only when an integration registered and the Pixel is running,
+and it never throws into the host page.
+
+### Identity extraction
+
+Email and phone are read from the field **type**, which the form builder already
+declared — not from field labels, which is how integrations end up hashing a
+subject line as an email address.
+
+Names are taken only from fields explicitly named for one (`first-name`,
+`Last Name`). A single combined "name" field is deliberately **not** split:
+"Mary Jane Watson" has no correct answer, and a wrong surname hashes to a digest
+that matches nobody, which is worse than sending none.
+
+For anything the automatic extraction cannot recognize:
+
+```php
+add_filter( 'openai_ads_form_user_data', function ( $user, $form_id, $source ) {
+    $user['email'] = $_POST['my-custom-field'] ?? null;
+    return $user;
+}, 10, 3 );
+```
+
+### Mapping a form to a different event
+
+```php
+add_filter( 'openai_ads_form_event', function ( $event, $form_id, $source ) {
+    return $form_id === '12' ? 'appointment_scheduled' : $event;
+}, 10, 3 );
+```
+
+Any documented event works. For `custom`, supply the name via
+`openai_ads_form_custom_event_name` — it is used on both sides, as it must be.
+
+### Adding your own
+
+```php
+add_filter( 'openai_ads_integrations', function ( array $integrations ) {
+    $integrations[] = new My_Gravity_Forms_Integration();
+    return $integrations;
+} );
+```
+
+Implement `Integrations\Integration`: `id()`, `label()`, `isAvailable()`,
+`register()`.
 
 ## Delivery
 

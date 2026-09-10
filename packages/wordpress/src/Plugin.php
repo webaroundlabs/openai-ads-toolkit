@@ -8,6 +8,7 @@ use WebaroundLabs\OpenAIAds\Event;
 use WebaroundLabs\OpenAIAds\InvalidArgument;
 use WebaroundLabs\OpenAIAds\SystemClock;
 use WebaroundLabs\OpenAIAds\WordPress\Admin\SettingsPage;
+use WebaroundLabs\OpenAIAds\WordPress\Integrations\Registry;
 
 /**
  * The plugin's composition root.
@@ -29,6 +30,8 @@ final class Plugin
     private ?RequestContext $context = null;
 
     private ?Pixel $pixel = null;
+
+    private ?Registry $integrations = null;
 
     private function __construct(
         public readonly string $file,
@@ -77,6 +80,11 @@ final class Plugin
         return $this->pixel ??= new Pixel($this->settings(), $this->measurement());
     }
 
+    public function integrations(): Registry
+    {
+        return $this->integrations ??= new Registry($this, $this->settings());
+    }
+
     public function builder(): EventBuilder
     {
         return new EventBuilder($this->context(), $this->measurement()->clock());
@@ -123,12 +131,48 @@ final class Plugin
         return $this->builder()->build($eventName, $data, $options);
     }
 
+    /**
+     * The browser half of the deduplication bridge.
+     *
+     * Only enqueued when an integration that needs it actually registered, and
+     * only when the Pixel is running - there is nothing for it to talk to
+     * otherwise.
+     */
+    public function enqueueBridge(): void
+    {
+        if (!$this->settings()->pixelEnabled() || !$this->measurement()->consented()) {
+            return;
+        }
+
+        \wp_enqueue_script(
+            'openai-ads-forms',
+            \plugins_url('assets/js/forms.js', $this->file),
+            [],
+            $this->version,
+            true,
+        );
+    }
+
     private function registerHooks(): void
     {
         \add_action('wp_head', [$this->pixel(), 'render'], 1);
 
+        // Integrations attach to their host plugin's hooks, which are declared
+        // after plugins_loaded. `init` is late enough that every host has
+        // registered its classes, and early enough for all of their own hooks.
+        \add_action('init', function (): void {
+            if ($this->integrations()->register()) {
+                \add_action('wp_enqueue_scripts', [$this, 'enqueueBridge']);
+            }
+        });
+
         if (\is_admin()) {
-            $page = new SettingsPage($this->settings(), $this->measurement(), $this->builder());
+            $page = new SettingsPage(
+                $this->settings(),
+                $this->measurement(),
+                $this->builder(),
+                $this->integrations(),
+            );
             $page->register();
 
             \add_filter(

@@ -137,6 +137,27 @@ final class Settings
         return $origin;
     }
 
+    /**
+     * Whether a named integration should run.
+     *
+     * Defaults to on: a site that installs this plugin alongside Contact Form 7
+     * wants its leads measured, and having to hunt for a second switch is a
+     * worse default than having to turn one off.
+     */
+    public function integrationEnabled(string $id): bool
+    {
+        $all = $this->all();
+        $integrations = isset($all['integrations']) && is_array($all['integrations'])
+            ? $all['integrations']
+            : [];
+
+        if (!array_key_exists($id, $integrations)) {
+            return true;
+        }
+
+        return (bool) $integrations[$id];
+    }
+
     public function stripQueryString(): bool
     {
         return $this->bool('strip_query_string', true);
@@ -187,7 +208,54 @@ final class Settings
             'integration_source' => $integrationSource,
             'canonical_origin' => $canonical,
             'timeout' => max(1, min(30, (int) ($input['timeout'] ?? 5))),
+            'integrations' => $this->sanitizeIntegrations($input),
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $input
+     *
+     * @return array<string, bool>
+     */
+    private function sanitizeIntegrations(array $input): array
+    {
+        /*
+         * The hidden "present" list is the authority, not the checkboxes.
+         *
+         * An unchecked box is absent from the POST body entirely, so deriving
+         * the set of integrations from what was submitted would silently
+         * re-enable every one the site owner had just switched off. The form
+         * therefore states which integrations it rendered, and each of those is
+         * on only if its box came back.
+         */
+        $known = isset($input['integrations_present']) && is_array($input['integrations_present'])
+            ? $input['integrations_present']
+            : null;
+
+        if ($known === null) {
+            // The section was not rendered at all; leave what is stored.
+            $current = $this->all()['integrations'] ?? [];
+
+            return is_array($current) ? array_map('boolval', $current) : [];
+        }
+
+        $submitted = isset($input['integrations']) && is_array($input['integrations'])
+            ? $input['integrations']
+            : [];
+
+        $result = [];
+
+        foreach ($known as $id) {
+            $id = (string) $id;
+
+            if (preg_match('/^[a-z0-9_]{1,64}$/', $id) !== 1) {
+                continue;
+            }
+
+            $result[$id] = !empty($submitted[$id]);
+        }
+
+        return $result;
     }
 
     public function forget(): void
