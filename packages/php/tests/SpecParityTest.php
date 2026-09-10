@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use WebaroundLabs\OpenAIAds\ActionSource;
+use WebaroundLabs\OpenAIAds\DataShape;
 use WebaroundLabs\OpenAIAds\Capi\Client;
 use WebaroundLabs\OpenAIAds\Event;
 use WebaroundLabs\OpenAIAds\EventName;
@@ -215,6 +216,52 @@ final class SpecParityTest extends TestCase
             '/' . $pattern . '/',
             Client::DEFAULT_INTEGRATION_SOURCE,
         );
+    }
+
+    /**
+     * Which shapes carry a contents array and a plan id is spec knowledge that
+     * now lives in PHP as well, so it needs the same parity guarantee as the
+     * event catalogue.
+     */
+    #[Test]
+    public function each_data_shape_carries_what_the_specification_says_it_does(): void
+    {
+        $shapes = Spec::load('events.json')['data_shapes'];
+
+        foreach ($shapes as $name => $fields) {
+            $shape = DataShape::from($name);
+
+            self::assertSame(
+                array_key_exists('contents', $fields),
+                $shape->acceptsContents(),
+                sprintf('Contents support for "%s" disagrees with the spec.', $name),
+            );
+
+            self::assertSame(
+                array_key_exists('plan_id', $fields),
+                $shape->acceptsPlanId(),
+                sprintf('Plan id support for "%s" disagrees with the spec.', $name),
+            );
+        }
+    }
+
+    /**
+     * The two Conversions API only fields must be marked as such in the spec,
+     * because the Pixel serializer strips exactly what carries that marker.
+     */
+    #[Test]
+    public function the_capi_only_content_fields_are_the_ones_php_can_emit(): void
+    {
+        $content = Spec::load('events.json')['objects']['content'];
+
+        $capiOnly = array_keys(array_filter(
+            $content,
+            static fn (array $field): bool => ($field['capi_only'] ?? false) === true,
+        ));
+
+        sort($capiOnly);
+
+        self::assertSame(['group_id', 'variant_dict'], $capiOnly);
     }
 
     private static function fullyPopulatedUser(): UserData
