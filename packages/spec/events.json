@@ -1,0 +1,289 @@
+{
+  "spec_version": "1.0.0",
+  "retrieved": "2026-09-10",
+  "sources": [
+    "https://developers.openai.com/ads/supported-events",
+    "https://developers.openai.com/ads/conversions-api",
+    "https://developers.openai.com/ads/measurement-pixel",
+    "https://developers.openai.com/ads/multiple-pixels"
+  ],
+  "about": "Canonical description of the OpenAI Ads events this toolkit supports. Source of truth for documentation, test fixtures and the cross-runtime parity tests. Not loaded at runtime by any package. Identity/user data lives in user.json.",
+
+  "limits": {
+    "batch_max_events": 1000,
+    "batch_min_events": 1,
+    "batch_atomic": true,
+    "batch_atomic_note": "If one event in the batch fails, the full batch fails. Validate locally before sending: one bad event discards up to 999 good ones.",
+    "timestamp_max_age_ms": 604800000,
+    "timestamp_max_future_ms": 600000,
+    "timestamp_note": "Within the last 7 days and no more than 10 minutes in the future. The window is relative to send time, not construction time, so it must be checked immediately before transmission.",
+    "user_list_field_max_values": 3
+  },
+
+  "patterns": {
+    "custom_event_name": "^[A-Za-z0-9]$|^[A-Za-z0-9][A-Za-z0-9_-]{0,62}[A-Za-z0-9]$",
+    "integration_source": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$",
+    "sha256_hex": "^[0-9a-f]{64}$",
+    "currency": "^[A-Z]{3}$"
+  },
+
+  "conventions": {
+    "capi_only": "Field is accepted by the Conversions API and has no Measurement Pixel equivalent. The Pixel serializer must strip it.",
+    "supplied_by_pixel_sdk": "The browser SDK derives this itself. Never hand-pass it on the Pixel side; it is required explicitly on the Conversions API side.",
+    "opaque": "Pass through byte-for-byte. Never parse, decode, transform, normalize or mint a value for this field.",
+    "required_when": "Conditional requirement. Exactly two forms are permitted: {field, equals} and {field, present}. A rule needing a third form belongs in code, not in this file.",
+    "enum_source": "The permitted values are the keys of the named top-level list, rather than being duplicated here.",
+    "items": "Names the structure each array element takes: either a key of the top-level 'objects' map, or the top-level 'event_fields' section.",
+    "notes": "Records an ambiguity or hazard in the upstream documentation in-band, so no runtime silently picks a side."
+  },
+
+  "action_sources": [
+    "web",
+    "mobile_app",
+    "offline",
+    "physical_store",
+    "phone_call",
+    "email",
+    "other"
+  ],
+
+  "envelope": {
+    "endpoint": {
+      "method": "POST",
+      "url": "https://bzr.openai.com/v1/events",
+      "query": { "pid": "PIXEL_ID" },
+      "auth": "Authorization: Bearer <API-KEY>",
+      "auth_note": "Server-side only. The API key must never reach browser code, a frontend bundle, HTML, or a public log.",
+      "content_type": "application/json"
+    },
+    "fields": {
+      "validate_only": {
+        "type": "boolean",
+        "required": false,
+        "notes": "Documented test mode. Validates the batch without persisting it."
+      },
+      "integration_source": {
+        "type": "string",
+        "required": false,
+        "pattern": "integration_source",
+        "scope": "request",
+        "notes": "Top-level per request, not per event. Identifies the integration sending the request; does not affect authentication or authorization."
+      },
+      "events": {
+        "type": "array",
+        "required": true,
+        "items": "event_fields",
+        "min_items": 1,
+        "max_items": 1000
+      }
+    },
+    "response": {
+      "documented": false,
+      "notes": "The success body, HTTP status codes, error body shape, rate limits, retry guidance and idempotency semantics are not documented upstream. Clients must not model them. The only contract available is HTTP itself."
+    }
+  },
+
+  "event_fields": {
+    "id": {
+      "type": "string",
+      "required": true,
+      "notes": "Unique, non-empty. Prefer an existing stable business identifier (order id, payment intent id, lead id) over a minted one. Forms the deduplication key together with the Pixel ID and the event name."
+    },
+    "type": {
+      "type": "string",
+      "required": true,
+      "enum_source": "events"
+    },
+    "timestamp_ms": {
+      "type": "integer",
+      "required": true,
+      "unit": "unix_ms",
+      "supplied_by_pixel_sdk": true,
+      "notes": "Stamp at collection time, not at send time, so a retried job carries the original value."
+    },
+    "action_source": {
+      "type": "string",
+      "required": true,
+      "enum_source": "action_sources",
+      "capi_only": true
+    },
+    "data": {
+      "type": "object",
+      "required": true,
+      "notes": "Shape is selected by the event's data_shape."
+    },
+    "source_url": {
+      "type": "string",
+      "required_when": { "field": "action_source", "equals": "web" },
+      "supplied_by_pixel_sdk": true,
+      "notes": "Must include a scheme and a host. Reducing it to origin + path and stripping query and fragment is toolkit policy for privacy, not an upstream requirement."
+    },
+    "custom_event_name": {
+      "type": "string",
+      "required_when": { "field": "type", "equals": "custom" },
+      "pattern": "custom_event_name",
+      "min_length": 1,
+      "max_length": 64,
+      "notes": "Must not collide with a standard event name. Upstream says 'use lowercase'; it is unclear whether that is normative, so the pattern permits both cases and the toolkit recommends lowercase."
+    },
+    "oppref": {
+      "type": "string",
+      "required": false,
+      "opaque": true,
+      "supplied_by_pixel_sdk": true,
+      "cookie": "__oppref",
+      "notes": "Event-level attribution identifier. Distinct from user.obref - see user.json. The Pixel captures it from the landing-page URL and stores it in the first-party __oppref cookie."
+    },
+    "opt_out": {
+      "type": "boolean",
+      "required": false,
+      "notes": "Excludes the event from personalization. This is NOT a consent gate: a failed consent check must mean the event is never constructed at all."
+    },
+    "user": {
+      "type": "object",
+      "required": false,
+      "spec": "user.json",
+      "notes": "The Pixel accepts user data on init(), not per measure() call."
+    }
+  },
+
+  "data_shapes": {
+    "contents": {
+      "type": { "type": "string", "required": true, "const": "contents" },
+      "amount": { "type": "integer", "required": false, "unit": "currency_minor" },
+      "currency": { "type": "string", "required_when": { "field": "amount", "present": true }, "pattern": "currency" },
+      "contents": { "type": "array", "required": false, "items": "content" }
+    },
+    "customer_action": {
+      "type": { "type": "string", "required": true, "const": "customer_action" },
+      "amount": { "type": "integer", "required": false, "unit": "currency_minor" },
+      "currency": { "type": "string", "required_when": { "field": "amount", "present": true }, "pattern": "currency" },
+      "notes": "Accepts no contents array and no plan_id."
+    },
+    "plan_enrollment": {
+      "type": { "type": "string", "required": true, "const": "plan_enrollment" },
+      "plan_id": { "type": "string", "required": false },
+      "amount": { "type": "integer", "required": false, "unit": "currency_minor" },
+      "currency": { "type": "string", "required_when": { "field": "amount", "present": true }, "pattern": "currency" },
+      "contents": { "type": "array", "required": false, "items": "content" }
+    },
+    "custom": {
+      "type": { "type": "string", "required": true, "const": "custom" },
+      "plan_id": { "type": "string", "required": false },
+      "amount": { "type": "integer", "required": false, "unit": "currency_minor" },
+      "currency": { "type": "string", "required_when": { "field": "amount", "present": true }, "pattern": "currency" },
+      "contents": { "type": "array", "required": false, "items": "content" },
+      "additional_fields": "allowed"
+    }
+  },
+
+  "objects": {
+    "content": {
+      "id": { "type": "string", "required": false },
+      "group_id": { "type": "string", "required": false, "capi_only": true },
+      "name": { "type": "string", "required": false },
+      "content_type": { "type": "string", "required": false, "examples": ["product", "plan", "page"] },
+      "quantity": { "type": "integer", "required": false, "notes": "Integer, not a string." },
+      "amount": { "type": "integer", "required": false, "unit": "currency_minor" },
+      "currency": { "type": "string", "required": false, "pattern": "currency" },
+      "variant_dict": { "type": "object", "required": false, "capi_only": true, "value_type": "string" }
+    }
+  },
+
+  "events": {
+    "page_viewed": {
+      "data_shape": "contents",
+      "pixel": true,
+      "capi": true,
+      "description": "A visitor lands on or views an important page.",
+      "boundary": "On page load. Usually left to the Pixel where browser support exists."
+    },
+    "contents_viewed": {
+      "data_shape": "contents",
+      "pixel": true,
+      "capi": true,
+      "description": "A visitor views a specific product, listing, article, plan or content unit.",
+      "boundary": "When the item is shown, including views triggered after the page has already loaded."
+    },
+    "items_added": {
+      "data_shape": "contents",
+      "pixel": true,
+      "capi": true,
+      "description": "A visitor adds items to a cart, bundle or selection.",
+      "boundary": "After the cart mutation succeeds. Covers every confirmed add path, including quantity increments that create or increase a line."
+    },
+    "checkout_started": {
+      "data_shape": "contents",
+      "pixel": true,
+      "capi": true,
+      "description": "A visitor begins checkout.",
+      "boundary": "When the checkout session starts."
+    },
+    "order_created": {
+      "data_shape": "contents",
+      "pixel": true,
+      "capi": true,
+      "description": "A purchase is completed.",
+      "boundary": "After payment or order confirmation. Never on a checkout button click, and never for a failed or abandoned order."
+    },
+    "lead_created": {
+      "data_shape": "customer_action",
+      "pixel": true,
+      "capi": true,
+      "description": "A visitor submits a lead form or requests contact.",
+      "boundary": "After the submission is accepted by the server. Never when a form merely opens, and never on a submit-button click."
+    },
+    "registration_completed": {
+      "data_shape": "customer_action",
+      "pixel": true,
+      "capi": true,
+      "description": "A visitor completes an account or event registration.",
+      "boundary": "After account creation succeeds, not when signup starts."
+    },
+    "appointment_scheduled": {
+      "data_shape": "customer_action",
+      "pixel": true,
+      "capi": true,
+      "description": "A visitor books a meeting, demo or consultation.",
+      "boundary": "After the booking is confirmed."
+    },
+    "subscription_created": {
+      "data_shape": "plan_enrollment",
+      "pixel": true,
+      "capi": true,
+      "description": "A paid subscription starts.",
+      "boundary": "After the plan activates."
+    },
+    "trial_started": {
+      "data_shape": "plan_enrollment",
+      "pixel": true,
+      "capi": true,
+      "description": "A free trial starts.",
+      "boundary": "After the trial activates."
+    },
+    "custom": {
+      "data_shape": "custom",
+      "pixel": true,
+      "capi": true,
+      "requires_custom_event_name": true,
+      "description": "An advertiser-defined event outside the standard taxonomy.",
+      "boundary": "Use only when no standard event maps cleanly to the action."
+    },
+    "app_installed": {
+      "data_shape": "customer_action",
+      "pixel": false,
+      "capi": true,
+      "action_sources": ["mobile_app"],
+      "description": "A mobile application is installed.",
+      "boundary": "Reported server-side by a mobile measurement partner. Not available to the browser Pixel."
+    },
+    "app_opened": {
+      "data_shape": "customer_action",
+      "pixel": false,
+      "capi": true,
+      "action_sources": ["mobile_app"],
+      "description": "A mobile application is opened.",
+      "boundary": "Reported server-side by a mobile measurement partner. Not available to the browser Pixel."
+    }
+  }
+}

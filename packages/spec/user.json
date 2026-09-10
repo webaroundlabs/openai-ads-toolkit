@@ -1,0 +1,137 @@
+{
+  "spec_version": "1.0.0",
+  "retrieved": "2026-09-10",
+  "sources": [
+    "https://developers.openai.com/ads/conversions-api",
+    "https://developers.openai.com/ads/measurement-pixel"
+  ],
+  "about": "Identity and matching data. The logical attribute is the key; the Conversions API and the Measurement Pixel are two derived views of it. Kept separate from events.json because this is a mapping table rather than a catalogue, because it is identical across all 13 events, and because a change here is a behavioural change to deduplication that requires pinned tests and a changelog entry.",
+
+  "list_field_max_values": 3,
+  "list_field_rule": "The API uses the first three valid, unique values per list field. Serializers cap at three, in caller order, after removing duplicates.",
+
+  "hash": {
+    "algorithm": "sha256",
+    "encoding": "utf-8",
+    "output": "lowercase 64-character hexadecimal"
+  },
+
+  "conventions": {
+    "cardinality": "'list' means the wire value is a JSON array; 'scalar' means a bare string.",
+    "pixel_null": "\"pixel\": null means the browser supplies this itself. Never hand-pass it to the Pixel SDK. This is a different statement from capi_only in events.json.",
+    "opaque": "Pass through byte-for-byte. Never parse, decode, transform or mint.",
+    "preserve_case": "Normalization must not change letter case for this field.",
+    "preserve_non_ascii": "Lowercasing must be Unicode-aware. See the mb_strtolower hazard in the notes on the 'name' normalization."
+  },
+
+  "normalizations": {
+    "email": {
+      "steps": ["trim", "lowercase"],
+      "hash": "sha256",
+      "notes": "Lowercasing is Unicode-aware for consistency with the name rule, though addresses are ASCII in practice."
+    },
+    "phone": {
+      "steps": ["trim", "strip_non_digits", "strip_leading_zeroes"],
+      "digits_min": 8,
+      "digits_max": 15,
+      "hash": "sha256",
+      "notes": "Upstream says to remove the leading '+', leading zeroes, whitespace and punctuation, but does not fix an order, and order changes the result. This toolkit pins the order above: remove every non-digit first (which subsumes '+', whitespace and punctuation), then strip leading zeroes. Worked example: '+00 44 (0)20 7946 0958' becomes '4402079460958'. Note that the inner zero from '(0)' is retained - that is a deliberate consequence of a deterministic rule, not an attempt to parse dialling plans."
+    },
+    "external_id": {
+      "steps": ["trim"],
+      "preserve_case": true,
+      "hash": "sha256"
+    },
+    "name": {
+      "steps": ["trim", "lowercase", "strip_whitespace", "strip_ascii_punctuation"],
+      "preserve_non_ascii": true,
+      "hash": "sha256",
+      "notes": "Lowercasing MUST be Unicode-aware. PHP's strtolower() is byte-wise and leaves 'Ștefănescu' unchanged, while JavaScript's toLowerCase() does not - which produces two different hashes for the same person and silently breaks matching. Use mb_strtolower($v, 'UTF-8') and require ext-mbstring. Pinned in fixtures/normalization.cases.json."
+    },
+    "none": {
+      "steps": [],
+      "hash": null
+    }
+  },
+
+  "fields": {
+    "email": {
+      "normalization": "email",
+      "capi": { "key": "emails_sha256", "cardinality": "list" },
+      "pixel": { "key": "email_sha256", "cardinality": "scalar" }
+    },
+    "phone": {
+      "normalization": "phone",
+      "capi": { "key": "phone_numbers_sha256", "cardinality": "list" },
+      "pixel": { "key": "phone_number_sha256", "cardinality": "scalar" }
+    },
+    "external_id": {
+      "normalization": "external_id",
+      "capi": { "key": "external_ids_sha256", "cardinality": "list" },
+      "pixel": { "key": "external_id_sha256", "cardinality": "scalar" }
+    },
+    "first_name": {
+      "normalization": "name",
+      "capi": { "key": "first_names_sha256", "cardinality": "list" },
+      "pixel": { "key": "first_name_sha256", "cardinality": "scalar" }
+    },
+    "last_name": {
+      "normalization": "name",
+      "capi": { "key": "last_names_sha256", "cardinality": "list" },
+      "pixel": { "key": "last_name_sha256", "cardinality": "scalar" }
+    },
+    "country": {
+      "normalization": "none",
+      "capi": { "key": "countries", "cardinality": "list" },
+      "pixel": { "key": "country", "cardinality": "scalar" }
+    },
+    "city": {
+      "normalization": "none",
+      "capi": { "key": "cities", "cardinality": "list" },
+      "pixel": { "key": "city", "cardinality": "scalar" }
+    },
+    "region": {
+      "normalization": "none",
+      "capi": { "key": "regions", "cardinality": "list" },
+      "pixel": { "key": "region", "cardinality": "scalar" }
+    },
+    "postal_code": {
+      "normalization": "none",
+      "capi": { "key": "postal_codes", "cardinality": "list" },
+      "pixel": { "key": "postal_code", "cardinality": "scalar" },
+      "notes": "UNRESOLVED: the live Measurement Pixel documentation shows postal_code, while OpenAI's own plugin reference lists the Pixel key as zip_code. That reference defers to the live docs, so postal_code is used here. Re-verify against a live pixel before the JavaScript package ships."
+    },
+    "obref": {
+      "normalization": "none",
+      "opaque": true,
+      "capi": { "key": "obref", "cardinality": "scalar" },
+      "pixel": null,
+      "captured_by_pixel": { "cookie": "__obref" },
+      "notes": "User-level opaque browser reference. Distinct from the event-level oppref in events.json, which comes from the __oppref cookie. Conflating the two is the easiest mistake in this codebase and it silently breaks matching."
+    },
+    "ip_address": {
+      "normalization": "none",
+      "capi": { "key": "ip_address", "cardinality": "scalar" },
+      "pixel": null,
+      "notes": "IPv4 or IPv6. Must be the trusted client address; behind a proxy this is host-provided data and requires validation."
+    },
+    "user_agent": {
+      "normalization": "none",
+      "capi": { "key": "user_agent", "cardinality": "scalar" },
+      "pixel": null,
+      "notes": "Non-empty string."
+    },
+    "android_advertising_id": {
+      "normalization": "none",
+      "capi": { "key": "android_advertising_id", "cardinality": "scalar" },
+      "pixel": null,
+      "notes": "UUID format. Android GAID only."
+    }
+  },
+
+  "privacy": {
+    "raw_values": "Raw identifiers must never be logged, must never appear in exception messages, and must never be attached to error reports. Emit the hash or a redacted form instead.",
+    "oppref_and_pii": "Never log oppref or obref alongside raw identity data.",
+    "consent": "A failed consent check means the event is never constructed. opt_out is a personalization flag, not a consent gate; using it as one still transmits identity hashes."
+  }
+}

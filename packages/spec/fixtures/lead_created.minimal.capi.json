@@ -1,0 +1,49 @@
+{
+  "about": "The first vertical slice. This is the exact Conversions API output a minimal lead_created must produce, and it becomes the first assertion in the PHP test suite.",
+
+  "input": {
+    "name": "lead_created",
+    "id": "lead_88213",
+    "timestamp_ms": 1789041600000,
+    "action_source": "web",
+    "source_url": "https://example.com/contact/thank-you",
+    "user": { "email": " Ada@Example.COM " }
+  },
+
+  "expected_event": {
+    "id": "lead_88213",
+    "type": "lead_created",
+    "timestamp_ms": 1789041600000,
+    "action_source": "web",
+    "source_url": "https://example.com/contact/thank-you",
+    "data": { "type": "customer_action" },
+    "user": {
+      "emails_sha256": ["b5fc85e55755f9e0d030a10ab4429b6b2944855f9a0d60077fe832becbc41d72"]
+    }
+  },
+
+  "expected_request": {
+    "integration_source": "webaroundlabs-openai-ads-toolkit",
+    "events": [
+      {
+        "id": "lead_88213",
+        "type": "lead_created",
+        "timestamp_ms": 1789041600000,
+        "action_source": "web",
+        "source_url": "https://example.com/contact/thank-you",
+        "data": { "type": "customer_action" },
+        "user": {
+          "emails_sha256": ["b5fc85e55755f9e0d030a10ab4429b6b2944855f9a0d60077fe832becbc41d72"]
+        }
+      }
+    ]
+  },
+
+  "asserts": [
+    "Absent optional fields are OMITTED, never emitted as null. There is no amount, currency, oppref, opt_out or custom_event_name key above - omitted and null are a real distinction on the wire, and upstream does not document how an explicit null is treated.",
+    "data carries only { type } because lead_created uses the customer_action shape, which accepts no contents array and no plan_id.",
+    "validate_only is absent because it is false; it appears only when true.",
+    "The timestamp is fixed here. Implementations must accept an injected clock rather than calling the system clock, or this fixture cannot be asserted.",
+    "1789041600000 is 2026-09-10T12:00:00Z. The 7-day freshness window is checked at SEND time, not construction time, so this fixture stays valid as a serialization test indefinitely."
+  ]
+}
