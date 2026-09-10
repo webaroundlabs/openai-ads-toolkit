@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use WebaroundLabs\OpenAIAds\ActionSource;
+use WebaroundLabs\OpenAIAds\Capi\Client;
 use WebaroundLabs\OpenAIAds\Event;
 use WebaroundLabs\OpenAIAds\EventName;
 use WebaroundLabs\OpenAIAds\UserData;
@@ -25,6 +26,7 @@ use WebaroundLabs\OpenAIAds\UserData;
  */
 #[CoversClass(EventName::class)]
 #[CoversClass(ActionSource::class)]
+#[CoversClass(Client::class)]
 final class SpecParityTest extends TestCase
 {
     #[Test]
@@ -189,6 +191,29 @@ final class SpecParityTest extends TestCase
         self::assertSame(
             Spec::load('events.json')['patterns']['custom_event_name'],
             Event::CUSTOM_EVENT_NAME_PATTERN,
+        );
+    }
+
+    #[Test]
+    public function the_client_constants_match_the_specification(): void
+    {
+        $spec = Spec::load('events.json');
+
+        self::assertSame($spec['envelope']['endpoint']['url'], Client::ENDPOINT);
+        self::assertSame($spec['limits']['batch_max_events'], Client::MAX_BATCH_SIZE);
+        self::assertSame($spec['limits']['timestamp_max_age_ms'], Client::MAX_AGE_MS);
+        self::assertSame($spec['limits']['timestamp_max_future_ms'], Client::MAX_FUTURE_MS);
+        self::assertSame($spec['patterns']['integration_source'], Client::INTEGRATION_SOURCE_PATTERN);
+    }
+
+    #[Test]
+    public function the_default_integration_source_satisfies_the_specified_pattern(): void
+    {
+        $pattern = Spec::load('events.json')['patterns']['integration_source'];
+
+        self::assertMatchesRegularExpression(
+            '/' . $pattern . '/',
+            Client::DEFAULT_INTEGRATION_SOURCE,
         );
     }
 

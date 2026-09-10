@@ -1,7 +1,7 @@
 # PHP public API — design proposal
 
-**Status:** implemented in `packages/php`, except the Conversions API client (§5), which is next.
-**Scope:** the event model and the Conversions API serializer.
+**Status:** implemented in `packages/php`.
+**Scope:** the event model, the identity mapping and the Conversions API client.
 
 This document exists because the public surface of a library is expensive to change once
 people depend on it. It records not just what was built but why, and what was deliberately
@@ -298,14 +298,18 @@ buys the freedom to defer everything in §7.
    belonging to the adapters, which know the site's canonical origin, and doing it
    silently in the core would surprise callers.
 
-## Still open, and blocking nothing today
+## Still open
 
-These concern `Capi\Client`, which does not exist yet:
+One question remains, and it belongs to the adapter phase rather than the core:
+**what an adapter should do with an event that went stale in a queue** - drop it with a
+log, or fail the job. The core's behaviour is settled either way: `Client::send()`
+throws `InvalidArgument` naming the offending event id, before any HTTP request is
+made, because a batch fails as a whole and one stale event would otherwise discard up
+to 999 good ones.
 
-- **Non-2xx returning a `Response` rather than throwing.** Unconventional; needs a
-  decision before the client ships, and belongs in the README's first
-  error-handling paragraph either way.
-- **What adapters do with an event that has gone stale in a queue** — drop it with
-  a log, or fail the job. The freshness check itself is settled: it belongs in
-  `send()`, immediately before transmission, because the window is relative to
-  send time and one stale event fails an entire 1,000-event batch.
+Resolved during implementation: **non-2xx returns a `Response` rather than throwing.**
+Only a failed round trip throws (`TransportException`). Mapping status codes onto
+exception types would require inventing the taxonomy OpenAI has not published - is 202
+success, is 207 partial, does 429 exist and under which header. An opt-in throwing mode
+can be added later without breaking callers, which makes returning the safer default to
+start from.
