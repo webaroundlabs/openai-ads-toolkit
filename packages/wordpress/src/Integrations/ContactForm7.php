@@ -62,15 +62,9 @@ final class ContactForm7 implements Integration
      */
     public function onMailSent(object $contactForm): void
     {
-        $submission = $this->submission();
+        $posted = $this->postedData();
 
-        if ($submission === null) {
-            return;
-        }
-
-        $posted = $submission->get_posted_data();
-
-        if (!is_array($posted)) {
+        if ($posted === null) {
             return;
         }
 
@@ -151,7 +145,16 @@ final class ContactForm7 implements Integration
         return $fields;
     }
 
-    private function submission(): ?object
+    /**
+     * The submitted fields, or null when there is no usable submission.
+     *
+     * Returns the data rather than the submission object: the object is the only
+     * thing a caller would ever ask for it, and handing back `?object` means
+     * every caller re-proves that get_posted_data() exists.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function postedData(): ?array
     {
         if (!class_exists('WPCF7_Submission')) {
             return null;
@@ -160,8 +163,12 @@ final class ContactForm7 implements Integration
         /** @var object|null $submission */
         $submission = \WPCF7_Submission::get_instance();
 
-        return is_object($submission) && method_exists($submission, 'get_posted_data')
-            ? $submission
-            : null;
+        if (!is_object($submission) || !method_exists($submission, 'get_posted_data')) {
+            return null;
+        }
+
+        $posted = $submission->get_posted_data();
+
+        return is_array($posted) ? $posted : null;
     }
 }

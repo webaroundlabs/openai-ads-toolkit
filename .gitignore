@@ -120,3 +120,12 @@ Thumbs.db:encryptable
 ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
+
+# ---------------------------------------------------------------------------
+# Static analysis and style caches
+# ---------------------------------------------------------------------------
+.phpstan.cache/
+phpstan.tests.neon
+!phpstan.tests.neon.dist
+.php-cs-fixer.php
+!.php-cs-fixer.dist.php

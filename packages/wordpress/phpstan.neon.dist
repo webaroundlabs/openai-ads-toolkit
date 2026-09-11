@@ -1,0 +1,26 @@
+# phpstan-wordpress supplies the stubs for WordPress core, so `add_action`,
+# `wp_remote_post` and friends are typed rather than unknown - which is the
+# difference between analysis that finds bugs and analysis that reports that
+# WordPress exists.
+#
+# Level 8 rather than the core's 9: much of what this package touches is
+# host-provided data whose type WordPress itself does not promise - an option
+# row, a filter's return value, a WooCommerce getter. The core, which is the
+# published contract, is held to 9.
+includes:
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon
+
+parameters:
+    level: 8
+    paths:
+        - src
+        - openai-ads.php
+        - uninstall.php
+    treatPhpDocTypesAsCertain: false
+    # WooCommerce and Action Scheduler are optional hosts, not dependencies -
+    # every entry point into them is guarded by class_exists or function_exists.
+    # Scanning their stubs is what turns "Call to an undefined method
+    # object::get_total()" into actual analysis of the integration.
+    scanFiles:
+        - vendor/php-stubs/woocommerce-stubs/woocommerce-stubs.php
+        - vendor/php-stubs/woocommerce-stubs/woocommerce-packages-stubs.php

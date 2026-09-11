@@ -10,8 +10,15 @@ namespace WebaroundLabs\OpenAIAds\WordPress\Tests;
  * Only the methods it actually calls. WooCommerce's real classes are enormous
  * and change between releases; depending on more of them here would make the
  * suite fragile without testing anything further.
+ *
+ * They DO inherit the real class hierarchy's shape, though, because the
+ * integration depends on it: wc_get_order() returns either a WC_Order or a
+ * WC_Order_Refund, both of which descend from WC_Abstract_Order and both of
+ * which carry get_total(). Telling them apart is what keeps a refund from being
+ * reported as a purchase, so a double that is not a WC_Order would let that bug
+ * back in unnoticed.
  */
-final class FakeWcProduct
+final class FakeWcProduct extends \WC_Product
 {
     /**
      * @param array<string, string> $attributes
@@ -92,7 +99,7 @@ final class FakeWcOrderItem
     }
 }
 
-final class FakeWcOrder
+final class FakeWcOrder extends \WC_Order
 {
     /** @var array<string, mixed> */
     public array $meta = [];
@@ -207,5 +214,45 @@ final class FakeWcOrder
     public function get_billing_country(): string
     {
         return $this->billing['country'] ?? '';
+    }
+}
+
+/**
+ * A refund, which `wc_get_order()` will hand back for a refund's id.
+ *
+ * It answers the same methods an order does - that is the trap. Only the class
+ * separates them, which is why the integration checks the class and not a
+ * method.
+ */
+final class FakeWcRefund extends \WC_Order_Refund
+{
+    public function __construct(private readonly int $id)
+    {
+    }
+
+    public function get_id(): int
+    {
+        return $this->id;
+    }
+
+    public function get_total(): string
+    {
+        return '-25.98';
+    }
+
+    public function get_order_number(): string
+    {
+        return (string) $this->id;
+    }
+
+    public function get_currency(): string
+    {
+        return 'EUR';
+    }
+
+    /** @param string $key */
+    public function get_meta($key = ''): string
+    {
+        return '';
     }
 }

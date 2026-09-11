@@ -81,9 +81,9 @@ final class ImageTag
         // The data object travels as data[<field>] parameters, with the contents
         // array serialized to JSON first, exactly as documented.
         foreach ($event->pixelData() as $field => $value) {
-            $query['data[' . $field . ']'] = $field === 'contents'
-                ? json_encode($value, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
-                : (string) $value;
+            $query['data[' . $field . ']'] = is_scalar($value)
+                ? (string) $value
+                : json_encode($value, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         }
 
         return self::ENDPOINT . '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);

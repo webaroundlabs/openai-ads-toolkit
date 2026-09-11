@@ -7,7 +7,6 @@ import type { DataFor, EventData, InitConfig, ToolkitOptions, TrackOptions } fro
 type OaiqQueue = ((...args: unknown[]) => void) & { q?: unknown[] };
 
 declare global {
-  // eslint-disable-next-line no-var
   var oaiq: OaiqQueue | undefined;
 }
 
@@ -135,7 +134,7 @@ class OpenAIAdsPixel {
    */
   track<N extends EventName>(name: N, data?: Partial<DataFor<N>>, options: TrackOptions = {}): void {
     this.safely(() => {
-      this.emit(name, data as Partial<EventData> | undefined, options);
+      this.emit(name, data, options);
     });
   }
 
@@ -151,7 +150,7 @@ class OpenAIAdsPixel {
     options: Omit<TrackOptions, 'customEventName'> = {},
   ): void {
     this.safely(() => {
-      this.emit('custom', data as Partial<EventData> | undefined, { ...options, customEventName });
+      this.emit('custom', data, { ...options, customEventName });
     });
   }
 
@@ -169,7 +168,14 @@ class OpenAIAdsPixel {
     this.onError = () => {};
   }
 
-  private emit(name: EventName, data: Partial<EventData> | undefined, options: TrackOptions): void {
+  /**
+   * `name` is a string rather than an EventName on purpose.
+   *
+   * TypeScript proves the caller passed a valid one; JavaScript proves nothing,
+   * and this package is published for both. The check below is what a plain-JS
+   * caller gets instead of a compile error.
+   */
+  private emit(name: string, data: Partial<EventData> | undefined, options: TrackOptions): void {
     if (!isEventName(name)) {
       throw new OpenAIAdsError(`"${name}" is not a supported event name.`);
     }
@@ -220,7 +226,7 @@ class OpenAIAdsPixel {
 
   private buildData(name: EventName, data: Partial<EventData> | undefined): EventData {
     const shape = DATA_SHAPES[name];
-    const merged = { ...(data ?? {}), type: shape } as EventData;
+    const merged = { ...data, type: shape } as EventData;
 
     if (merged.amount !== undefined) {
       if (!Number.isInteger(merged.amount)) {

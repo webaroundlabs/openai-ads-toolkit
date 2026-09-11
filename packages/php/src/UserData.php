@@ -298,14 +298,10 @@ final class UserData
     {
         $payload = [];
 
-        foreach (self::CAPI as $field => [, $isList]) {
-            if (!isset($this->values[$field]) || !$isList) {
-                // Only the list-cardinality fields have a Pixel equivalent; the
-                // scalars in CAPI are precisely the four the browser owns.
-                continue;
+        foreach (self::PIXEL as $field => $key) {
+            if (isset($this->values[$field])) {
+                $payload[$key] = $this->values[$field];
             }
-
-            $payload[self::PIXEL[$field]] = $this->values[$field];
         }
 
         return $payload;

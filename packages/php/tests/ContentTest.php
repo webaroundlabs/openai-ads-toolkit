@@ -170,7 +170,7 @@ final class ContentTest extends TestCase
         $this->expectException(InvalidArgument::class);
         $this->expectExceptionMessage('contents must contain only');
 
-        /** @phpstan-ignore-next-line intentional: proving the boundary check */
+        // Deliberately not Content objects: this is the boundary check itself.
         $this->order(contents: [['id' => 'sku_1']]);
     }
 
@@ -180,9 +180,6 @@ final class ContentTest extends TestCase
         self::assertSame(['type' => 'contents'], $this->order()->toCapiArray()['data']);
     }
 
-    /**
-     * @param array<int, mixed> $contents
-     */
     #[Test]
     #[DataProvider('shapesAndWhatTheyAccept')]
     public function each_shape_declares_what_it_carries(

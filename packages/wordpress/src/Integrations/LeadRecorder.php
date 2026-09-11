@@ -45,7 +45,10 @@ final class LeadRecorder
          * quote request to `lead_created`, a webinar sign-up to
          * `registration_completed`, a booking form to `appointment_scheduled`.
          *
-         * @param string $eventName
+         * @param string $eventName The event this submission will be reported as.
+         * @param string $formId    The host plugin's identifier for the form.
+         * @param string $source    Which integration is reporting - "cf7", "elementor".
+         * @param string $formName  The form's title, where it has one.
          */
         $eventName = (string) \apply_filters(
             'openai_ads_form_event',
@@ -59,7 +62,10 @@ final class LeadRecorder
          * Full control over the identity sent for this submission, for forms
          * whose field names the automatic extraction cannot recognize.
          *
-         * @param array<string, string> $user
+         * @param array<string, string> $user     Identity extracted from the submission.
+         * @param string                $formId   The host plugin's identifier for the form.
+         * @param string                $source   Which integration is reporting.
+         * @param string                $formName The form's title, where it has one.
          */
         $user = \apply_filters('openai_ads_form_user_data', $user, $formId, $source, $formName);
 

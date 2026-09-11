@@ -1,0 +1,15 @@
+# Larastan teaches PHPStan about the container, the facades and Blade, without
+# which every `app()` call and every facade looks like a mistake.
+#
+# Level 8 rather than the core's 9: this package reaches into a framework whose
+# own annotations stop short of level 9 in places, and chasing that produces
+# casts around Laravel's API rather than better types of our own. The measurement
+# semantics live in the core, and the core is held to 9.
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 8
+    paths:
+        - src
+    treatPhpDocTypesAsCertain: false

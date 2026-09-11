@@ -215,6 +215,24 @@ final class WooCommerceTest extends TestCase
         self::assertCount(1, $body['events'], 'The purchase must be reported exactly once.');
     }
 
+    /**
+     * `wc_get_order()` also returns a WC_Order_Refund, which carries
+     * `get_total()` and `get_order_number()` like an order does. Treating one as
+     * a purchase reports a conversion for money going the other way - an
+     * over-count that nothing downstream would flag.
+     */
+    #[Test]
+    public function a_refund_is_not_reported_as_a_purchase(): void
+    {
+        $refund = new FakeWcRefund(4242);
+        WooStubs::$orders[$refund->get_id()] = $refund;
+
+        $this->woo()->onOrderPaid($refund->get_id());
+
+        self::assertNull(Plugin::instance()?->measurement()->flush());
+        self::assertSame([], WpStubs::$requests);
+    }
+
     #[Test]
     public function the_order_number_becomes_the_deduplication_id_and_is_stored(): void
     {
