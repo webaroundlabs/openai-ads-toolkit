@@ -5,7 +5,8 @@
     "https://developers.openai.com/ads/supported-events",
     "https://developers.openai.com/ads/conversions-api",
     "https://developers.openai.com/ads/measurement-pixel",
-    "https://developers.openai.com/ads/multiple-pixels"
+    "https://developers.openai.com/ads/multiple-pixels",
+    "https://developers.openai.com/ads/image-tag"
   ],
   "about": "Canonical description of the OpenAI Ads events this toolkit supports. Source of truth for documentation, test fixtures and the cross-runtime parity tests. Not loaded at runtime by any package. Identity/user data lives in user.json.",
 
@@ -80,6 +81,29 @@
     "response": {
       "documented": false,
       "notes": "The success body, HTTP status codes, error body shape, rate limits, retry guidance and idempotency semantics are not documented upstream. Clients must not model them. The only contract available is HTTP itself."
+    }
+  },
+
+  "image_tag": {
+    "about": "The third measurement channel: a GET request dressed as a 1x1 image, for the places JavaScript cannot go - an email body, an AMP page, a <noscript> fallback. Deliberately weaker than the other two, and the weaknesses are load-bearing rather than incidental.",
+    "method": "GET",
+    "url": "https://bzr.openai.com/v1/sdk/events",
+    "query": {
+      "pid": { "required": true, "notes": "The public Pixel ID." },
+      "event": { "required": true, "enum_source": "events" },
+      "data[type]": { "required": true, "notes": "The data shape for the chosen event." },
+      "data[<field>]": { "required": false, "notes": "Any field the chosen data shape documents. data[contents] is the contents array serialized to JSON and then URL-encoded." },
+      "event_id": { "required": false, "notes": "The deduplication id. Reuse the same value on the Conversions API side, exactly as with the Pixel." },
+      "custom_event_name": { "required_when": { "field": "event", "equals": "custom" }, "pattern": "custom_event_name" },
+      "oppref": { "required": false, "opaque": true, "notes": "Not captured automatically; this channel runs no script." }
+    },
+    "no_user_object": true,
+    "no_user_object_note": "Upstream: \"The image tag doesn't support a `user` object. Don't put personal data, secrets, session IDs, customer identifiers, or order identifiers in any query parameter.\" A serializer must REFUSE an event carrying identity rather than strip it, so the loss of matching is never silent.",
+    "no_opt_out": true,
+    "no_opt_out_note": "opt_out is not among the documented parameters. An event carrying one must be refused rather than sent without it: silently dropping a privacy flag is worse than refusing the event.",
+    "limits": {
+      "batch": false,
+      "notes": "One event per request, bounded further by URL length. No post-load measurement, because the element is static."
     }
   },
 

@@ -77,6 +77,78 @@ if (!function_exists('openai_ads_pixel_event')) {
     }
 }
 
+if (!function_exists('openai_ads_hash_user')) {
+    /**
+     * Normalize and hash raw identity into the shape the browser Pixel wants.
+     *
+     * Use it when you render the Pixel yourself, or pass identity to a script.
+     * The point is that the raw value never leaves the server:
+     *
+     *     $user = openai_ads_hash_user( [ 'email' => $customer->email ] );
+     *     // [ 'email_sha256' => '...' ]
+     *
+     * Fields the API cannot use are dropped rather than throwing. Returns an
+     * empty array when nothing usable was supplied.
+     *
+     * @param array<string, mixed> $user email, phone, external_id, first_name,
+     *                                   last_name, country, city, region, postal_code
+     *
+     * @return array<string, string>
+     */
+    function openai_ads_hash_user(array $user): array
+    {
+        return \WebaroundLabs\OpenAIAds\WordPress\Identity::forPixel($user);
+    }
+}
+
+if (!function_exists('openai_ads_image_tag')) {
+    /**
+     * Print an image-tag conversion: a 1x1 <img> that measures without JavaScript.
+     *
+     * For the places a script cannot go - an email body, an AMP page, a
+     * <noscript> fallback. It carries the same event id as the server event, so
+     * the two deduplicate exactly as a Pixel event would.
+     *
+     * It cannot carry identity: OpenAI documents no user object for this channel
+     * and forbids personal data in a query parameter. Anything you pass under
+     * `user` is used for the SERVER event only, never for this URL.
+     *
+     * Prints nothing when the Pixel is off, consent was refused, or the event
+     * could not be built.
+     *
+     * @param array<string, mixed> $data
+     * @param array<string, mixed> $options
+     */
+    function openai_ads_image_tag(string $event_name, array $data = [], array $options = []): void
+    {
+        $url = openai_ads_image_tag_url($event_name, $data, $options);
+
+        if ($url === null) {
+            return;
+        }
+
+        printf(
+            '<img src="%s" width="1" height="1" alt="" style="display:none" />',
+            esc_url($url),
+        );
+    }
+}
+
+if (!function_exists('openai_ads_image_tag_url')) {
+    /**
+     * The image tag's URL, for callers that render the element themselves.
+     *
+     * @param array<string, mixed> $data
+     * @param array<string, mixed> $options
+     */
+    function openai_ads_image_tag_url(string $event_name, array $data = [], array $options = []): ?string
+    {
+        $plugin = Plugin::instance();
+
+        return $plugin?->imageTagUrl($event_name, $data, $options);
+    }
+}
+
 if (!function_exists('openai_ads_is_configured')) {
     /**
      * Whether server-side measurement is switched on and has credentials.

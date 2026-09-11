@@ -2,14 +2,14 @@
     The OpenAI Ads Measurement Pixel.
 
     Render in <head>, as early as possible:  @openaiAdsPixel
-    With identity once the visitor is known: @openaiAdsPixel(['email_sha256' => $digest])
+    With identity once the visitor is known: @openaiAdsPixel(['email' => $user->email])
 
     Only ever emits the PUBLIC Pixel ID. The Conversions API key is not
     available to this view and must never be rendered into a page.
 
-    `user` values must already be hashed - see the JavaScript package's
-    hashUser(), or hash server-side and pass the digests in. Raw email
-    addresses must not be placed in browser code.
+    The directive takes RAW values and hashes them before this view is reached,
+    so a raw email address never appears in page source. What arrives here is
+    already a map of digests.
 --}}
 @php
     /** @var \WebaroundLabs\OpenAIAds\Laravel\Measurement $openAiAds */

@@ -6,6 +6,7 @@ namespace WebaroundLabs\OpenAIAds\Laravel\Tests;
 
 use Illuminate\Support\Facades\Blade;
 use PHPUnit\Framework\Attributes\Test;
+use WebaroundLabs\OpenAIAds\Laravel\Measurement;
 
 final class PixelViewTest extends TestCase
 {
@@ -86,6 +87,64 @@ final class PixelViewTest extends TestCase
     public function the_pixel_directive_is_registered(): void
     {
         self::assertArrayHasKey('openaiAdsPixel', Blade::getCustomDirectives());
+    }
+
+    /**
+     * The directive takes raw identity and hashes it on the server, which is the
+     * whole reason an application does not have to hash by hand - and therefore
+     * cannot get it wrong and ship a raw address in page source.
+     */
+    #[Test]
+    public function the_directive_compiles_to_a_call_that_hashes_before_rendering(): void
+    {
+        $compiled = Blade::compileString("@openaiAdsPixel(['email' => \$email])");
+
+        self::assertStringContainsString('pixelUser(', $compiled);
+        self::assertStringContainsString(Measurement::class, $compiled);
+    }
+
+    #[Test]
+    public function raw_identity_is_hashed_and_never_rendered_raw(): void
+    {
+        $user = $this->measurement()->pixelUser(['email' => ' Ada@Example.COM ']);
+
+        self::assertSame(
+            ['email_sha256' => 'b5fc85e55755f9e0d030a10ab4429b6b2944855f9a0d60077fe832becbc41d72'],
+            $user,
+        );
+
+        $html = $this->render($user);
+
+        self::assertStringNotContainsString('ada@example.com', strtolower($html));
+    }
+
+    /**
+     * A page must render even when a stored value turns out to be unusable. The
+     * offending field is dropped; the rest still matches.
+     */
+    #[Test]
+    public function an_unusable_identity_field_does_not_break_the_page(): void
+    {
+        $user = $this->measurement()->pixelUser([
+            'email' => 'ada@example.com',
+            'phone' => '+1 (555) 123-4567 ext. 89',
+        ]);
+
+        self::assertArrayHasKey('email_sha256', $user);
+        self::assertArrayNotHasKey('phone_number_sha256', $user);
+    }
+
+    #[Test]
+    public function no_identity_is_hashed_when_the_pixel_is_switched_off(): void
+    {
+        config(['openai-ads.pixel_enabled' => false]);
+
+        self::assertSame([], $this->measurement()->pixelUser(['email' => 'ada@example.com']));
+    }
+
+    private function measurement(): Measurement
+    {
+        return $this->app->make(Measurement::class);
     }
 
     /**

@@ -112,6 +112,17 @@ function esc_url_raw(string $url): string
     return preg_match('#^https?://#i', $url) === 1 ? $url : '';
 }
 
+function esc_url(string $url): string
+{
+    $url = trim($url);
+
+    if (preg_match('#^https?://#i', $url) !== 1) {
+        return '';
+    }
+
+    return htmlspecialchars($url, ENT_QUOTES, 'UTF-8');
+}
+
 function esc_html(string $text): string
 {
     return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
@@ -319,3 +330,7 @@ function delete_option(string $name): bool
 WpStubs::reset();
 WooStubs::reset();
 SchedulerStubs::reset();
+
+// The public API is plain functions rather than a class, so it is loaded the
+// way the plugin loads it - and therefore actually covered by these tests.
+require_once __DIR__ . '/../src/api.php';

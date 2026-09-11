@@ -76,16 +76,41 @@ final class PixelTest extends TestCase
         self::assertSame('', $this->render());
     }
 
+    /**
+     * The filter takes RAW values and the server hashes them, so a page can
+     * carry identity without a raw email address ever reaching browser code.
+     */
     #[Test]
-    public function already_hashed_identity_can_be_supplied_through_a_filter(): void
+    public function raw_identity_supplied_through_the_filter_is_hashed_before_it_is_printed(): void
     {
-        $digest = str_repeat('a', 64);
-        \add_filter('openai_ads_pixel_user', static fn (): array => ['email_sha256' => $digest]);
+        \add_filter('openai_ads_pixel_identity', static fn (): array => ['email' => ' Ada@Example.COM ']);
 
         $html = $this->render();
 
-        self::assertStringContainsString($digest, $html);
-        self::assertStringContainsString('user', $html);
+        self::assertStringContainsString(
+            'b5fc85e55755f9e0d030a10ab4429b6b2944855f9a0d60077fe832becbc41d72',
+            $html,
+        );
+        self::assertStringContainsString('email_sha256', $html);
+        self::assertStringNotContainsString('ada@example.com', strtolower($html));
+    }
+
+    /**
+     * An unusable field costs only itself. The page still renders, and the rest
+     * of the identity still matches.
+     */
+    #[Test]
+    public function an_unusable_identity_field_does_not_stop_the_pixel_rendering(): void
+    {
+        \add_filter('openai_ads_pixel_identity', static fn (): array => [
+            'email' => 'ada@example.com',
+            'country' => 'Romania',
+        ]);
+
+        $html = $this->render();
+
+        self::assertStringContainsString('email_sha256', $html);
+        self::assertStringNotContainsString('Romania', $html);
     }
 
     /**
@@ -95,7 +120,7 @@ final class PixelTest extends TestCase
     #[Test]
     public function identity_values_cannot_break_out_of_the_script_tag(): void
     {
-        \add_filter('openai_ads_pixel_user', static fn (): array => [
+        \add_filter('openai_ads_pixel_identity', static fn (): array => [
             'city' => '</script><script>alert(1)</script>',
         ]);
 

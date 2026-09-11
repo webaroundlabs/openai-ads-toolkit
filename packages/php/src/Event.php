@@ -219,6 +219,83 @@ final class Event
     }
 
     /**
+     * The `data` object as the browser channels want it.
+     *
+     * Same fields as the Conversions API shape, minus the two content fields
+     * that are server-side only. Used by the Measurement Pixel and by the image
+     * tag, both of which would otherwise be handed a payload with fields they
+     * silently discard.
+     *
+     * @return array<string, mixed>
+     */
+    public function pixelData(): array
+    {
+        $data = $this->dataArray();
+
+        if (isset($data['contents'])) {
+            $data['contents'] = array_map(
+                static fn (Content $item): array => $item->toPixelArray(),
+                $this->contents,
+            );
+        }
+
+        return $data;
+    }
+
+    /**
+     * The third argument to the Pixel SDK's `measure` call.
+     *
+     * `event_id` is the whole point: it is what ties this browser event to the
+     * Conversions API event describing the same conversion, so the two are
+     * matched rather than counted twice.
+     *
+     * @return array<string, mixed>
+     */
+    public function pixelOptions(): array
+    {
+        $options = ['event_id' => $this->id->value];
+
+        if ($this->customEventName !== null) {
+            $options['custom_event_name'] = $this->customEventName;
+        }
+
+        if ($this->optOut !== null) {
+            $options['opt_out'] = $this->optOut;
+        }
+
+        return $options;
+    }
+
+    /**
+     * The same event with its identity removed.
+     *
+     * For the channels that cannot carry one - the image tag, whose parameters
+     * travel in a URL. Explicit rather than implicit: losing matching data
+     * should be something a reader of the call site can see.
+     */
+    public function withoutIdentity(): self
+    {
+        if ($this->user === null) {
+            return $this;
+        }
+
+        return new self(
+            $this->name,
+            $this->id,
+            $this->timestampMs,
+            $this->actionSource,
+            $this->sourceUrl,
+            $this->value,
+            null,
+            $this->oppref,
+            $this->optOut,
+            $this->customEventName,
+            $this->contents,
+            $this->planId,
+        );
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function dataArray(): array

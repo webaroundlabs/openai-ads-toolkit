@@ -111,10 +111,17 @@ final class OpenAIAdsServiceProvider extends ServiceProvider
 
         // Renders the official loader and the init call. The Pixel ID is public;
         // the Conversions API key is never available to this view.
+        //
+        // The directive takes RAW identity - @openaiAdsPixel(['email' => $user->email])
+        // - and hashes it here, before the view is reached. That is deliberate:
+        // asking the application to hash by hand is how a raw email address ends
+        // up in page source, and the view itself must receive finished data.
         Blade::directive('openaiAdsPixel', static function (string $expression): string {
             $arguments = trim($expression) === '' ? '[]' : $expression;
+            $measurement = '\\' . Measurement::class;
 
-            return "<?php echo view('openai-ads::pixel', ['user' => {$arguments}])->render(); ?>";
+            return "<?php echo view('openai-ads::pixel', ['user' => app({$measurement}::class)"
+                . "->pixelUser({$arguments})])->render(); ?>";
         });
     }
 

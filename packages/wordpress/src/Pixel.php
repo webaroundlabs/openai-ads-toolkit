@@ -34,20 +34,33 @@ final class Pixel
         $config = ['pixelId' => $pixelId];
 
         /**
-         * Already-hashed identity for the Pixel, in its singular-key shape:
-         * email_sha256, phone_number_sha256, external_id_sha256,
-         * first_name_sha256, last_name_sha256, country, city, region,
-         * postal_code.
+         * RAW identity for the visitor, if the site knows who they are.
          *
-         * Raw values must never be placed in browser code. Hash server-side, or
-         * use the JavaScript package's hashUser().
+         * Documented field names - email, phone, external_id, first_name,
+         * last_name, country, city, region, postal_code - exactly as they appear
+         * in the plugin's other entry points:
          *
-         * @param array<string, string> $user
+         *     add_filter( 'openai_ads_pixel_identity', function () {
+         *         $user = wp_get_current_user();
+         *
+         *         return $user->exists() ? [ 'email' => $user->user_email ] : [];
+         *     } );
+         *
+         * Values are normalized and hashed HERE, on the server, before anything
+         * is printed. A raw email address must never appear in browser code, and
+         * this filter is the reason a site does not have to hash by hand to
+         * avoid that.
+         *
+         * @param array<string, string> $identity
          */
-        $user = \apply_filters('openai_ads_pixel_user', []);
+        $identity = \apply_filters('openai_ads_pixel_identity', []);
 
-        if (is_array($user) && $user !== []) {
-            $config['user'] = array_map('strval', $user);
+        if (is_array($identity) && $identity !== []) {
+            $user = Identity::forPixel($identity);
+
+            if ($user !== []) {
+                $config['user'] = $user;
+            }
         }
 
         if ($this->settings->debug()) {

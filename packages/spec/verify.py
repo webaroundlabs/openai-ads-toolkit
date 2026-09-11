@@ -136,6 +136,22 @@ actual_capi_keys = set(f['capi']['key'] for f in us['fields'].values())
 if actual_capi_keys != expected_capi_keys:
     fail.append("CAPI key set mismatch: %s" % (actual_capi_keys ^ expected_capi_keys))
 
+# The image tag is a third channel with its own endpoint and its own refusals.
+it = ev['image_tag']
+if it['url'] != 'https://bzr.openai.com/v1/sdk/events':
+    fail.append("the image tag endpoint is not the documented one")
+if it['method'] != 'GET':
+    fail.append("the image tag is a GET")
+for required in ('pid', 'event', 'data[type]'):
+    if not it['query'][required].get('required'):
+        fail.append("image_tag.query.%s must be required" % required)
+if 'event_id' not in it['query']:
+    fail.append("the image tag must offer event_id, or it cannot deduplicate at all")
+if not it.get('no_user_object') or not it.get('no_opt_out'):
+    fail.append("the image tag must record that it carries neither a user object nor opt_out")
+if it['limits']['batch'] is not False:
+    fail.append("the image tag sends one event per request")
+
 if ev['limits']['batch_max_events'] != 1000: fail.append("batch max must be 1000")
 if ev['limits']['timestamp_max_age_ms'] != 7*24*60*60*1000: fail.append("age window must be 7 days")
 if ev['limits']['timestamp_max_future_ms'] != 10*60*1000: fail.append("future window must be 10 min")

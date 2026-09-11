@@ -13,6 +13,7 @@ use WebaroundLabs\OpenAIAds\DataShape;
 use WebaroundLabs\OpenAIAds\Capi\Client;
 use WebaroundLabs\OpenAIAds\Event;
 use WebaroundLabs\OpenAIAds\EventName;
+use WebaroundLabs\OpenAIAds\ImageTag;
 use WebaroundLabs\OpenAIAds\UserData;
 
 /**
@@ -154,9 +155,58 @@ final class SpecParityTest extends TestCase
     }
 
     /**
+     * The Pixel serializer emits exactly the keys the spec says it should.
+     *
+     * Parity assertion 3, Pixel half: every field with a `pixel` mapping is
+     * present under its singular key, and every field marked `"pixel": null` is
+     * absent because the browser supplies it itself.
+     */
+    #[Test]
+    public function the_pixel_serializer_emits_the_key_set_the_specification_declares(): void
+    {
+        $spec = Spec::load('user.json');
+        $fixture = Spec::load('fixtures/user.full.pixel.json');
+        $in = $fixture['input'];
+
+        $payload = UserData::create(
+            email: $in['email'],
+            phone: $in['phone'],
+            externalId: $in['external_id'],
+            firstName: $in['first_name'],
+            lastName: $in['last_name'],
+            country: $in['country'],
+            city: $in['city'],
+            region: $in['region'],
+            postalCode: $in['postal_code'],
+            obref: $in['obref'],
+            ipAddress: $in['ip_address'],
+            userAgent: $in['user_agent'],
+            androidAdvertisingId: $in['android_advertising_id'],
+        )->toPixelArray();
+
+        $expectedKeys = [];
+
+        foreach ($spec['fields'] as $logical => $field) {
+            if ($field['pixel'] === null) {
+                continue;
+            }
+
+            $expectedKeys[] = $field['pixel']['key'];
+
+            self::assertIsString(
+                $payload[$field['pixel']['key']] ?? null,
+                sprintf('"%s" must be a scalar on the Pixel, not a list.', $logical),
+            );
+        }
+
+        self::assertEqualsCanonicalizing($expectedKeys, array_keys($payload));
+        self::assertSame($fixture['expected'], $payload);
+    }
+
+    /**
      * The Pixel takes singular keys and omits everything the browser supplies
-     * itself. No Pixel serializer exists yet, so this asserts the fixture pair
-     * stays coherent - it becomes an assertion about code in the JS phase.
+     * itself. Asserted on the fixture pair as well as on the serializer, because
+     * the two fixtures are what the JavaScript package reads.
      */
     #[Test]
     public function the_pixel_fixture_carries_the_same_digests_under_singular_keys(): void
@@ -184,6 +234,15 @@ final class SpecParityTest extends TestCase
                 sprintf('Digest for "%s" differs between the two serializations.', $logical),
             );
         }
+    }
+
+    #[Test]
+    public function the_image_tag_endpoint_is_the_one_in_the_specification(): void
+    {
+        self::assertSame(
+            Spec::load('events.json')['image_tag']['url'],
+            ImageTag::ENDPOINT,
+        );
     }
 
     #[Test]
