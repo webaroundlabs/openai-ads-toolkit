@@ -18,8 +18,9 @@ namespace WebaroundLabs\OpenAIAds;
  *
  * The Conversions API and the Measurement Pixel want the same digests in
  * different shapes - `emails_sha256: ["..."]` versus `email_sha256: "..."` -
- * hence a serializer per destination. Only the Conversions API one exists so
- * far; `toPixelArray()` arrives with the JavaScript package.
+ * hence a serializer per destination: `toCapiArray()` and `toPixelArray()`.
+ * Neither is named `toArray()`, because a payload sent to the wrong one loses
+ * identity matching and nothing reports it.
  */
 final class UserData
 {
@@ -45,6 +46,27 @@ final class UserData
         'ip_address' => ['ip_address', false],
         'user_agent' => ['user_agent', false],
         'android_advertising_id' => ['android_advertising_id', false],
+    ];
+
+    /**
+     * Logical field => Measurement Pixel key.
+     *
+     * Only the fields the browser does not supply itself appear here, which is
+     * exactly the set marked list-cardinality above; the four scalars are marked
+     * `"pixel": null` in the spec. SpecParityTest asserts both halves.
+     *
+     * @var array<string, string>
+     */
+    private const PIXEL = [
+        'email' => 'email_sha256',
+        'phone' => 'phone_number_sha256',
+        'external_id' => 'external_id_sha256',
+        'first_name' => 'first_name_sha256',
+        'last_name' => 'last_name_sha256',
+        'country' => 'country',
+        'city' => 'city',
+        'region' => 'region',
+        'postal_code' => 'postal_code',
     ];
 
     /** Mirrors `normalizations.city_region.max_length` in packages/spec/user.json. */
@@ -180,6 +202,51 @@ final class UserData
         return new self($values);
     }
 
+    /**
+     * Build from values a host cannot vouch for, dropping what cannot be used.
+     *
+     * `create()` is strict, which is right: a phone number with an extension
+     * welded on hashes to somebody who does not exist, and an integrator passing
+     * one has made a mistake worth naming. But an adapter is often handed
+     * whatever a visitor typed into a form, and there losing a paid order
+     * because a customer wrote "ext. 12" is the wrong trade - the conversion
+     * should still be reported with whatever else matched.
+     *
+     * Each field is validated alone, so one unusable value costs only itself.
+     * `$onDropped` receives the parameter name and the reason; neither contains
+     * the value, and callers must not log one either.
+     *
+     * Use this at a host boundary. Do not use it to paper over a caller's bug:
+     * inside application code, `create()` failing loudly is the point.
+     *
+     * @param array<string, string|null>          $values    create()'s parameter names => raw values
+     * @param (callable(string, string): void)|null $onDropped field name, reason
+     */
+    public static function fromUntrusted(array $values, ?callable $onDropped = null): self
+    {
+        $accepted = [];
+
+        foreach ($values as $parameter => $value) {
+            if ($value === null || trim($value) === '') {
+                continue;
+            }
+
+            try {
+                self::create(...[$parameter => $value]);
+            } catch (InvalidArgument $e) {
+                if ($onDropped !== null) {
+                    $onDropped($parameter, $e->getMessage());
+                }
+
+                continue;
+            }
+
+            $accepted[$parameter] = $value;
+        }
+
+        return self::create(...$accepted);
+    }
+
     public function isEmpty(): bool
     {
         return $this->values === [];
@@ -206,6 +273,39 @@ final class UserData
             }
 
             $payload[$key] = $isList ? [$this->values[$field]] : $this->values[$field];
+        }
+
+        return $payload;
+    }
+
+    /**
+     * The Measurement Pixel shape: singular keys, scalar values.
+     *
+     * Same digests as `toCapiArray()`, different key names and cardinality -
+     * `email_sha256: "..."` rather than `emails_sha256: ["..."]`. Four fields
+     * are absent entirely because the browser supplies them itself and the spec
+     * marks them `"pixel": null`: `obref`, `ip_address`, `user_agent` and
+     * `android_advertising_id`.
+     *
+     * This is what a server-rendered Pixel needs. Hashing in the browser is also
+     * possible - the JavaScript package's `hashUser()` produces the identical
+     * shape - but a page that already knows who the visitor is should not ship
+     * their raw email address to the browser to find out.
+     *
+     * @return array<string, string>
+     */
+    public function toPixelArray(): array
+    {
+        $payload = [];
+
+        foreach (self::CAPI as $field => [, $isList]) {
+            if (!isset($this->values[$field]) || !$isList) {
+                // Only the list-cardinality fields have a Pixel equivalent; the
+                // scalars in CAPI are precisely the four the browser owns.
+                continue;
+            }
+
+            $payload[self::PIXEL[$field]] = $this->values[$field];
         }
 
         return $payload;

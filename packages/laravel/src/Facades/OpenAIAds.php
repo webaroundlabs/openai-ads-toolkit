@@ -14,6 +14,8 @@ use WebaroundLabs\OpenAIAds\Laravel\Measurement;
  * @method static \WebaroundLabs\OpenAIAds\Laravel\RequestContext context()
  * @method static string|null pixelId()
  * @method static bool pixelEnabled()
+ * @method static array<string, string> pixelUser(array $user)
+ * @method static string|null imageTagUrl(\WebaroundLabs\OpenAIAds\Event $event)
  * @method static bool consented()
  *
  * @see Measurement

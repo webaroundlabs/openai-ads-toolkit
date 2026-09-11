@@ -87,6 +87,48 @@ final class UserDataTest extends TestCase
         self::assertSame($fixture['expected'], $user->toCapiArray());
     }
 
+    /**
+     * The same input, the same digests, the browser's shape. A page that already
+     * knows who the visitor is can hash server-side instead of shipping their
+     * raw email address to the browser for `hashUser()` to do it there.
+     */
+    #[Test]
+    public function a_fully_populated_user_matches_the_pixel_fixture(): void
+    {
+        $fixture = Spec::load('fixtures/user.full.pixel.json');
+        $in = $fixture['input'];
+
+        $user = UserData::create(
+            email: $in['email'],
+            phone: $in['phone'],
+            externalId: $in['external_id'],
+            firstName: $in['first_name'],
+            lastName: $in['last_name'],
+            country: $in['country'],
+            city: $in['city'],
+            region: $in['region'],
+            postalCode: $in['postal_code'],
+            obref: $in['obref'],
+            ipAddress: $in['ip_address'],
+            userAgent: $in['user_agent'],
+            androidAdvertisingId: $in['android_advertising_id'],
+        );
+
+        self::assertSame($fixture['expected'], $user->toPixelArray());
+    }
+
+    #[Test]
+    public function the_two_serializations_carry_identical_digests(): void
+    {
+        $user = UserData::create(email: ' Ada@Example.COM ', phone: '+40 746 123 456');
+
+        $capi = $user->toCapiArray();
+        $pixel = $user->toPixelArray();
+
+        self::assertSame($capi['emails_sha256'][0], $pixel['email_sha256']);
+        self::assertSame($capi['phone_numbers_sha256'][0], $pixel['phone_number_sha256']);
+    }
+
     #[Test]
     public function hashed_fields_are_lists_and_opaque_fields_are_scalars(): void
     {
@@ -253,6 +295,49 @@ final class UserDataTest extends TestCase
             self::assertStringContainsString('only digits', $e->getMessage());
             self::assertStringNotContainsString('555', $e->getMessage());
         }
+    }
+
+    /**
+     * The host-boundary constructor. An adapter handed whatever a visitor typed
+     * must still report the conversion with the fields that did work.
+     */
+    #[Test]
+    public function from_untrusted_drops_only_the_fields_it_cannot_use(): void
+    {
+        $dropped = [];
+
+        $payload = UserData::fromUntrusted(
+            [
+                'email' => 'ada@example.com',
+                'phone' => '+1 (555) 123-4567 ext. 89',
+                'country' => 'Romania',
+                'city' => '   ',
+                'lastName' => null,
+            ],
+            static function (string $field, string $reason) use (&$dropped): void {
+                $dropped[$field] = $reason;
+            },
+        )->toCapiArray();
+
+        self::assertArrayHasKey('emails_sha256', $payload);
+        self::assertArrayNotHasKey('phone_numbers_sha256', $payload);
+        self::assertArrayNotHasKey('countries', $payload);
+        self::assertSame(['phone', 'country'], array_keys($dropped));
+    }
+
+    #[Test]
+    public function from_untrusted_never_hands_the_value_to_the_callback(): void
+    {
+        $reasons = [];
+
+        UserData::fromUntrusted(
+            ['phone' => '+1 (555) 123-4567 ext. 89'],
+            static function (string $field, string $reason) use (&$reasons): void {
+                $reasons[] = $reason;
+            },
+        );
+
+        self::assertStringNotContainsString('555', $reasons[0]);
     }
 
     #[Test]

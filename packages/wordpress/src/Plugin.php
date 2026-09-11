@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebaroundLabs\OpenAIAds\WordPress;
 
 use WebaroundLabs\OpenAIAds\Event;
+use WebaroundLabs\OpenAIAds\ImageTag;
 use WebaroundLabs\OpenAIAds\InvalidArgument;
 use WebaroundLabs\OpenAIAds\SystemClock;
 use WebaroundLabs\OpenAIAds\WordPress\Admin\SettingsPage;
@@ -130,6 +131,42 @@ final class Plugin
     public function event(string $eventName, array $data = [], array $options = []): Event
     {
         return $this->builder()->build($eventName, $data, $options);
+    }
+
+    /**
+     * The URL for an image-tag conversion, or null when one cannot be measured.
+     *
+     * Never throws, for the same reason `track()` does not: a measurement
+     * problem must not break the page that produced the conversion.
+     *
+     * Identity is deliberately dropped here rather than in the core - OpenAI
+     * documents no user object for this channel and forbids personal data in a
+     * query parameter, so `withoutIdentity()` is what says that out loud.
+     *
+     * @param array<string, mixed> $data
+     * @param array<string, mixed> $options
+     */
+    public function imageTagUrl(string $eventName, array $data = [], array $options = []): ?string
+    {
+        $pixelId = $this->settings()->pixelId();
+
+        if ($pixelId === null || !$this->settings()->pixelEnabled() || !$this->measurement()->consented()) {
+            return null;
+        }
+
+        try {
+            $event = $this->builder()->build($eventName, $data, $options);
+
+            return ImageTag::url($pixelId, $event->withoutIdentity());
+        } catch (InvalidArgument $e) {
+            if ($this->settings()->debug()) {
+                \error_log('[openai-ads] ' . $e->getMessage());
+            }
+
+            \do_action('openai_ads_invalid_event', $e, $eventName, $data, $options);
+
+            return null;
+        }
     }
 
     /**

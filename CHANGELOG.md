@@ -10,7 +10,40 @@ While the version is `0.x` the public API may change in any release. See
 
 ## [Unreleased]
 
+### Added
+
+- **Image Tag support**, the third measurement channel OpenAI documents: a 1x1
+  `<img>` that reports a conversion without JavaScript, for an email body, an AMP
+  page or a `<noscript>` fallback. `ImageTag::url()` in the core,
+  `openai_ads_image_tag()` in WordPress, `OpenAIAds::imageTagUrl()` in Laravel.
+  It carries the same `event_id` as the server event, so the two deduplicate.
+  An event carrying identity or `opt_out` is **refused** rather than silently
+  stripped - the channel supports neither, and losing matching or a privacy flag
+  without being told is the failure this toolkit exists to prevent. Say it out
+  loud with the new `Event::withoutIdentity()`.
+- **`UserData::toPixelArray()`**: the Measurement Pixel's identity shape in PHP,
+  with the same digests as `toCapiArray()` under singular scalar keys. Server-
+  rendered pages can now carry identity without shipping a raw email address to
+  the browser for `hashUser()` to hash it there.
+- `Event::pixelData()` and `Event::pixelOptions()`, and `Content::toPixelArray()`,
+  which drops the two content fields documented as server-side only.
+- `UserData::fromUntrusted()`, for host boundaries where identity arrives from a
+  form rather than from application code.
+- WordPress: `openai_ads_hash_user()`, and the `openai_ads_pixel_identity`
+  filter, which takes RAW values and hashes them server-side.
+- Laravel: `OpenAIAds::pixelUser()`.
+
 ### Changed
+
+- **Laravel: `@openaiAdsPixel` now takes raw identity, not digests.**
+  `@openaiAdsPixel(['email' => $user->email])` hashes on the server before the
+  view is reached. Asking applications to hash by hand is how a raw address ends
+  up in page source.
+- **WordPress: the `openai_ads_pixel_user` filter is replaced by
+  `openai_ads_pixel_identity`**, which takes raw values under the documented
+  field names rather than pre-computed digests. The rename is deliberate: the two
+  take incompatible input, and a silently reinterpreted filter would ship
+  unhashed values.
 
 - **Deduplication behaviour: geographic values are now normalized.** Re-verified
   against the live Conversions API documentation on 2026-09-11, which documents a

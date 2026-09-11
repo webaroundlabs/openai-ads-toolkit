@@ -11,8 +11,10 @@ use WebaroundLabs\OpenAIAds\Capi\Client;
 use WebaroundLabs\OpenAIAds\Capi\Response;
 use WebaroundLabs\OpenAIAds\Capi\TransportException;
 use WebaroundLabs\OpenAIAds\Event;
+use WebaroundLabs\OpenAIAds\ImageTag;
 use WebaroundLabs\OpenAIAds\InvalidArgument;
 use WebaroundLabs\OpenAIAds\Laravel\Jobs\SendConversionEvents;
+use WebaroundLabs\OpenAIAds\UserData;
 
 /**
  * What the OpenAIAds facade resolves to.
@@ -28,6 +30,26 @@ use WebaroundLabs\OpenAIAds\Laravel\Jobs\SendConversionEvents;
  */
 final class Measurement
 {
+    /**
+     * Documented field name => the core's parameter name.
+     *
+     * The keys are the names OpenAI's documentation uses, so an application
+     * developer recognizes them without learning a second vocabulary.
+     *
+     * @var array<string, string>
+     */
+    private const IDENTITY_FIELDS = [
+        'email' => 'email',
+        'phone' => 'phone',
+        'external_id' => 'externalId',
+        'first_name' => 'firstName',
+        'last_name' => 'lastName',
+        'country' => 'country',
+        'city' => 'city',
+        'region' => 'region',
+        'postal_code' => 'postalCode',
+    ];
+
     public function __construct(
         private readonly Container $container,
         private readonly Config $config,
@@ -127,6 +149,75 @@ final class Measurement
     public function context(): RequestContext
     {
         return $this->container->make(RequestContext::class);
+    }
+
+    /**
+     * Raw identity, hashed into the shape the browser Pixel wants.
+     *
+     * This is what `@openaiAdsPixel(['email' => $user->email])` calls. Hashing
+     * happens here, on the server, so a raw email address never reaches browser
+     * code - which is the whole reason the directive takes raw values rather
+     * than asking the application to hash them itself.
+     *
+     * Never throws. A page must render even when a stored phone number turns out
+     * to be unusable; the offending field is dropped and logged, and the rest
+     * still matches.
+     *
+     * @param array<string, mixed> $user email, phone, external_id, first_name,
+     *                                   last_name, country, city, region, postal_code
+     *
+     * @return array<string, string>
+     */
+    public function pixelUser(array $user): array
+    {
+        if (!$this->pixelEnabled() || $user === []) {
+            return [];
+        }
+
+        $values = [];
+
+        foreach (self::IDENTITY_FIELDS as $key => $parameter) {
+            $values[$parameter] = isset($user[$key]) && is_string($user[$key]) ? $user[$key] : null;
+        }
+
+        return UserData::fromUntrusted(
+            $values,
+            function (string $field, string $reason): void {
+                // The reason names no identifier, and neither does this line.
+                $this->logger->notice('OpenAI Ads: identity field dropped.', [
+                    'field' => $field,
+                    'reason' => $reason,
+                ]);
+            },
+        )->toPixelArray();
+    }
+
+    /**
+     * A no-JavaScript conversion URL, for an email body or an AMP page.
+     *
+     * Returns null when measurement is off, consent was refused, or the event
+     * cannot travel in a URL - which is the case whenever it carries identity,
+     * because OpenAI documents no user object for this channel and forbids
+     * personal data in a query parameter. Strip it deliberately with
+     * `Event::withoutIdentity()` when you mean to.
+     */
+    public function imageTagUrl(Event $event): ?string
+    {
+        $pixelId = $this->pixelId();
+
+        if ($pixelId === null || !$this->pixelEnabled()) {
+            return null;
+        }
+
+        try {
+            return ImageTag::url($pixelId, $event);
+        } catch (InvalidArgument $e) {
+            $this->logger->warning('OpenAI Ads: the image tag could not be built.', [
+                'reason' => $e->getMessage(),
+            ]);
+        }
+
+        return null;
     }
 
     /** The public Pixel ID, safe to render in a page. */

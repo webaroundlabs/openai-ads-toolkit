@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use WebaroundLabs\OpenAIAds\ActionSource;
+use WebaroundLabs\OpenAIAds\Content;
 use WebaroundLabs\OpenAIAds\Event;
 use WebaroundLabs\OpenAIAds\EventId;
 use WebaroundLabs\OpenAIAds\EventName;
@@ -273,6 +274,79 @@ final class EventTest extends TestCase
         $payload = self::lead(user: UserData::create())->toCapiArray();
 
         self::assertArrayNotHasKey('user', $payload);
+    }
+
+    /**
+     * The browser channels get the data object without the two content fields
+     * the documentation marks server-side only. The Pixel would accept and
+     * discard them, which is how a payload looks correct and is not.
+     */
+    #[Test]
+    public function the_pixel_data_object_omits_the_server_only_content_fields(): void
+    {
+        $event = Event::create(
+            name: EventName::OrderCreated,
+            id: EventId::fromBusinessId('order-1'),
+            timestampMs: 1789041600000,
+            actionSource: ActionSource::Web,
+            sourceUrl: 'https://example.com/thank-you',
+            value: Money::minor(2599, 'EUR'),
+            contents: [Content::create(id: 'SKU-1', groupId: 'PARENT-1', variantDict: ['size' => 'M'])],
+        );
+
+        $capiItem = $event->toCapiArray()['data']['contents'][0];
+        $pixelItem = $event->pixelData()['contents'][0];
+
+        self::assertArrayHasKey('group_id', $capiItem);
+        self::assertArrayHasKey('variant_dict', $capiItem);
+        self::assertArrayNotHasKey('group_id', $pixelItem);
+        self::assertArrayNotHasKey('variant_dict', $pixelItem);
+        self::assertSame('SKU-1', $pixelItem['id']);
+    }
+
+    /**
+     * The event id is what ties the browser event to its server-side twin, so it
+     * is always present in the Pixel options rather than being optional.
+     */
+    #[Test]
+    public function the_pixel_options_always_carry_the_event_id(): void
+    {
+        self::assertSame(['event_id' => 'lead_88213'], self::lead()->pixelOptions());
+
+        self::assertSame(
+            ['event_id' => 'lead_88213', 'opt_out' => true],
+            self::lead(optOut: true)->pixelOptions(),
+        );
+
+        self::assertSame(
+            ['event_id' => 'c_1', 'custom_event_name' => 'quote_requested'],
+            self::custom('quote_requested')->pixelOptions(),
+        );
+    }
+
+    #[Test]
+    public function without_identity_keeps_everything_except_the_user(): void
+    {
+        $event = self::lead(user: UserData::create(email: 'ada@example.com'), oppref: 'opp-1');
+
+        $stripped = $event->withoutIdentity();
+
+        self::assertNull($stripped->user);
+        self::assertArrayNotHasKey('user', $stripped->toCapiArray());
+        // oppref is an EVENT field, not identity, and must survive.
+        self::assertSame('opp-1', $stripped->oppref);
+        self::assertSame($event->id->value, $stripped->id->value);
+        self::assertSame($event->timestampMs, $stripped->timestampMs);
+    }
+
+    #[Test]
+    public function without_identity_leaves_the_original_untouched(): void
+    {
+        $event = self::lead(user: UserData::create(email: 'ada@example.com'));
+
+        $event->withoutIdentity();
+
+        self::assertNotNull($event->user);
     }
 
     private static function lead(

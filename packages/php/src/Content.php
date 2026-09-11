@@ -115,4 +115,22 @@ final class Content
 
         return $payload;
     }
+
+    /**
+     * The browser shape: the same item without the two Conversions API fields.
+     *
+     * `group_id` and `variant_dict` are documented as server-side only. The
+     * Pixel and the image tag would accept and discard them, so they are dropped
+     * here rather than sent and ignored.
+     *
+     * @return array<string, mixed>
+     */
+    public function toPixelArray(): array
+    {
+        $payload = $this->toCapiArray();
+
+        unset($payload['group_id'], $payload['variant_dict']);
+
+        return $payload;
+    }
 }
