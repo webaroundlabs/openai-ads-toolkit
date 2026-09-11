@@ -51,7 +51,15 @@ accident.
 - WordPress: `openai_ads_hash_user()`, `openai_ads_image_tag()`, and the
   `openai_ads_pixel_identity` filter, which takes RAW values and hashes them
   server-side.
-- Laravel: `OpenAIAds::pixelUser()` and `OpenAIAds::imageTagUrl()`.
+- Laravel: `OpenAIAds::event()` and `OpenAIAds::track()`, which fill in the five
+  things only the request knows - the source URL under the configured privacy
+  policy, the `__oppref` and `__obref` cookies, the client IP and the user agent
+  - so a controller does not have to. `Event::create()` stays available as the
+  typed alternative. Plus `OpenAIAds::pixelUser()` and
+  `OpenAIAds::imageTagUrl()`.
+- `EventFactory` and `HostContext` in the core: the translation from a host's
+  loose array to a validated `Event`, shared by both adapters rather than
+  written once per host.
 - Continuous integration across PHP 8.2–8.4, Laravel 11 and 12, and Node 22,
   plus a credential-exposure check that scans the built JavaScript bundle.
 - Static analysis and code style across every package, in CI: PHPStan at level 9

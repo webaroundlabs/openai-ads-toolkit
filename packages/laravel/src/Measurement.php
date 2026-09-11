@@ -10,7 +10,9 @@ use Psr\Log\LoggerInterface;
 use WebaroundLabs\OpenAIAds\Capi\Client;
 use WebaroundLabs\OpenAIAds\Capi\Response;
 use WebaroundLabs\OpenAIAds\Capi\TransportException;
+use WebaroundLabs\OpenAIAds\Clock;
 use WebaroundLabs\OpenAIAds\Event;
+use WebaroundLabs\OpenAIAds\EventFactory;
 use WebaroundLabs\OpenAIAds\ImageTag;
 use WebaroundLabs\OpenAIAds\InvalidArgument;
 use WebaroundLabs\OpenAIAds\Laravel\Jobs\SendConversionEvents;
@@ -30,26 +32,6 @@ use WebaroundLabs\OpenAIAds\UserData;
  */
 final class Measurement
 {
-    /**
-     * Documented field name => the core's parameter name.
-     *
-     * The keys are the names OpenAI's documentation uses, so an application
-     * developer recognizes them without learning a second vocabulary.
-     *
-     * @var array<string, string>
-     */
-    private const IDENTITY_FIELDS = [
-        'email' => 'email',
-        'phone' => 'phone',
-        'external_id' => 'externalId',
-        'first_name' => 'firstName',
-        'last_name' => 'lastName',
-        'country' => 'country',
-        'city' => 'city',
-        'region' => 'region',
-        'postal_code' => 'postalCode',
-    ];
-
     public function __construct(
         private readonly Container $container,
         private readonly Config $config,
@@ -158,6 +140,62 @@ final class Measurement
     }
 
     /**
+     * Build an event from the documented field names, filling in the request.
+     *
+     * The ergonomic path. `Event::create()` is the typed one and stays available
+     * for code that wants it, but it makes the caller supply `source_url`,
+     * `oppref`, `obref`, the client IP and the user agent by hand - five values
+     * the request already knows. This reads them, applies the configured privacy
+     * policy to the URL, and validates the rest.
+     *
+     *     OpenAIAds::queue(OpenAIAds::event('lead_created', [], [
+     *         'event_id' => $lead->id,             // share this with the browser
+     *         'user'     => ['email' => $lead->email],
+     *     ]));
+     *
+     * @param array<string, mixed> $data    amount (minor units, integer), currency
+     * @param array<string, mixed> $options event_id, custom_event_name, opt_out, user,
+     *                                      action_source, source_url, timestamp_ms,
+     *                                      contents, plan_id
+     *
+     * @throws InvalidArgument when the caller supplied something the API cannot accept
+     */
+    public function event(string $eventName, array $data = [], array $options = []): Event
+    {
+        return $this->factory()->build($eventName, $data, $options, $this->context()->forMeasurement());
+    }
+
+    /**
+     * Build an event and put it on the queue, in one call.
+     *
+     * Never throws, unlike `event()`. This is the form to reach for inside a
+     * controller: a measurement mistake must not take the request that produced
+     * the conversion with it.
+     *
+     * @param array<string, mixed> $data
+     * @param array<string, mixed> $options
+     *
+     * @return bool whether the event was built and handed on
+     */
+    public function track(string $eventName, array $data = [], array $options = []): bool
+    {
+        try {
+            $event = $this->event($eventName, $data, $options);
+        } catch (InvalidArgument $e) {
+            $this->logger->error('OpenAI Ads: event rejected before sending.', [
+                'reason' => $e->getMessage(),
+                'event' => $eventName,
+            ]);
+
+            return false;
+        }
+
+        $this->queue($event);
+
+        return true;
+    }
+
+    /**
      * Raw identity, hashed into the shape the browser Pixel wants.
      *
      * This is what `@openaiAdsPixel(['email' => $user->email])` calls. Hashing
@@ -180,22 +218,7 @@ final class Measurement
             return [];
         }
 
-        $values = [];
-
-        foreach (self::IDENTITY_FIELDS as $key => $parameter) {
-            $values[$parameter] = isset($user[$key]) && is_string($user[$key]) ? $user[$key] : null;
-        }
-
-        return UserData::fromUntrusted(
-            $values,
-            function (string $field, string $reason): void {
-                // The reason names no identifier, and neither does this line.
-                $this->logger->notice('OpenAI Ads: identity field dropped.', [
-                    'field' => $field,
-                    'reason' => $reason,
-                ]);
-            },
-        )->toPixelArray();
+        return UserData::fromUntrusted($user, $this->reportDroppedField(...))->toPixelArray();
     }
 
     /**
@@ -294,5 +317,21 @@ final class Measurement
     private function client(): Client
     {
         return $this->container->make(Client::class);
+    }
+
+    private function factory(): EventFactory
+    {
+        return new EventFactory($this->container->make(Clock::class), $this->reportDroppedField(...));
+    }
+
+    /**
+     * Neither argument carries the value, and this line must not add one.
+     */
+    private function reportDroppedField(string $field, string $reason): void
+    {
+        $this->logger->notice('OpenAI Ads: identity field dropped.', [
+            'field' => $field,
+            'reason' => $reason,
+        ]);
     }
 }

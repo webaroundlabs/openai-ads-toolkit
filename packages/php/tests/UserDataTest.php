@@ -300,6 +300,9 @@ final class UserDataTest extends TestCase
     /**
      * The host-boundary constructor. An adapter handed whatever a visitor typed
      * must still report the conversion with the fields that did work.
+     *
+     * The keys are the documented field names, which is the vocabulary every
+     * adapter's own public API already uses.
      */
     #[Test]
     public function from_untrusted_drops_only_the_fields_it_cannot_use(): void
@@ -312,7 +315,7 @@ final class UserDataTest extends TestCase
                 'phone' => '+1 (555) 123-4567 ext. 89',
                 'country' => 'Romania',
                 'city' => '   ',
-                'lastName' => null,
+                'last_name' => null,
             ],
             static function (string $field, string $reason) use (&$dropped): void {
                 $dropped[$field] = $reason;
@@ -323,6 +326,18 @@ final class UserDataTest extends TestCase
         self::assertArrayNotHasKey('phone_numbers_sha256', $payload);
         self::assertArrayNotHasKey('countries', $payload);
         self::assertSame(['phone', 'country'], array_keys($dropped));
+    }
+
+    #[Test]
+    public function from_untrusted_ignores_a_key_it_does_not_recognize(): void
+    {
+        $payload = UserData::fromUntrusted([
+            'email' => 'ada@example.com',
+            'externalId' => 'camelCase is not the documented name',
+            'nickname' => 'not a field at all',
+        ])->toCapiArray();
+
+        self::assertSame(['emails_sha256'], array_keys($payload));
     }
 
     #[Test]

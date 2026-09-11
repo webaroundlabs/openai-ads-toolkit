@@ -69,6 +69,32 @@ final class UserData
         'postal_code' => 'postal_code',
     ];
 
+    /**
+     * Documented field name => this class's constructor parameter.
+     *
+     * The public vocabulary is OpenAI's, per §9 of the charter: a developer
+     * reading the API documentation should recognize every key. `fromUntrusted()`
+     * is the single translation point, so an adapter never has to carry its own
+     * copy of this map.
+     *
+     * @var array<string, string>
+     */
+    private const DOCUMENTED = [
+        'email' => 'email',
+        'phone' => 'phone',
+        'external_id' => 'externalId',
+        'first_name' => 'firstName',
+        'last_name' => 'lastName',
+        'country' => 'country',
+        'city' => 'city',
+        'region' => 'region',
+        'postal_code' => 'postalCode',
+        'obref' => 'obref',
+        'ip_address' => 'ipAddress',
+        'user_agent' => 'userAgent',
+        'android_advertising_id' => 'androidAdvertisingId',
+    ];
+
     /** Mirrors `normalizations.city_region.max_length` in packages/spec/user.json. */
     private const CITY_REGION_MAX_LENGTH = 128;
 
@@ -213,21 +239,29 @@ final class UserData
      * should still be reported with whatever else matched.
      *
      * Each field is validated alone, so one unusable value costs only itself.
-     * `$onDropped` receives the parameter name and the reason; neither contains
-     * the value, and callers must not log one either.
+     * `$onDropped` receives the field name and the reason; neither contains the
+     * value, and callers must not log one either.
+     *
+     * The keys are the **documented** field names, in snake_case, because every
+     * caller of this method is translating from a host's array of exactly those
+     * - a WordPress function's `user` option, a Laravel config array, a GTM
+     * template's parameters. Keeping that map here rather than in each adapter is
+     * what stops three copies of it disagreeing. Unknown keys are ignored.
      *
      * Use this at a host boundary. Do not use it to paper over a caller's bug:
      * inside application code, `create()` failing loudly is the point.
      *
-     * @param array<string, string|null>          $values    create()'s parameter names => raw values
+     * @param array<string, mixed>                 $fields    documented field names => raw values
      * @param (callable(string, string): void)|null $onDropped field name, reason
      */
-    public static function fromUntrusted(array $values, ?callable $onDropped = null): self
+    public static function fromUntrusted(array $fields, ?callable $onDropped = null): self
     {
         $accepted = [];
 
-        foreach ($values as $parameter => $value) {
-            if ($value === null || trim($value) === '') {
+        foreach (self::DOCUMENTED as $field => $parameter) {
+            $value = $fields[$field] ?? null;
+
+            if (!is_string($value) || trim($value) === '') {
                 continue;
             }
 
@@ -235,7 +269,7 @@ final class UserData
                 self::create(...[$parameter => $value]);
             } catch (InvalidArgument $e) {
                 if ($onDropped !== null) {
-                    $onDropped($parameter, $e->getMessage());
+                    $onDropped($field, $e->getMessage());
                 }
 
                 continue;
