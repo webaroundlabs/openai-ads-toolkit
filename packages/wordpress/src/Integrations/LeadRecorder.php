@@ -146,7 +146,10 @@ final class LeadRecorder
                 continue;
             }
 
-            if ($type === 'tel' && !isset($user['phone'])) {
+            // Form builders spell the same field type differently - Contact
+            // Form 7 and Elementor use the HTML input type, Gravity Forms and
+            // WPForms use their own name for it.
+            if (in_array($type, ['tel', 'phone'], true) && !isset($user['phone'])) {
                 $user['phone'] = $value;
 
                 continue;

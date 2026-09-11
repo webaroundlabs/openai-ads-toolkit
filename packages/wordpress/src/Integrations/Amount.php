@@ -2,14 +2,15 @@
 
 declare(strict_types=1);
 
-namespace WebaroundLabs\OpenAIAds\WordPress\Integrations\WooCommerce;
+namespace WebaroundLabs\OpenAIAds\WordPress\Integrations;
 
 use WebaroundLabs\OpenAIAds\Money;
 
 /**
- * Converts a WooCommerce price into the minor unit the API expects.
+ * Converts a store's price into the minor unit the API expects.
  *
- * WooCommerce stores totals as decimal strings in the store currency - "12.99".
+ * WooCommerce and Easy Digital Downloads both store totals as decimal strings
+ * in the store currency - "12.99".
  * The API wants an integer in the currency's minor unit - 1299. How many minor
  * units make one major unit is a property of the CURRENCY, not of the store's
  * display settings: a shop showing zero decimals for euros still deals in cents,
@@ -54,7 +55,7 @@ final class Amount
     }
 
     /**
-     * @param string|float|int $amount a WooCommerce total, in major units
+     * @param string|float|int $amount a store total, in major units
      */
     public static function toMinorUnits(string|float|int $amount, string $currency): int
     {

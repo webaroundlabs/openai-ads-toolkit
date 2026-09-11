@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WebaroundLabs\OpenAIAds\WordPress\Integrations;
 
 use WebaroundLabs\OpenAIAds\Content;
-use WebaroundLabs\OpenAIAds\WordPress\Integrations\WooCommerce\Amount;
 use WebaroundLabs\OpenAIAds\WordPress\Plugin;
 
 /**

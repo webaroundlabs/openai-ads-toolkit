@@ -37,6 +37,12 @@ final class WpStubs
     /** @var mixed */
     public static $nextResponse = null;
 
+    /** @var array<int, object> Accounts get_userdata() can find. */
+    public static array $users = [];
+
+    /** Whether this request is an admin one, for the registration integration. */
+    public static bool $isAdmin = false;
+
     public static function reset(): void
     {
         self::$options = [];
@@ -44,6 +50,8 @@ final class WpStubs
         self::$actions = [];
         self::$requests = [];
         self::$nextResponse = null;
+        self::$users = [];
+        self::$isAdmin = false;
         $_COOKIE = [];
         $_SERVER['REQUEST_URI'] = '/';
         $_SERVER['REMOTE_ADDR'] = '203.0.113.7';
@@ -183,7 +191,12 @@ function do_action(string $hook, mixed ...$args): void
 
 function is_admin(): bool
 {
-    return false;
+    return WpStubs::$isAdmin;
+}
+
+function get_userdata(int $userId): object|false
+{
+    return WpStubs::$users[$userId] ?? false;
 }
 
 function plugin_basename(string $file): string

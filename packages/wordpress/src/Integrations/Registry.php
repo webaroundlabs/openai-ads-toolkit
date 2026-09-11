@@ -12,7 +12,12 @@ use WebaroundLabs\OpenAIAds\WordPress\Settings;
  *
  * An integration is registered only when its host plugin is active AND the site
  * owner has not switched it off. Nothing is loaded speculatively, so a site
- * running neither form plugin pays for neither.
+ * running none of these plugins pays for none of them.
+ *
+ * Constructing them is cheap - each one is a couple of readonly properties - and
+ * `isAvailable()` is a `class_exists` or a `function_exists`. Nothing here
+ * touches the database or opens a connection, which matters because this runs on
+ * every front-end request.
  */
 final class Registry
 {
@@ -41,7 +46,14 @@ final class Registry
         $integrations = [
             new ContactForm7($recorder),
             new ElementorForms($recorder),
+            new GravityForms($recorder),
+            new WPForms($recorder),
+            new FluentForms($recorder),
+            new NinjaForms($recorder),
             new WooCommerce($this->plugin),
+            new WooCommerceSubscriptions($this->plugin),
+            new EasyDigitalDownloads($this->plugin),
+            new UserRegistration($this->plugin),
         ];
 
         /**

@@ -4,7 +4,9 @@ The WordPress plugin, built on the shared toolkit. Measurement Pixel, Conversion
 API, and the deduplication between them.
 
 > **Pre-alpha, `0.1.0`.** Not on the WordPress plugin directory. Base plugin plus
-> Contact Form 7, Elementor Forms and WooCommerce.
+> Contact Form 7, Elementor Forms, Gravity Forms, WPForms, Fluent Forms, Ninja
+> Forms, WooCommerce, WooCommerce Subscriptions, Easy Digital Downloads and
+> WordPress account registration.
 
 An independent community integration. Not created, certified, endorsed or
 supported by OpenAI.
@@ -101,6 +103,26 @@ clicked:
 |---|---|---|
 | Contact Form 7 | `wpcf7_mail_sent` | Fires only after validation, spam checks and delivery all succeeded. `wpcf7_before_send_mail` runs before the outcome is known. |
 | Elementor Forms | `elementor_pro/forms/new_record` | Runs after validation and after the form's own actions were accepted. |
+| Gravity Forms | `gform_after_submission` | Runs once the entry is saved, after any payment add-on has settled. |
+| WPForms | `wpforms_process_complete` | Runs after validation, spam checks and storage. |
+| Fluent Forms | `fluentform/submission_inserted` | Runs once the entry exists. |
+| Ninja Forms | `ninja_forms_after_submission` | Runs once the submission is processed. |
+| Easy Digital Downloads | `edd_complete_purchase` | Fires when the payment reaches a complete status, not when checkout begins. |
+| WooCommerce Subscriptions | `woocommerce_subscription_status_updated` → `active` | Later than the order being paid, on purpose: a subscription can be created pending and activate only once the first payment settles. |
+| WordPress registration | `user_register` | After the account row exists. **Off by default** — see below. |
+
+The last four form plugins report **server-side only**. That is correct rather
+than a shortcut: nothing fires a browser Pixel event for those conversions, so
+there is no second report to deduplicate against. A site that wants the browser
+half too can listen for `openai_ads_form_recorded` and print it with
+`openai_ads_pixel_event()`, using the event id handed over.
+
+WordPress registration is off until you switch it on, because `user_register`
+also fires for an administrator adding a colleague, for a WooCommerce guest
+checkout that creates an account, and for an importer restoring a thousand
+users. None of those is an ad conversion, and reporting them would quietly
+inflate the number the advertiser optimizes against. Refine the rule with the
+`openai_ads_should_report_registration` filter.
 
 A test asserts that a response which is not a successful send carries no
 conversion — verified by removing the check and watching the test fail.
@@ -151,7 +173,7 @@ Any documented event works. For `custom`, supply the name via
 
 ```php
 add_filter( 'openai_ads_integrations', function ( array $integrations ) {
-    $integrations[] = new My_Gravity_Forms_Integration();
+    $integrations[] = new My_Booking_Plugin_Integration();
     return $integrations;
 } );
 ```
