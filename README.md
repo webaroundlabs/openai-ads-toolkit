@@ -167,6 +167,14 @@ The adapters reach the core through a Composer path repository, and their tests 
 `packages/spec` by relative path, so they run from a monorepo checkout only. That is intended:
 the specification is a development-time asset, not a runtime dependency.
 
+## Releasing
+
+Publishing is started by pushing a tag, never by merging to `main`, and the
+release workflow re-runs every check against the tagged commit first — CI having
+been green on a commit is not the same as it being green on the artefact.
+[`docs/releasing.md`](docs/releasing.md) has the details, including why the
+WordPress plugin zip is built from an allowlist rather than an exclude list.
+
 ## Versioning
 
 Semantic versioning, but the version is `0.x` and the public API may change in any release

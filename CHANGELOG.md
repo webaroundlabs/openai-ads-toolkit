@@ -69,6 +69,10 @@ accident.
   written once per host.
 - Continuous integration across PHP 8.2–8.4, Laravel 11 and 12, and Node 22,
   plus a credential-exposure check that scans the built JavaScript bundle.
+- A release pipeline: a pushed tag re-verifies everything, publishes to npm with
+  provenance, builds the WordPress plugin zip from an allowlist, and opens a
+  draft GitHub release. `scripts/check-version.py` refuses a tag that disagrees
+  with any manifest. See `docs/releasing.md`.
 - Static analysis and code style across every package, in CI: PHPStan at level 9
   over the core and 8 over the adapters, with WordPress and WooCommerce stubs
   loaded; PHP-CS-Fixer; and type-aware ESLint for the browser package. Each

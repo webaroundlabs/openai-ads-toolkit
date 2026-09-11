@@ -105,6 +105,12 @@ By contributing you agree your work is licensed under the [MIT License](LICENSE)
 except the WordPress plugin, which is GPL-2.0-or-later as the plugin directory
 requires.
 
+## Releasing
+
+[`docs/releasing.md`](docs/releasing.md). Publishing is started by pushing a
+tag, never by merging to `main`, and the release workflow re-runs every check
+against the tagged commit before anything leaves the building.
+
 ## Conduct
 
 [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md). The short version: review the code,

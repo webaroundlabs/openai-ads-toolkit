@@ -1,0 +1,169 @@
+# Publishing is not automatic, and that is the point.
+#
+# Four registries with four different failure modes sit behind this file:
+# Packagist and npm cannot unpublish a version, the WordPress plugin directory
+# serves whatever is in SVN trunk to every site on its next update check, and a
+# GTM template is reviewed by hand. A pushed tag is a decision, so a tag is what
+# starts this - never a merge to main.
+#
+# Packagist has no job here because it does not need one: it watches the
+# repository and picks up the tag itself. The WordPress directory has no job
+# either, until the plugin is actually approved there - see docs/releasing.md.
+#
+# Every path re-runs the full checks first. CI having been green on the commit
+# is not the same as it being green on the artefact, and the artefact is what
+# people install.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Build and verify the artefacts without publishing anything'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify the tagged commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: json, mbstring
+          coverage: none
+          tools: composer:v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: packages/js/package-lock.json
+
+      - name: Specification
+        run: python packages/spec/verify.py
+
+      - name: PHP core
+        working-directory: packages/php
+        run: composer install --prefer-dist --no-interaction --no-progress && composer check
+
+      - name: JavaScript
+        working-directory: packages/js
+        run: npm ci && npm run check && npm run build
+
+      - name: Laravel adapter
+        working-directory: packages/laravel
+        run: composer install --prefer-dist --no-interaction --no-progress && composer check
+
+      - name: WordPress plugin
+        working-directory: packages/wordpress
+        run: composer install --prefer-dist --no-interaction --no-progress && composer check
+
+      # The artefact browsers receive, not the source it came from.
+      - name: No credential can reach a browser
+        run: python scripts/check-secrets.py
+
+      # A tag that disagrees with the manifests would publish a version nobody
+      # can find again. Cheaper to catch here than to yank afterwards.
+      - name: The tag matches every manifest
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: python scripts/check-version.py "${GITHUB_REF_NAME#v}"
+
+  npm:
+    name: Publish @webaroundlabs/openai-ads
+    needs: verify
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') && !inputs.dry_run
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+          cache: npm
+          cache-dependency-path: packages/js/package-lock.json
+
+      - name: Build
+        working-directory: packages/js
+        run: npm ci && npm run build
+
+      # --provenance signs the package with this workflow run, so anyone can
+      # verify the published tarball came from this commit.
+      - name: Publish
+        working-directory: packages/js
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  plugin-zip:
+    name: Build the WordPress plugin
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: json, mbstring
+          coverage: none
+          tools: composer:v2
+
+      # --no-dev because the plugin ships its vendor directory, and a site does
+      # not need PHPUnit. The core arrives through the path repository, so this
+      # is also what proves the plugin installs without the monorepo's dev deps.
+      - name: Install runtime dependencies only
+        working-directory: packages/wordpress
+        run: composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
+
+      - name: Assemble
+        run: bash scripts/build-plugin.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openai-ads-wordpress-plugin
+          path: build/openai-ads.zip
+          retention-days: 14
+
+  github-release:
+    name: Draft the GitHub release
+    needs: [verify, plugin-zip]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') && !inputs.dry_run
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: openai-ads-wordpress-plugin
+          path: build
+
+      # A draft, not a publish. Somebody reads the notes before the world does.
+      - name: Draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --draft \
+            --title "$GITHUB_REF_NAME" \
+            --notes "See CHANGELOG.md for what changed in this release." \
+            build/openai-ads.zip
