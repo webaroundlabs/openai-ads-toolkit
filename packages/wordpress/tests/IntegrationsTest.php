@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebaroundLabs\OpenAIAds\WordPress\Tests;
 
+use Cf7SubmissionStub;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -13,7 +14,6 @@ use WebaroundLabs\OpenAIAds\WordPress\Integrations\LeadRecorder;
 use WebaroundLabs\OpenAIAds\WordPress\Integrations\Registry;
 use WebaroundLabs\OpenAIAds\WordPress\Plugin;
 use WebaroundLabs\OpenAIAds\WordPress\Settings;
-use Cf7SubmissionStub;
 use WpStubs;
 
 #[CoversClass(LeadRecorder::class)]

@@ -1,0 +1,10 @@
+# One level lower, and against the test suite's own WordPress doubles rather
+# than the real stubs: the suite defines its own `add_action`, `get_option` and
+# so on in tests/bootstrap.php, which is what lets it run without a WordPress
+# install at all.
+parameters:
+    level: 5
+    paths:
+        - tests
+    bootstrapFiles:
+        - tests/bootstrap.php

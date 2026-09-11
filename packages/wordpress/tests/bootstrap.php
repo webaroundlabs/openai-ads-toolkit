@@ -255,6 +255,33 @@ function wp_enqueue_script(string $handle, string $src = '', array $deps = [], m
  * what the integration's availability check looks for, and a test asserts it
  * reports itself unavailable on a site without the plugin.
  */
+/*
+ * The slice of WooCommerce's class hierarchy the integration actually reasons
+ * about. wc_get_order() returns a WC_Order or a WC_Order_Refund; both descend
+ * from WC_Abstract_Order and both carry get_total(), so only the class tells
+ * them apart - and reporting a refund as a purchase is exactly the kind of
+ * silent over-count this toolkit exists to prevent.
+ */
+class WC_Abstract_Order
+{
+}
+
+class WC_Order extends WC_Abstract_Order
+{
+}
+
+class WC_Order_Refund extends WC_Abstract_Order
+{
+}
+
+class WC_Product
+{
+}
+
+class WC_Cart
+{
+}
+
 final class WooStubs
 {
     /** @var array<int, object> */

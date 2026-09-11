@@ -52,6 +52,18 @@ jobs:
         working-directory: packages/php
         run: composer install --prefer-dist --no-interaction --no-progress
 
+      - name: Style
+        working-directory: packages/php
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff
+
+      # Level 9 over src. This package is the published contract, so a type
+      # error here reaches every adapter and every site running one.
+      - name: Static analysis
+        working-directory: packages/php
+        run: |
+          vendor/bin/phpstan analyse --no-progress -c phpstan.neon.dist
+          vendor/bin/phpstan analyse --no-progress -c phpstan.tests.neon.dist
+
       - name: Test
         working-directory: packages/php
         run: vendor/bin/phpunit
@@ -71,6 +83,10 @@ jobs:
       - name: Install
         working-directory: packages/js
         run: npm ci
+
+      - name: Lint
+        working-directory: packages/js
+        run: npm run lint
 
       - name: Typecheck
         working-directory: packages/js
@@ -119,6 +135,16 @@ jobs:
             --no-interaction --no-update
           composer update --prefer-dist --no-interaction --no-progress
 
+      - name: Style
+        working-directory: packages/laravel
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff
+
+      - name: Static analysis
+        working-directory: packages/laravel
+        run: |
+          vendor/bin/phpstan analyse --no-progress -c phpstan.neon.dist
+          vendor/bin/phpstan analyse --no-progress -c phpstan.tests.neon.dist
+
       - name: Test
         working-directory: packages/laravel
         run: vendor/bin/phpunit
@@ -143,6 +169,18 @@ jobs:
       - name: Install
         working-directory: packages/wordpress
         run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Style
+        working-directory: packages/wordpress
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff
+
+      # WordPress core and WooCommerce arrive as stubs, so this analyses the
+      # integration rather than reporting that WordPress exists.
+      - name: Static analysis
+        working-directory: packages/wordpress
+        run: |
+          vendor/bin/phpstan analyse --no-progress --memory-limit=1G -c phpstan.neon.dist
+          vendor/bin/phpstan analyse --no-progress --memory-limit=1G -c phpstan.tests.neon.dist
 
       - name: Test
         working-directory: packages/wordpress

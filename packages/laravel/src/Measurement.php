@@ -72,7 +72,13 @@ final class Measurement
         }
 
         try {
-            return $this->client()->send($events, (bool) $this->config->get('openai-ads.validate_only'));
+            // array_values because a variadic can be called with named
+            // arguments, which would hand the core a string-keyed array where
+            // its contract says list.
+            return $this->client()->send(
+                array_values($events),
+                (bool) $this->config->get('openai-ads.validate_only'),
+            );
         } catch (InvalidArgument $e) {
             // A malformed or stale event. Retrying will not fix it.
             $this->logger->error('OpenAI Ads: event rejected before sending.', [
@@ -106,7 +112,7 @@ final class Measurement
             return;
         }
 
-        $job = new SendConversionEvents($events);
+        $job = new SendConversionEvents(array_values($events));
 
         $connection = $this->config->get('openai-ads.queue.connection');
         $queue = $this->config->get('openai-ads.queue.queue');
@@ -137,7 +143,7 @@ final class Measurement
         }
 
         try {
-            return $this->client()->validate($events);
+            return $this->client()->validate(array_values($events));
         } catch (InvalidArgument | TransportException $e) {
             $this->logger->warning('OpenAI Ads: validation failed.', ['reason' => $e->getMessage()]);
         }

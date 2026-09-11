@@ -132,7 +132,9 @@ final class Measurement
      */
     public function sendNow(bool $validateOnly, Event ...$events): ?Response
     {
-        return $events === [] ? null : $this->deliver($events, $validateOnly);
+        // array_values because a variadic accepts named arguments, which would
+        // hand deliver() a string-keyed array where its contract says list.
+        return $events === [] ? null : $this->deliver(array_values($events), $validateOnly);
     }
 
     /**

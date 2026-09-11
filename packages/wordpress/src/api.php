@@ -71,7 +71,7 @@ if (!function_exists('openai_ads_pixel_event')) {
         string $event_name,
         string $event_id,
         array $data = [],
-        ?string $custom_event_name = null
+        ?string $custom_event_name = null,
     ): void {
         Plugin::instance()?->pixel()->renderEvent($event_name, $event_id, $data, $custom_event_name);
     }

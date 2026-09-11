@@ -1,0 +1,13 @@
+# Level 9 over src, which is the highest level that is meaningful without
+# bleeding-edge rules. This package earns it: it is the library's published
+# contract, it has no host framework to hide behind, and its whole runtime
+# dependency set is four PSR interfaces. A type error here reaches every adapter
+# and every site running one.
+#
+# Tests are analysed separately and one level lower - see phpstan.tests.neon.dist
+# for why.
+parameters:
+    level: 9
+    paths:
+        - src
+    treatPhpDocTypesAsCertain: false

@@ -280,7 +280,7 @@ final class SettingsPage
             <p>
                 <button type="button" class="button" id="openai-ads-test"><?php
                     echo \esc_html__('Send a test event', 'openai-ads');
-                ?></button>
+        ?></button>
                 <span id="openai-ads-test-result"></span>
             </p>
             <script>
@@ -329,9 +329,10 @@ final class SettingsPage
                 'source_url' => \home_url('/'),
             ]);
         } catch (InvalidArgument $e) {
+            // wp_send_json_* ends the request; there is nothing after it. A
+            // defensive `return` here would be unreachable code pretending to
+            // guard a state WordPress does not produce.
             \wp_send_json_error(['message' => \esc_html($e->getMessage())]);
-
-            return;
         }
 
         $response = $this->measurement->sendNow(true, $event);
@@ -340,16 +341,12 @@ final class SettingsPage
             \wp_send_json_error([
                 'message' => \__('The API could not be reached. Check the site can make outbound requests.', 'openai-ads'),
             ]);
-
-            return;
         }
 
         if ($response->isSuccessful()) {
             \wp_send_json_success([
                 'message' => \__('Success. The credentials work and the event validated.', 'openai-ads'),
             ]);
-
-            return;
         }
 
         \wp_send_json_error([

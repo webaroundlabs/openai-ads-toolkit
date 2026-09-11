@@ -99,7 +99,7 @@ final class WooCommerce implements Integration
         int $quantity = 0,
         int $variationId = 0,
         mixed $variation = null,
-        mixed $cartItemData = null
+        mixed $cartItemData = null,
     ): void {
         $product = $this->product($variationId > 0 ? $variationId : $productId);
 
@@ -247,6 +247,7 @@ final class WooCommerce implements Integration
      * still counted as a sale at the moment it was paid, so `is_paid()` is the
      * right question - not the current status.
      */
+    /** @param \WC_Order $order */
     private function isPaid(object $order): bool
     {
         if (method_exists($order, 'is_paid')) {
@@ -258,6 +259,8 @@ final class WooCommerce implements Integration
     }
 
     /**
+     * @param \WC_Order $order
+     *
      * @return list<Content>
      */
     private function orderContents(object $order, string $currency): array
@@ -357,6 +360,8 @@ final class WooCommerce implements Integration
     /**
      * Identity from the order's billing details, hashed downstream.
      *
+     * @param \WC_Order $order
+     *
      * @return array<string, string>
      */
     private function customer(object $order): array
@@ -416,6 +421,7 @@ final class WooCommerce implements Integration
             : 'USD';
     }
 
+    /** @return \WC_Product|null */
     private function currentProduct(): ?object
     {
         if (!function_exists('is_product') || !\is_product()) {
@@ -425,6 +431,7 @@ final class WooCommerce implements Integration
         return $this->product(0);
     }
 
+    /** @return \WC_Product|null */
     private function product(int $id): ?object
     {
         if (!function_exists('wc_get_product')) {
@@ -433,21 +440,22 @@ final class WooCommerce implements Integration
 
         $product = \wc_get_product($id > 0 ? $id : null);
 
-        return is_object($product) ? $product : null;
+        return $product instanceof \WC_Product ? $product : null;
     }
 
+    /** @return \WC_Cart|null */
     private function cart(): ?object
     {
         if (!function_exists('WC')) {
             return null;
         }
 
-        $wc = \WC();
-        $cart = is_object($wc) && property_exists($wc, 'cart') ? $wc->cart : null;
+        $cart = \WC()->cart;
 
-        return is_object($cart) && method_exists($cart, 'get_cart') ? $cart : null;
+        return $cart instanceof \WC_Cart ? $cart : null;
     }
 
+    /** @return \WC_Order|null */
     private function order(int $id): ?object
     {
         if ($id <= 0 || !function_exists('wc_get_order')) {
@@ -456,6 +464,9 @@ final class WooCommerce implements Integration
 
         $order = \wc_get_order($id);
 
-        return is_object($order) && method_exists($order, 'get_total') ? $order : null;
+        // instanceof rather than method_exists: wc_get_order() also returns a
+        // WC_Order_Refund, which carries get_total() and would have been
+        // reported as a purchase.
+        return $order instanceof \WC_Order ? $order : null;
     }
 }

@@ -3,7 +3,14 @@
     "description": "OpenAI Ads measurement for PHP: typed events, identity normalization and the Conversions API. Framework-independent.",
     "type": "library",
     "license": "MIT",
-    "keywords": ["openai", "openai-ads", "conversions-api", "capi", "measurement", "analytics"],
+    "keywords": [
+        "openai",
+        "openai-ads",
+        "conversions-api",
+        "capi",
+        "measurement",
+        "analytics"
+    ],
     "homepage": "https://github.com/webaroundlabs/openai-ads-toolkit",
     "support": {
         "issues": "https://github.com/webaroundlabs/openai-ads-toolkit/issues",
@@ -18,7 +25,9 @@
         "psr/http-message": "^1.1|^2.0"
     },
     "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.64",
         "nyholm/psr7": "^1.8",
+        "phpstan/phpstan": "^2.0",
         "phpunit/phpunit": "^11.0"
     },
     "autoload": {
@@ -32,11 +41,29 @@
         }
     },
     "scripts": {
-        "test": "phpunit"
+        "test": "phpunit",
+        "analyse": [
+            "phpstan analyse --no-progress -c phpstan.neon.dist",
+            "phpstan analyse --no-progress -c phpstan.tests.neon.dist"
+        ],
+        "style": "php-cs-fixer fix --dry-run --diff",
+        "style:fix": "php-cs-fixer fix",
+        "check": [
+            "@style",
+            "@analyse",
+            "@test"
+        ]
     },
     "config": {
         "sort-packages": true
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "scripts-descriptions": {
+        "test": "Run the test suite.",
+        "analyse": "Static analysis: level 9 over src, level 6 over tests.",
+        "style": "Report style violations without changing anything.",
+        "style:fix": "Apply the style rules.",
+        "check": "Everything CI runs, in the order that fails fastest."
+    }
 }

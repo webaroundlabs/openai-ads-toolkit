@@ -1,0 +1,15 @@
+# Tests run lower than src, and without Larastan.
+#
+# Two reasons, both about signal rather than laziness. These tests read JSON
+# fixtures, which are `mixed` all the way down; and Larastan's stricter rules -
+# `view-string`, model property checks - describe an application's own views and
+# models, not a package test suite that renders a vendor view and mocks a queue
+# job. Running them here produces annotations that exist only to satisfy the
+# analyser, and those hide the findings that matter.
+#
+# What this still catches is what actually breaks a test: a renamed method, a
+# wrong argument count, an assertion that can never fail.
+parameters:
+    level: 5
+    paths:
+        - tests

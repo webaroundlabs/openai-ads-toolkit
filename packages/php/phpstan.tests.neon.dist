@@ -1,0 +1,12 @@
+# Tests run one level below src, deliberately.
+#
+# They read the shared specification out of JSON, which is `mixed` all the way
+# down by nature. Asserting level 9 over that means a cast on every fixture
+# access, and a hundred casts hide the one that matters. Level 6 still catches
+# what actually goes wrong in a test - a renamed method, a wrong argument count,
+# an assertion that can never fail - while src, which is the published contract,
+# is held to 9.
+parameters:
+    level: 6
+    paths:
+        - tests

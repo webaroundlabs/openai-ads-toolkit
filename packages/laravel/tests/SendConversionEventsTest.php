@@ -139,12 +139,7 @@ final class SendConversionEventsTest extends TestCase
         if ($attempts > 1) {
             // Stands in for the queue's own job record, which is what reports
             // how many times this payload has already been attempted.
-            $queueJob = \Mockery::mock(\Illuminate\Contracts\Queue\Job::class);
-            $queueJob->shouldReceive('attempts')->andReturn($attempts);
-            $queueJob->shouldReceive('delete')->andReturnNull();
-            $queueJob->shouldReceive('isDeleted')->andReturn(false);
-
-            $job->setJob($queueJob);
+            $job->setJob(new FakeQueueJob($attempts));
         }
 
         $job->handle(
