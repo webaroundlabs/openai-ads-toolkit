@@ -17,19 +17,73 @@ import type { PixelUser, RawUser } from './types.js';
 /** ASCII punctuation. Non-ASCII characters are preserved, as the spec requires. */
 const ASCII_PUNCTUATION = /[!-/:-@[-`{-~]/g;
 
+/** Mirrors `normalizations.city_region.max_length` in packages/spec/user.json. */
+const CITY_REGION_MAX_LENGTH = 128;
+
+/** Mirrors `normalizations.postal_code.max_length` in packages/spec/user.json. */
+const POSTAL_CODE_MAX_LENGTH = 32;
+
 export function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
 }
 
 /**
- * Remove every non-digit, then leading zeroes.
+ * Remove the four documented separators, then a leading '+', then leading
+ * zeroes - and nothing else.
  *
- * The upstream documentation lists the operations but not their order, and the
- * order changes the result, so the toolkit pins this one. It does not parse
- * dialling plans: '+00 44 (0)20 7946 0958' becomes '4402079460958'.
+ * Upstream documents '8-15 digits after removing a leading +, leading zeroes,
+ * whitespace, parentheses, periods, and hyphens'. Removing every non-digit
+ * instead looks equivalent and is not: '+1 (555) 123-4567 ext. 89' would become
+ * '1555123456789', which passes a length check and hashes to nobody. Whatever
+ * is left over is returned as-is so the caller can refuse it.
+ *
+ * Dialling plans are still not parsed: '+00 44 (0)20 7946 0958' becomes
+ * '4402079460958'.
  */
 export function normalizePhone(value: string): string {
-  return value.trim().replace(/\D/g, '').replace(/^0+/, '');
+  return value
+    .trim()
+    .replace(/[\s().-]/g, '')
+    .replace(/^\+/, '')
+    .replace(/^0+/, '');
+}
+
+/**
+ * ISO 3166-1 alpha-2, uppercased.
+ *
+ * Returns undefined for anything that is not two ASCII letters. A country name
+ * rather than a code is dropped by the API without an error, so sending one
+ * would look like matching data and be nothing of the sort.
+ */
+export function normalizeCountry(value: string): string | undefined {
+  const trimmed = value.trim();
+
+  return /^[A-Za-z]{2}$/.test(trimmed) ? trimmed.toUpperCase() : undefined;
+}
+
+/**
+ * Trim, lowercase, cap at 128 characters - what the API does on receipt.
+ *
+ * Applied here too so the string sent is the string stored, and so the Pixel
+ * and the Conversions API carry the same one for the same person.
+ */
+export function normalizeCityOrRegion(value: string): string {
+  return value.trim().toLowerCase().slice(0, CITY_REGION_MAX_LENGTH);
+}
+
+/**
+ * Reduce to letters, digits, spaces and hyphens, cap at 32 characters.
+ *
+ * Disallowed characters are removed rather than refused - a stray period is a
+ * formatting artefact. Case is deliberately not folded: upstream states a
+ * lowercase rule for cities and regions and states none here.
+ */
+export function normalizePostalCode(value: string): string {
+  return value
+    .trim()
+    .replace(/[^A-Za-z0-9 -]/g, '')
+    .slice(0, POSTAL_CODE_MAX_LENGTH)
+    .trim();
 }
 
 export function normalizeExternalId(value: string): string {
@@ -102,28 +156,55 @@ export async function hashUser(raw: RawUser): Promise<PixelUser> {
       continue;
     }
 
-    if (key === 'phone_number_sha256' && (normalized.length < 8 || normalized.length > 15)) {
-      // The number itself is deliberately absent from this message.
-      throw new OpenAIAdsError(
-        `phone must contain between 8 and 15 digits after normalization; got ${normalized.length}.`,
-      );
+    if (key === 'phone_number_sha256') {
+      // Both messages deliberately omit the number itself.
+      if (!/^[0-9]*$/.test(normalized)) {
+        throw new OpenAIAdsError(
+          'phone must contain only digits once whitespace, parentheses, periods, hyphens, ' +
+            'a leading plus and leading zeroes are removed. An extension or a letter is not ' +
+            'stripped, because stripping it would silently hash a different number.',
+        );
+      }
+
+      if (normalized.length < 8 || normalized.length > 15) {
+        throw new OpenAIAdsError(
+          `phone must contain between 8 and 15 digits after normalization; got ${normalized.length}.`,
+        );
+      }
     }
 
     user[key] = await sha256Hex(normalized);
   }
 
-  const plain: Array<[keyof PixelUser, string | undefined]> = [
-    ['country', raw.country],
-    ['city', raw.city],
-    ['region', raw.region],
-    ['postal_code', raw.postalCode],
+  // Geographic values are sent unhashed but NOT unnormalized: the API documents
+  // a rule for each and drops a value that does not satisfy it, silently.
+  if (raw.country !== undefined && raw.country.trim() !== '') {
+    const country = normalizeCountry(raw.country);
+
+    if (country === undefined) {
+      throw new OpenAIAdsError(
+        `country must be a two-letter ISO 3166-1 alpha-2 code such as "US"; got "${raw.country.trim()}".`,
+      );
+    }
+
+    user.country = country;
+  }
+
+  const geographic: Array<[keyof PixelUser, string | undefined, (v: string) => string]> = [
+    ['city', raw.city, normalizeCityOrRegion],
+    ['region', raw.region, normalizeCityOrRegion],
+    ['postal_code', raw.postalCode, normalizePostalCode],
   ];
 
-  for (const [key, value] of plain) {
-    const trimmed = value?.trim();
+  for (const [key, value, normalize] of geographic) {
+    if (value === undefined || value === null) {
+      continue;
+    }
 
-    if (trimmed !== undefined && trimmed !== '') {
-      user[key] = trimmed;
+    const normalized = normalize(value);
+
+    if (normalized !== '') {
+      user[key] = normalized;
     }
   }
 

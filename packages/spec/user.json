@@ -1,6 +1,6 @@
 {
   "spec_version": "1.0.0",
-  "retrieved": "2026-09-10",
+  "retrieved": "2026-09-11",
   "sources": [
     "https://developers.openai.com/ads/conversions-api",
     "https://developers.openai.com/ads/measurement-pixel"
@@ -31,11 +31,12 @@
       "notes": "Lowercasing is Unicode-aware for consistency with the name rule, though addresses are ASCII in practice."
     },
     "phone": {
-      "steps": ["trim", "strip_non_digits", "strip_leading_zeroes"],
+      "steps": ["trim", "strip_separators", "strip_leading_plus", "strip_leading_zeroes"],
+      "separators": ["whitespace", "parentheses", "periods", "hyphens"],
       "digits_min": 8,
       "digits_max": 15,
       "hash": "sha256",
-      "notes": "Upstream says to remove the leading '+', leading zeroes, whitespace and punctuation, but does not fix an order, and order changes the result. This toolkit pins the order above: remove every non-digit first (which subsumes '+', whitespace and punctuation), then strip leading zeroes. Worked example: '+00 44 (0)20 7946 0958' becomes '4402079460958'. Note that the inner zero from '(0)' is retained - that is a deliberate consequence of a deterministic rule, not an attempt to parse dialling plans."
+      "notes": "Upstream: 'SHA-256 hashes of 8-15 digits after removing a leading +, leading zeroes, whitespace, parentheses, periods, and hyphens.' ONLY those characters are removed - deliberately not every non-digit. Anything left that is not a digit means the result is not '8-15 digits', so the value is refused rather than stripped into a different number: '+1 (555) 123-4567 ext. 89' becomes '15551234567ext89' and is rejected, where stripping every non-digit would have produced the plausible-looking but wrong '1555123456789' and hashed a number belonging to nobody. Worked example: '+00 44 (0)20 7946 0958' becomes '4402079460958' - the inner zero from '(0)' is retained, which is a deliberate consequence of a deterministic rule rather than an attempt to parse dialling plans."
     },
     "external_id": {
       "steps": ["trim"],
@@ -48,10 +49,34 @@
       "hash": "sha256",
       "notes": "Lowercasing MUST be Unicode-aware. PHP's strtolower() is byte-wise and leaves 'Ștefănescu' unchanged, while JavaScript's toLowerCase() does not - which produces two different hashes for the same person and silently breaks matching. Use mb_strtolower($v, 'UTF-8') and require ext-mbstring. Pinned in fixtures/normalization.cases.json."
     },
+    "country": {
+      "steps": ["trim", "uppercase"],
+      "pattern": "country_code",
+      "hash": null,
+      "notes": "Upstream: 'Raw two-letter country codes, such as US.' A value that is not two ASCII letters is refused rather than sent, because the API drops it silently and a country name like 'Romania' would otherwise look delivered while matching nothing. Emitting uppercase is toolkit policy: upstream's only example is uppercase and it states no case rule."
+    },
+    "city_region": {
+      "steps": ["trim", "lowercase", "truncate"],
+      "max_length": 128,
+      "preserve_non_ascii": true,
+      "hash": null,
+      "notes": "Upstream: 'The API trims whitespace, converts values to lowercase, and limits each normalized value to 128 characters.' The API does this itself; the toolkit does it too so that what is sent is what is stored, and so the Pixel and the Conversions API carry the same string for the same person. Lowercasing is Unicode-aware for the same reason as the name rule."
+    },
+    "postal_code": {
+      "steps": ["trim", "strip_disallowed", "truncate"],
+      "allowed": "ASCII letters, digits, spaces and hyphens",
+      "max_length": 32,
+      "hash": null,
+      "notes": "Upstream: 'Use letters, numbers, spaces, or hyphens; each normalized value can contain up to 32 characters.' Disallowed characters are removed rather than rejected - a postal code arriving with a period or a slash is a formatting artefact, not a caller error. Case is deliberately NOT folded: upstream states a lowercase rule for cities and regions and states none here, and that omission is treated as meaningful rather than as an oversight."
+    },
     "none": {
       "steps": [],
       "hash": null
     }
+  },
+
+  "patterns": {
+    "country_code": "^[A-Za-z]{2}$"
   },
 
   "fields": {
@@ -81,25 +106,25 @@
       "pixel": { "key": "last_name_sha256", "cardinality": "scalar" }
     },
     "country": {
-      "normalization": "none",
+      "normalization": "country",
       "capi": { "key": "countries", "cardinality": "list" },
       "pixel": { "key": "country", "cardinality": "scalar" }
     },
     "city": {
-      "normalization": "none",
+      "normalization": "city_region",
       "capi": { "key": "cities", "cardinality": "list" },
       "pixel": { "key": "city", "cardinality": "scalar" }
     },
     "region": {
-      "normalization": "none",
+      "normalization": "city_region",
       "capi": { "key": "regions", "cardinality": "list" },
       "pixel": { "key": "region", "cardinality": "scalar" }
     },
     "postal_code": {
-      "normalization": "none",
+      "normalization": "postal_code",
       "capi": { "key": "postal_codes", "cardinality": "list" },
       "pixel": { "key": "postal_code", "cardinality": "scalar" },
-      "notes": "UNRESOLVED: the live Measurement Pixel documentation shows postal_code, while OpenAI's own plugin reference lists the Pixel key as zip_code. That reference defers to the live docs, so postal_code is used here. Re-verify against a live pixel before the JavaScript package ships."
+      "notes": "RESOLVED 2026-09-11: the live Measurement Pixel documentation lists postal_code, not zip_code. An older OpenAI plugin reference said zip_code and deferred to the live docs; postal_code is confirmed correct and is what both runtimes emit."
     },
     "obref": {
       "normalization": "none",

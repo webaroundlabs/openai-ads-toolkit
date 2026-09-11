@@ -8,6 +8,9 @@ export {
   normalizeName,
   normalizePhone,
   normalizeExternalId,
+  normalizeCountry,
+  normalizeCityOrRegion,
+  normalizePostalCode,
 } from './userData.js';
 export {
   EVENT_NAMES,

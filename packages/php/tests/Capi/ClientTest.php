@@ -375,7 +375,9 @@ final class ClientTest extends TestCase
         $this->client($http)->send([$event]);
 
         self::assertNotNull($http->lastRequest);
-        self::assertStringContainsString('București', (string) $http->lastRequest->getBody());
+        // Lowercased by the city rule, but the diacritic must survive both the
+        // Unicode-aware lowercase and JSON_UNESCAPED_UNICODE.
+        self::assertStringContainsString('bucurești', (string) $http->lastRequest->getBody());
     }
 
     private function client(
