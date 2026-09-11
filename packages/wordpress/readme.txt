@@ -33,12 +33,28 @@ endorsed or supported by OpenAI. "OpenAI" and "ChatGPT" are trademarks of OpenAI
 
 = Form integrations =
 
-Contact Form 7 and Elementor Forms are detected automatically. A lead is recorded
-when the submission is accepted, never when the button is clicked, and the
-browser and server halves share one event id so the conversion is counted once.
+Contact Form 7, Elementor Forms, Gravity Forms, WPForms, Fluent Forms and Ninja
+Forms are detected automatically. A lead is recorded when the submission is
+accepted, never when the button is clicked.
 
-Neither plugin is required. Each can be switched off individually under
+Contact Form 7 and Elementor also fire the matching browser event, sharing one
+event id with the server so the conversion is counted once. The other four
+report server-side only, which needs no deduplication because nothing fires a
+second report for the same conversion.
+
+None of them is required. Each can be switched off individually under
 Settings -> OpenAI Ads.
+
+= Other integrations =
+
+* **Easy Digital Downloads** - a purchase once the payment completes, with line
+  items and the buyer's details.
+* **WooCommerce Subscriptions** - `trial_started` when a subscription begins in
+  its trial, `subscription_created` when a paid one activates.
+* **WordPress registration** - `registration_completed` on signup. Off by
+  default, deliberately: `user_register` also fires for an administrator adding
+  a colleague and for an importer restoring a backup, and neither is a
+  conversion.
 
 = WooCommerce =
 

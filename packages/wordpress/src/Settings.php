@@ -25,6 +25,13 @@ final class Settings
 
     public const PIXEL_ID_CONSTANT = 'OPENAI_ADS_PIXEL_ID';
 
+    /**
+     * Integrations a site has to switch on deliberately.
+     *
+     * @var list<string>
+     */
+    private const OFF_BY_DEFAULT = ['user_registration'];
+
     /** @var array<string, mixed>|null */
     private ?array $cache = null;
 
@@ -144,6 +151,17 @@ final class Settings
      * wants its leads measured, and having to hunt for a second switch is a
      * worse default than having to turn one off.
      */
+    /**
+     * Integrations default to ON, with one deliberate exception.
+     *
+     * Installing a form plugin's integration and having it do nothing until
+     * somebody finds a checkbox is the wrong default: the site owner installed
+     * this plugin to measure conversions. The exception is
+     * `user_registration`, whose host is WordPress itself, so it is always
+     * "available" and would otherwise switch itself on for every site. It
+     * reports every account creation, and on a WooCommerce site or one with an
+     * importer that is not what anybody meant by a conversion.
+     */
     public function integrationEnabled(string $id): bool
     {
         $all = $this->all();
@@ -152,7 +170,7 @@ final class Settings
             : [];
 
         if (!array_key_exists($id, $integrations)) {
-            return true;
+            return !in_array($id, self::OFF_BY_DEFAULT, true);
         }
 
         return (bool) $integrations[$id];

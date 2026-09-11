@@ -280,17 +280,28 @@ final class IntegrationsTest extends TestCase
     }
 
     /**
-     * Neither host plugin is installed here, so nothing registers - which is the
-     * point: a site running neither pays for neither.
+     * No host plugin is installed here, so none of their integrations register -
+     * which is the point: a site running none of them pays for none of them.
+     *
+     * WordPress registration is the exception, because its host IS WordPress. It
+     * is therefore always available and, for the same reason, off until a site
+     * switches it on: `user_register` fires for an administrator adding a
+     * colleague and for an importer restoring a backup, neither of which is a
+     * conversion.
      */
     #[Test]
-    public function nothing_registers_when_no_host_plugin_is_present(): void
+    public function only_wordpress_own_integration_is_available_without_a_host_plugin(): void
     {
         $plugin = Plugin::boot(__FILE__, '0.1.0');
         $registry = new Registry($plugin, new Settings());
 
-        self::assertSame([], $registry->available());
-        self::assertFalse($registry->register());
+        $available = array_map(
+            static fn ($integration): string => $integration->id(),
+            $registry->available(),
+        );
+
+        self::assertSame(['user_registration'], $available);
+        self::assertFalse($registry->register(), 'It must not switch itself on.');
     }
 
     #[Test]

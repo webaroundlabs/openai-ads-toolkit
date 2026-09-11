@@ -25,7 +25,14 @@ accident.
 - Laravel adapter: service provider, facade, queued delivery, request
   attribution and a Blade Pixel helper.
 - WordPress plugin: Pixel, Conversions API, settings screen, connection test,
-  and integrations for Contact Form 7, Elementor Forms and WooCommerce.
+  and ten integrations - Contact Form 7, Elementor Forms, Gravity Forms,
+  WPForms, Fluent Forms, Ninja Forms, WooCommerce, WooCommerce Subscriptions,
+  Easy Digital Downloads, and WordPress account registration.
+  `trial_started` and `subscription_created` are reported by the Subscriptions
+  integration; nothing else in the plugin has a boundary for them.
+  Registration is **off by default**: `user_register` also fires for an
+  administrator adding a colleague and for an importer restoring a backup, and
+  counting those inflates the number the advertiser optimizes against.
 - Google Tag Manager templates for web and server containers. The server
   template's hand-written identity normalization - the sandbox has no regular
   expressions, so that code could not be shared - is asserted against the same
