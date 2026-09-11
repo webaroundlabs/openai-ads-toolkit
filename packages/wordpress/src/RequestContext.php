@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WebaroundLabs\OpenAIAds\WordPress;
 
+use WebaroundLabs\OpenAIAds\HostContext as HostContextValue;
+
 /**
  * Measurement context for the current request.
  *
@@ -24,6 +26,24 @@ final class RequestContext
     public function __construct(
         private readonly Settings $settings,
     ) {
+    }
+
+    /**
+     * Everything the core needs to know about this request, in one value.
+     *
+     * The core's EventFactory takes this rather than reaching into WordPress,
+     * which is what lets the same translation serve Laravel and a GTM server
+     * container too.
+     */
+    public function forMeasurement(): HostContextValue
+    {
+        return new HostContextValue(
+            sourceUrl: $this->sourceUrl(),
+            oppref: $this->oppref(),
+            obref: $this->obref(),
+            ipAddress: $this->ipAddress(),
+            userAgent: $this->userAgent(),
+        );
     }
 
     /** Event-level attribution, from the Pixel's `__oppref` cookie. */

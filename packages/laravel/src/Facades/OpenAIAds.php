@@ -9,6 +9,8 @@ use WebaroundLabs\OpenAIAds\Laravel\Measurement;
 
 /**
  * @method static \WebaroundLabs\OpenAIAds\Capi\Response|null send(\WebaroundLabs\OpenAIAds\Event ...$events)
+ * @method static \WebaroundLabs\OpenAIAds\Event event(string $eventName, array<string, mixed> $data = [], array<string, mixed> $options = [])
+ * @method static bool track(string $eventName, array<string, mixed> $data = [], array<string, mixed> $options = [])
  * @method static void queue(\WebaroundLabs\OpenAIAds\Event ...$events)
  * @method static \WebaroundLabs\OpenAIAds\Capi\Response|null validate(\WebaroundLabs\OpenAIAds\Event ...$events)
  * @method static \WebaroundLabs\OpenAIAds\Laravel\RequestContext context()

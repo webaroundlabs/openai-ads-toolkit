@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebaroundLabs\OpenAIAds\Laravel;
 
 use Illuminate\Http\Request;
+use WebaroundLabs\OpenAIAds\HostContext;
 
 /**
  * Pulls the measurement context out of an HTTP request.
@@ -29,6 +30,23 @@ final class RequestContext
         private readonly ?string $canonicalOrigin = null,
         private readonly bool $stripQueryString = true,
     ) {
+    }
+
+    /**
+     * Everything the core needs to know about this request, in one value.
+     *
+     * The core's `EventFactory` takes this rather than reaching into Laravel,
+     * which is what lets the same translation serve WordPress too.
+     */
+    public function forMeasurement(): HostContext
+    {
+        return new HostContext(
+            sourceUrl: $this->sourceUrl(),
+            oppref: $this->oppref(),
+            obref: $this->obref(),
+            ipAddress: $this->ipAddress(),
+            userAgent: $this->userAgent(),
+        );
     }
 
     /**

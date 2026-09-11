@@ -47,8 +47,11 @@ ImageTag::url($pixelId, $event->withoutIdentity());
 ```
 
 ```php
-// Laravel
-OpenAIAds::queue($event);         // delivered off the request cycle
+// Laravel — documented field names in, the request's own context filled in
+OpenAIAds::track('lead_created', [], [
+    'event_id' => $lead->id,                  // share this with the browser
+    'user'     => ['email' => $lead->email],  // hashed before it leaves
+]);
 ```
 
 ```blade
