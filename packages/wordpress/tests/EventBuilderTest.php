@@ -101,6 +101,45 @@ final class EventBuilderTest extends TestCase
         self::assertStringNotContainsString('ada@example.com', json_encode($payload) ?: '');
     }
 
+    /**
+     * A visitor typing an extension after their phone number must not cost the
+     * site the conversion. The core refuses that phone - correctly, because
+     * stripping the extension would hash a number belonging to nobody - and the
+     * adapter drops just that field.
+     */
+    #[Test]
+    public function one_unusable_identity_field_does_not_take_the_conversion_with_it(): void
+    {
+        $payload = $this->builder()->build('lead_created', [], [
+            'user' => [
+                'email' => 'ada@example.com',
+                'phone' => '+1 (555) 123-4567 ext. 89',
+                'country' => 'Romania',
+            ],
+        ])->toCapiArray();
+
+        self::assertArrayHasKey('emails_sha256', $payload['user']);
+        self::assertArrayNotHasKey('phone_numbers_sha256', $payload['user']);
+        self::assertArrayNotHasKey('countries', $payload['user']);
+    }
+
+    #[Test]
+    public function a_dropped_identity_field_is_announced_without_its_value(): void
+    {
+        $this->builder()->build('lead_created', [], [
+            'user' => ['phone' => '+1 (555) 123-4567 ext. 89'],
+        ]);
+
+        $dropped = array_values(array_filter(
+            WpStubs::$actions,
+            static fn (array $fired): bool => $fired[0] === 'openai_ads_identity_field_dropped',
+        ));
+
+        self::assertCount(1, $dropped);
+        self::assertSame('phone', $dropped[0][1][0]);
+        self::assertStringNotContainsString('555', $dropped[0][1][1]);
+    }
+
     #[Test]
     public function the_request_supplies_the_network_context(): void
     {

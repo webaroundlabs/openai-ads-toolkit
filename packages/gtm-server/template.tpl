@@ -267,26 +267,100 @@ function normalizeEmail(value) {
   return makeString(value).trim().toLowerCase();
 }
 
-// Digits only, then leading zeroes removed. The sandbox has no regular
-// expressions, so this walks the string - which is also the clearest statement
-// of the rule the toolkit pins.
+// Only the four separators the API documents are removed - whitespace,
+// parentheses, periods and hyphens - then a leading '+', then leading zeroes.
+// Anything else that is not a digit is deliberately LEFT IN so the caller can
+// refuse the value: stripping every non-digit turns "ext. 89" into two more
+// digits of a plausible-looking number belonging to nobody. The sandbox has no
+// regular expressions, so this walks the string.
 function normalizePhone(value) {
   const input = makeString(value).trim();
-  let digits = '';
+  let compact = '';
 
   for (let i = 0; i < input.length; i++) {
     const character = input.charAt(i);
-    if (character >= '0' && character <= '9') {
-      digits = digits + character;
+    const isSeparator = character === ' ' || character === '\t' || character === '\n' ||
+      character === '\r' || character === '(' || character === ')' ||
+      character === '.' || character === '-';
+
+    if (!isSeparator) {
+      compact = compact + character;
     }
   }
 
+  if (compact.charAt(0) === '+') {
+    compact = compact.substring(1);
+  }
+
   let start = 0;
-  while (start < digits.length - 1 && digits.charAt(start) === '0') {
+  while (start < compact.length && compact.charAt(start) === '0') {
     start++;
   }
 
-  return digits.substring(start);
+  return compact.substring(start);
+}
+
+function isAllDigits(value) {
+  if (value === '') {
+    return false;
+  }
+
+  for (let i = 0; i < value.length; i++) {
+    const character = value.charAt(i);
+
+    if (character < '0' || character > '9') {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+// ISO 3166-1 alpha-2, uppercased. Returns '' for anything else, because the API
+// drops a country NAME without an error - it would look sent and match nobody.
+function normalizeCountry(value) {
+  const trimmed = makeString(value).trim();
+
+  if (trimmed.length !== 2) {
+    return '';
+  }
+
+  for (let i = 0; i < 2; i++) {
+    const character = trimmed.charAt(i).toLowerCase();
+
+    if (character < 'a' || character > 'z') {
+      return '';
+    }
+  }
+
+  return trimmed.toUpperCase();
+}
+
+// Trim, lowercase, cap at 128 characters - what the API does on receipt. Done
+// here too so the value sent is the value stored, and so a conversion reported
+// from this container carries the same string as one reported from PHP.
+function normalizeCityOrRegion(value) {
+  return makeString(value).trim().toLowerCase().substring(0, 128);
+}
+
+// Letters, digits, spaces and hyphens, capped at 32 characters. Case is not
+// folded: upstream states a lowercase rule for cities and regions, none here.
+function normalizePostalCode(value) {
+  const input = makeString(value).trim();
+  let result = '';
+
+  for (let i = 0; i < input.length; i++) {
+    const character = input.charAt(i);
+    const lowered = character.toLowerCase();
+    const isLetter = lowered >= 'a' && lowered <= 'z';
+    const isDigit = character >= '0' && character <= '9';
+
+    if (isLetter || isDigit || character === ' ' || character === '-') {
+      result = result + character;
+    }
+  }
+
+  return result.substring(0, 32).trim();
 }
 
 // Lowercase, then whitespace and ASCII punctuation removed, preserving
@@ -321,7 +395,7 @@ function buildUser() {
 
   if (isSet(data.phone)) {
     const phone = normalizePhone(data.phone);
-    if (phone.length >= 8 && phone.length <= 15) {
+    if (isAllDigits(phone) && phone.length >= 8 && phone.length <= 15) {
       user.phone_numbers_sha256 = [hash(phone)];
     } else {
       // The number itself is deliberately absent from this message.
@@ -345,11 +419,32 @@ function buildUser() {
     if (lastName !== '') user.last_names_sha256 = [hash(lastName)];
   }
 
-  // Geographic values are lists on the wire but are never hashed.
-  if (isSet(data.country)) user.countries = [makeString(data.country).trim()];
-  if (isSet(data.city)) user.cities = [makeString(data.city).trim()];
-  if (isSet(data.region)) user.regions = [makeString(data.region).trim()];
-  if (isSet(data.postalCode)) user.postal_codes = [makeString(data.postalCode).trim()];
+  // Geographic values are lists on the wire and are never hashed - but they are
+  // normalized, because the API documents a rule for each and drops a value that
+  // does not satisfy it without reporting anything.
+  if (isSet(data.country)) {
+    const country = normalizeCountry(data.country);
+    if (country !== '') {
+      user.countries = [country];
+    } else {
+      logToConsole('OpenAI Ads: country skipped, it is not a two-letter code such as "US".');
+    }
+  }
+
+  if (isSet(data.city)) {
+    const city = normalizeCityOrRegion(data.city);
+    if (city !== '') user.cities = [city];
+  }
+
+  if (isSet(data.region)) {
+    const region = normalizeCityOrRegion(data.region);
+    if (region !== '') user.regions = [region];
+  }
+
+  if (isSet(data.postalCode)) {
+    const postalCode = normalizePostalCode(data.postalCode);
+    if (postalCode !== '') user.postal_codes = [postalCode];
+  }
 
   // obref is user-level and opaque. oppref is a different field on the event
   // itself; conflating the two silently breaks matching.

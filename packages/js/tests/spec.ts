@@ -22,8 +22,19 @@ export interface NormalizationCase {
   asserts: string;
 }
 
+export interface GeographicCase {
+  field: string;
+  raw: string;
+  normalized: string;
+  asserts: string;
+}
+
 export interface NormalizationFixture {
   valid: NormalizationCase[];
+  geographic: {
+    valid: GeographicCase[];
+    rejected: Array<{ field: string; raw: string; reason: string; asserts: string }>;
+  };
   divergence_guard: {
     raw: string;
     wrong: { normalized: string; sha256: string };

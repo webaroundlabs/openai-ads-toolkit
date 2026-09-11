@@ -1,7 +1,7 @@
 {
   "about": "Pinned normalization and hashing results. Every runtime must reproduce these exactly. This file is the enforcement of the rule that two adapters must never normalize the same value differently; it is written before any implementation exists, and a change to it is a behavioural change to deduplication requiring a changelog entry.",
   "verified": {
-    "on": "2026-09-10",
+    "on": "2026-09-11",
     "with": ["Python 3.12.6 hashlib", "PHP 8.2.12 hash('sha256')"],
     "note": "Both produced identical digests for every case below."
   },
@@ -33,7 +33,14 @@
       "raw": "+00 44 (0)20 7946 0958",
       "normalized": "4402079460958",
       "sha256": "40f19965b0d0ebba641dbd9309c3ac18542d9ad976c47f8d35347daea67ee2c2",
-      "asserts": "The pinned step order: strip every non-digit first, then leading zeroes. The inner zero from '(0)' is deliberately retained - the toolkit does not parse dialling plans."
+      "asserts": "The documented removals - whitespace, parentheses, periods and hyphens, then a leading plus, then leading zeroes. The inner zero from '(0)' is deliberately retained; the toolkit does not parse dialling plans."
+    },
+    {
+      "field": "phone",
+      "raw": "+1.555.123.4567",
+      "normalized": "15551234567",
+      "sha256": "d6736136ea896c1bfdc553e0e86e702c70d060d805696ca3e4e9e0961353860a",
+      "asserts": "Periods are one of the four documented separators."
     },
     {
       "field": "external_id",
@@ -88,6 +95,62 @@
     "assert": "A runtime that produces the 'wrong' digest must fail its test suite."
   },
 
+  "geographic": {
+    "about": "Geographic values are never hashed, but they ARE normalized - the Conversions API documents a rule for each, and a value that does not satisfy it is dropped by the API without any error. These cases pin the rule so the Pixel and the Conversions API carry the same string for the same person.",
+    "valid": [
+      {
+        "field": "country",
+        "raw": " ro ",
+        "normalized": "RO",
+        "asserts": "Trimmed and uppercased. Upstream's only example is uppercase and it states no case rule, so uppercase is the toolkit's pinned choice."
+      },
+      {
+        "field": "city",
+        "raw": " București ",
+        "normalized": "bucurești",
+        "asserts": "Trimmed and lowercased, Unicode-aware. The diacritic survives; the capital does not."
+      },
+      {
+        "field": "region",
+        "raw": "Île-de-France",
+        "normalized": "île-de-france",
+        "asserts": "Unicode-aware lowercase. Unlike a name, punctuation and internal spacing are preserved - this is not a hashed field."
+      },
+      {
+        "field": "city",
+        "raw": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "normalized": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "asserts": "Truncated to 128 characters, counted in characters rather than bytes."
+      },
+      {
+        "field": "postal_code",
+        "raw": " SW1A 1AA ",
+        "normalized": "SW1A 1AA",
+        "asserts": "Letters, digits, spaces and hyphens all survive, and case is NOT folded - upstream states a lowercase rule for cities and regions and states none here."
+      },
+      {
+        "field": "postal_code",
+        "raw": "01.01/01",
+        "normalized": "010101",
+        "asserts": "Characters outside the documented set are removed rather than rejected: a stray separator is a formatting artefact, not a caller mistake."
+      }
+    ],
+    "rejected": [
+      {
+        "field": "country",
+        "raw": "Romania",
+        "reason": "Not a two-letter country code.",
+        "asserts": "Refused rather than sent. The API would drop it silently, so the value would look delivered while matching nobody."
+      },
+      {
+        "field": "postal_code",
+        "raw": "///",
+        "reason": "Nothing remains after removing characters outside the documented set.",
+        "asserts": "A value that normalizes away entirely is treated as absent, not as an empty string on the wire."
+      }
+    ]
+  },
+
   "rejected": [
     {
       "field": "phone",
@@ -106,9 +169,16 @@
     {
       "field": "phone",
       "raw": "not-a-phone",
-      "normalized": "",
-      "reason": "No digits remain after normalization.",
-      "asserts": "An empty normalization result is a rejection, never an empty hash."
+      "normalized": "notaphone",
+      "reason": "A non-digit remains after the documented removals, so the result is not 8-15 digits.",
+      "asserts": "An unusable value is a rejection, never an empty hash."
+    },
+    {
+      "field": "phone",
+      "raw": "+1 (555) 123-4567 ext. 89",
+      "normalized": "15551234567ext89",
+      "reason": "A non-digit remains after the documented removals, so the result is not 8-15 digits.",
+      "asserts": "REGRESSION GUARD. Stripping every non-digit instead of only the four documented separators would have yielded '1555123456789' - eleven digits of real number with an extension welded on, which passes a length check and hashes to somebody who does not exist. Refusing it is the point."
     }
   ]
 }

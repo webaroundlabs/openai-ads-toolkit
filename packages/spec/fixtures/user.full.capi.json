@@ -24,8 +24,8 @@
     "first_names_sha256": ["d6806158f75334002321a9333b6b02b9b84b51433400afb68bb197bddc2db6a5"],
     "last_names_sha256": ["1c43886f1047ed5dfae59c0945ff61475b7df3a912312a6484ce80429df049a1"],
     "countries": ["RO"],
-    "cities": ["București"],
-    "regions": ["București"],
+    "cities": ["bucurești"],
+    "regions": ["bucurești"],
     "postal_codes": ["010101"],
     "obref": "123e4567-e89b-42d3-a456-426614174000",
     "ip_address": "203.0.113.1",
@@ -37,6 +37,6 @@
     "Every hashable field is a list, even with a single value.",
     "obref, ip_address, user_agent and android_advertising_id are scalars and are never hashed.",
     "obref is passed through byte-for-byte.",
-    "Geographic values are not hashed and not case-folded."
+    "Geographic values are never hashed. Cities and regions ARE lowercased and capped at 128 characters, postal codes are reduced to letters, digits, spaces and hyphens and capped at 32, and country codes are uppercased - the normalization the Conversions API documents for each."
   ]
 }

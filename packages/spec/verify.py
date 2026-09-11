@@ -69,9 +69,13 @@ for k, f in ev['envelope']['fields'].items():
     check_field("envelope.fields.%s" % k, f)
 
 norms = set(us['normalizations'])
+user_patterns = set(us.get('patterns', {}))
 for name, f in us['fields'].items():
     if f['normalization'] not in norms:
         fail.append("user.fields.%s.normalization -> %s missing" % (name, f['normalization']))
+for name, n in us['normalizations'].items():
+    if isinstance(n.get('pattern'), str) and n['pattern'] not in user_patterns:
+        fail.append("user.normalizations.%s.pattern -> %s missing" % (name, n['pattern']))
 
 # --- documented facts -------------------------------------------------------
 expected_events = {"page_viewed","contents_viewed","items_added","checkout_started","order_created",
@@ -189,6 +193,65 @@ for side in ('wrong', 'correct'):
         fail.append("divergence_guard.%s digest does not match its normalized value" % side)
 if g['wrong']['sha256'] == g['correct']['sha256']:
     fail.append("divergence_guard is pointless: both digests are equal")
+
+# --- geographic normalization is declared, not "none" -----------------------
+# The Conversions API documents a rule for each geographic field and drops a
+# value that does not satisfy it, without any error. Leaving these on the "none"
+# normalization is how a country named "Romania" gets sent and silently ignored.
+for field, expected_rule in (('country', 'country'), ('city', 'city_region'),
+                             ('region', 'city_region'), ('postal_code', 'postal_code')):
+    if us['fields'][field]['normalization'] != expected_rule:
+        fail.append("user.%s must use the %r normalization, not %r"
+                    % (field, expected_rule, us['fields'][field]['normalization']))
+
+cc = re.compile(us['patterns']['country_code'])
+for good in ('RO', 'us'):
+    if not cc.fullmatch(good): fail.append("country_code should accept %r" % good)
+for bad in ('Romania', 'R', 'R0', ''):
+    if cc.fullmatch(bad): fail.append("country_code should reject %r" % bad)
+
+geo = fx_norm['geographic']
+city_max = us['normalizations']['city_region']['max_length']
+postal_max = us['normalizations']['postal_code']['max_length']
+postal_allowed = re.compile(r'^[A-Za-z0-9 -]*$')
+
+for case in geo['valid']:
+    field, raw, norm = case['field'], case['raw'], case['normalized']
+
+    if norm == '':
+        fail.append("geographic case %r normalizes to nothing but is listed as valid" % raw)
+
+    if field == 'country':
+        if not cc.fullmatch(norm) or norm != norm.upper():
+            fail.append("geographic country case %r must normalize to an uppercase two-letter code" % raw)
+    elif field in ('city', 'region'):
+        if norm != norm.lower():
+            fail.append("geographic %s case %r must normalize to lowercase" % (field, raw))
+        if len(norm) > city_max:
+            fail.append("geographic %s case %r exceeds the %d-character cap" % (field, raw, city_max))
+        # Truncation is measured in characters, so a long raw value must land
+        # exactly on the cap rather than somewhere near it.
+        if len(raw.strip()) > city_max and len(norm) != city_max:
+            fail.append("geographic %s case must truncate to exactly %d characters, got %d"
+                        % (field, city_max, len(norm)))
+    elif field == 'postal_code':
+        if not postal_allowed.fullmatch(norm):
+            fail.append("geographic postal_code case %r kept a character outside the documented set" % raw)
+        if len(norm) > postal_max:
+            fail.append("geographic postal_code case %r exceeds the %d-character cap" % (raw, postal_max))
+    else:
+        fail.append("geographic case names an unknown field %r" % field)
+
+if not any(c['field'] == 'country' for c in geo['rejected']):
+    fail.append("the geographic fixtures must pin a rejected country, or nothing stops 'Romania' being sent")
+
+# The phone rule removes four documented separators, NOT every non-digit.
+# Stripping every non-digit turns an extension into extra digits of a plausible
+# but wrong number, so a case proving that is refused is load-bearing.
+if us['normalizations']['phone']['steps'] == ['trim', 'strip_non_digits', 'strip_leading_zeroes']:
+    fail.append("the phone rule must remove only the documented separators, not every non-digit")
+if not any('ext' in c['raw'] for c in fx_norm['rejected'] if c['field'] == 'phone'):
+    fail.append("the phone fixtures must pin a rejected extension, or the strip-every-non-digit bug can return")
 
 # --- the GTM templates agree with the catalogue -----------------------------
 # The templates themselves cannot be executed here; that needs Google Tag

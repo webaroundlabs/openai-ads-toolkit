@@ -144,8 +144,8 @@ final class UserDataTest extends TestCase
      */
     public static function pinnedRejections(): iterable
     {
-        foreach (Spec::load('fixtures/normalization.cases.json')['rejected'] as $case) {
-            yield $case['reason'] => [$case];
+        foreach (Spec::load('fixtures/normalization.cases.json')['rejected'] as $i => $case) {
+            yield sprintf('%s #%d: %s', $case['field'], $i, $case['reason']) => [$case];
         }
     }
 
@@ -187,6 +187,72 @@ final class UserDataTest extends TestCase
 
         self::assertArrayNotHasKey('cities', $payload);
         self::assertSame(['RO'], $payload['countries']);
+    }
+
+    /**
+     * Geographic values are never hashed, but they ARE normalized: the API
+     * documents a rule for each and drops a value that does not satisfy it,
+     * silently. These cases are driven from the fixture for the same reason the
+     * digests are - so PHP, TypeScript and the GTM template cannot disagree.
+     *
+     * @param array{field: string, raw: string, normalized: string} $case
+     */
+    #[Test]
+    #[DataProvider('pinnedGeographicCases')]
+    public function it_reproduces_every_pinned_geographic_normalization(array $case): void
+    {
+        $user = self::userWith($case['field'], $case['raw']);
+        $capiKey = self::capiKeyFor($case['field']);
+
+        self::assertSame([$case['normalized']], $user->toCapiArray()[$capiKey]);
+    }
+
+    /**
+     * @return iterable<string, array{array{field: string, raw: string, normalized: string}}>
+     */
+    public static function pinnedGeographicCases(): iterable
+    {
+        $fixture = Spec::load('fixtures/normalization.cases.json');
+
+        foreach ($fixture['geographic']['valid'] as $i => $case) {
+            yield sprintf('%s #%d: %s', $case['field'], $i, $case['asserts']) => [$case];
+        }
+    }
+
+    /**
+     * A country name rather than a code is refused outright, because the API
+     * would drop it without an error and the caller would believe it was sent.
+     */
+    #[Test]
+    public function a_country_that_is_not_a_two_letter_code_is_rejected(): void
+    {
+        $this->expectException(InvalidArgument::class);
+        $this->expectExceptionMessage('two-letter ISO 3166-1 alpha-2 code');
+
+        UserData::create(country: 'Romania');
+    }
+
+    #[Test]
+    public function a_postal_code_that_normalizes_away_entirely_is_treated_as_absent(): void
+    {
+        self::assertArrayNotHasKey('postal_codes', UserData::create(postalCode: '///')->toCapiArray());
+    }
+
+    /**
+     * The regression this rule exists for: stripping every non-digit would turn
+     * an extension into two more digits of a plausible-looking number, pass the
+     * length check, and hash somebody who does not exist.
+     */
+    #[Test]
+    public function a_phone_with_an_extension_is_refused_rather_than_silently_rewritten(): void
+    {
+        try {
+            UserData::create(phone: '+1 (555) 123-4567 ext. 89');
+            self::fail('Expected the extension to be refused.');
+        } catch (InvalidArgument $e) {
+            self::assertStringContainsString('only digits', $e->getMessage());
+            self::assertStringNotContainsString('555', $e->getMessage());
+        }
     }
 
     #[Test]
@@ -232,6 +298,10 @@ final class UserDataTest extends TestCase
             'external_id' => UserData::create(externalId: $raw),
             'first_name' => UserData::create(firstName: $raw),
             'last_name' => UserData::create(lastName: $raw),
+            'country' => UserData::create(country: $raw),
+            'city' => UserData::create(city: $raw),
+            'region' => UserData::create(region: $raw),
+            'postal_code' => UserData::create(postalCode: $raw),
             default => throw new \LogicException(sprintf('Fixture uses unmapped field "%s".', $field)),
         };
     }

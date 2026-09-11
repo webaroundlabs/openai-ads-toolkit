@@ -3,10 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { OpenAIAdsError } from '../src/errors.js';
 import {
   hashUser,
+  normalizeCityOrRegion,
+  normalizeCountry,
   normalizeEmail,
   normalizeExternalId,
   normalizeName,
   normalizePhone,
+  normalizePostalCode,
   sha256Hex,
 } from '../src/userData.js';
 import { loadSpec, type NormalizationFixture } from './spec.js';
@@ -38,6 +41,25 @@ describe('normalization matches the shared specification', () => {
 
       expect(normalized).toBe(testCase.normalized);
       await expect(sha256Hex(normalized)).resolves.toBe(testCase.sha256);
+    },
+  );
+
+  /**
+   * Geographic values are never hashed, but the API documents a normalization
+   * rule for each and drops a value that does not satisfy it, silently. The PHP
+   * suite asserts these same cases from this same file.
+   */
+  it.each(fixture.geographic.valid.map((c) => [c.asserts, c] as const))(
+    'reproduces the pinned geographic normalization: %s',
+    (_label, testCase) => {
+      const normalize =
+        testCase.field === 'country'
+          ? (v: string) => normalizeCountry(v) ?? ''
+          : testCase.field === 'postal_code'
+            ? normalizePostalCode
+            : normalizeCityOrRegion;
+
+      expect(normalize(testCase.raw)).toBe(testCase.normalized);
     },
   );
 
@@ -113,22 +135,47 @@ describe('hashUser', () => {
     expect(upper.external_id_sha256).not.toBe(lower.external_id_sha256);
   });
 
-  it.each(fixture.rejected.filter((c) => c.field === 'phone' && c.normalized !== ''))(
-    'rejects an out-of-range phone without echoing it: $reason',
+  it.each(fixture.rejected.filter((c) => c.field === 'phone'))(
+    'refuses a phone without echoing it: $reason',
     async (testCase) => {
       await expect(hashUser({ phone: testCase.raw })).rejects.toThrow(OpenAIAdsError);
 
       await hashUser({ phone: testCase.raw }).catch((error: Error) => {
-        expect(error.message).toContain('between 8 and 15 digits');
+        const isNonDigit = !/^[0-9]*$/.test(testCase.normalized);
+
+        expect(error.message).toContain(
+          isNonDigit ? 'only digits' : 'between 8 and 15 digits',
+        );
         expect(error.message).not.toContain(testCase.normalized);
       });
     },
   );
 
-  it('drops a phone with no digits at all rather than throwing', async () => {
-    // '' normalizes away, so it is treated as absent like any other empty value.
-    await expect(hashUser({ phone: 'not-a-phone' })).resolves.toEqual({});
+  /**
+   * The regression the phone rule exists for. Stripping every non-digit would
+   * turn the extension into two more digits, pass the length check, and hash a
+   * number belonging to nobody.
+   */
+  it('refuses a phone with an extension rather than silently rewriting it', async () => {
+    await expect(hashUser({ phone: '+1 (555) 123-4567 ext. 89' })).rejects.toThrow(
+      /only digits/,
+    );
   });
+
+  it.each(fixture.geographic.rejected)(
+    'does not send a geographic value the API would drop: $reason',
+    async (testCase) => {
+      if (testCase.field === 'country') {
+        await expect(hashUser({ country: testCase.raw })).rejects.toThrow(
+          /two-letter ISO 3166-1 alpha-2 code/,
+        );
+
+        return;
+      }
+
+      await expect(hashUser({ postalCode: testCase.raw })).resolves.toEqual({});
+    },
+  );
 });
 
 describe('sha256Hex', () => {

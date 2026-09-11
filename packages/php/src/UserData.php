@@ -47,6 +47,12 @@ final class UserData
         'android_advertising_id' => ['android_advertising_id', false],
     ];
 
+    /** Mirrors `normalizations.city_region.max_length` in packages/spec/user.json. */
+    private const CITY_REGION_MAX_LENGTH = 128;
+
+    /** Mirrors `normalizations.postal_code.max_length` in packages/spec/user.json. */
+    private const POSTAL_CODE_MAX_LENGTH = 32;
+
     /**
      * @param array<string, string> $values logical field => wire-ready value
      */
@@ -62,8 +68,10 @@ final class UserData
      * dropped: hashing an empty string produces a valid-looking digest that
      * matches nobody, and silently sending it would degrade matching with no
      * signal. Geographic fields are lenient by contrast - they are hints, not
-     * identifiers, so a blank one is simply treated as absent, which keeps a
-     * half-filled checkout address from throwing.
+     * identifiers, so a blank or unusable one is treated as absent, which keeps
+     * a half-filled checkout address from throwing. The one exception is
+     * `$country`, where a non-empty value that is not a two-letter code is a
+     * caller mistake worth naming rather than a missing field.
      *
      * @param string|null $obref The opaque `__obref` cookie value. Never hashed,
      *                           never parsed. Not to be confused with the
@@ -108,16 +116,33 @@ final class UserData
             $values['last_name'] = self::hash(self::normalizeName($lastName), 'last_name');
         }
 
-        foreach (
-            [
-                'country' => $country,
-                'city' => $city,
-                'region' => $region,
-                'postal_code' => $postalCode,
-            ] as $field => $raw
-        ) {
-            if ($raw !== null && trim($raw) !== '') {
-                $values[$field] = trim($raw);
+        // Geographic fields are never hashed, but they ARE normalized: the API
+        // documents a rule for each and drops a value that does not satisfy it,
+        // without reporting anything. A blank one is simply absent - a
+        // half-filled checkout address must not throw - but a malformed country
+        // code is a caller mistake worth naming, because "Romania" would look
+        // delivered while matching nobody.
+        if ($country !== null && trim($country) !== '') {
+            $values['country'] = self::normalizeCountry($country);
+        }
+
+        foreach (['city' => $city, 'region' => $region] as $field => $raw) {
+            if ($raw === null) {
+                continue;
+            }
+
+            $normalized = self::normalizeCityOrRegion($raw);
+
+            if ($normalized !== '') {
+                $values[$field] = $normalized;
+            }
+        }
+
+        if ($postalCode !== null) {
+            $normalized = self::normalizePostalCode($postalCode);
+
+            if ($normalized !== '') {
+                $values['postal_code'] = $normalized;
             }
         }
 
@@ -192,23 +217,44 @@ final class UserData
     }
 
     /**
-     * Remove every non-digit, then leading zeroes.
+     * Remove the four documented separators, then a leading "+", then leading
+     * zeroes - and nothing else.
      *
-     * OpenAI documents removing the leading "+", leading zeroes, whitespace and
-     * punctuation but does not fix an order, and the order changes the result.
-     * The order pinned here is deterministic and is recorded in
-     * `packages/spec/user.json`. It does not attempt to parse dialling plans:
-     * "+00 44 (0)20 7946 0958" becomes "4402079460958", inner zero included.
+     * OpenAI documents "8-15 digits after removing a leading +, leading zeroes,
+     * whitespace, parentheses, periods, and hyphens". Removing every non-digit
+     * instead looks equivalent and is not: "+1 (555) 123-4567 ext. 89" would
+     * become "1555123456789", thirteen digits that pass every length check and
+     * hash to a number belonging to nobody. Anything left over that is not a
+     * digit is therefore refused rather than stripped.
+     *
+     * Dialling plans are still not parsed: "+00 44 (0)20 7946 0958" becomes
+     * "4402079460958", inner zero included.
      *
      * @throws InvalidArgument when the result is not 8-15 digits
      */
     private static function normalizePhone(string $value): string
     {
-        $digits = ltrim((string) preg_replace('/\D/', '', trim($value)), '0');
+        $compact = (string) preg_replace('/[\s()\.\-]/u', '', trim($value));
+
+        if (str_starts_with($compact, '+')) {
+            $compact = substr($compact, 1);
+        }
+
+        $digits = ltrim($compact, '0');
+
+        // The raw number is deliberately absent from both messages below.
+        if (preg_match('/^[0-9]*$/', $digits) !== 1) {
+            throw new InvalidArgument(
+                'phone must contain only digits once whitespace, parentheses, periods, '
+                . 'hyphens, a leading plus and leading zeroes are removed. An extension or '
+                . 'a letter is not stripped, because stripping it would silently hash a '
+                . 'different number.',
+            );
+        }
+
         $length = strlen($digits);
 
         if ($length < 8 || $length > 15) {
-            // The raw number is deliberately absent from this message.
             throw new InvalidArgument(sprintf(
                 'phone must contain between 8 and 15 digits after normalization; got %d.',
                 $length,
@@ -216,6 +262,60 @@ final class UserData
         }
 
         return $digits;
+    }
+
+    /**
+     * ISO 3166-1 alpha-2, emitted uppercase.
+     *
+     * Upstream asks for "raw two-letter country codes, such as US" and states no
+     * case rule; uppercase is the toolkit's pinned choice, recorded in the spec.
+     * A country name rather than a code is refused: the API would drop it
+     * without an error, leaving the caller believing it was sent.
+     *
+     * @throws InvalidArgument
+     */
+    private static function normalizeCountry(string $value): string
+    {
+        $trimmed = trim($value);
+
+        if (preg_match('/^[A-Za-z]{2}$/', $trimmed) !== 1) {
+            throw new InvalidArgument(sprintf(
+                'country must be a two-letter ISO 3166-1 alpha-2 code such as "US"; got "%s".',
+                $trimmed,
+            ));
+        }
+
+        return strtoupper($trimmed);
+    }
+
+    /**
+     * Trim, lowercase, cap at 128 characters.
+     *
+     * This is what the API does to the value on receipt. Doing it here too means
+     * the string sent is the string stored, and that the Pixel and the
+     * Conversions API carry the same one. Lowercasing is Unicode-aware for the
+     * same reason as the name rule.
+     */
+    private static function normalizeCityOrRegion(string $value): string
+    {
+        $lowered = mb_strtolower(trim($value), 'UTF-8');
+
+        return mb_substr($lowered, 0, self::CITY_REGION_MAX_LENGTH, 'UTF-8');
+    }
+
+    /**
+     * Reduce to letters, digits, spaces and hyphens, cap at 32 characters.
+     *
+     * Characters outside that set are removed rather than refused: a postal code
+     * arriving with a period or a slash is a formatting artefact, not a caller
+     * mistake. Case is deliberately not folded - upstream states a lowercase
+     * rule for cities and regions and states none here.
+     */
+    private static function normalizePostalCode(string $value): string
+    {
+        $filtered = (string) preg_replace('/[^A-Za-z0-9 \-]/u', '', trim($value));
+
+        return trim(substr($filtered, 0, self::POSTAL_CODE_MAX_LENGTH));
     }
 
     /**
