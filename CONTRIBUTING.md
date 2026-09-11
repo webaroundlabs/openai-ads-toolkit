@@ -23,11 +23,20 @@ them are written down — which should make it easier to contribute, not harder.
 python packages/spec/verify.py        # the specification and the GTM templates
 python scripts/check-secrets.py       # credential exposure
 
-cd packages/php       && composer install && composer test
-cd packages/js        && npm install      && npm test && npm run typecheck
-cd packages/laravel   && composer install && composer test
-cd packages/wordpress && composer install && composer test
+cd packages/php       && composer install && composer check
+cd packages/js        && npm install      && npm run check
+cd packages/laravel   && composer install && composer check
+cd packages/wordpress && composer install && composer check
 ```
+
+`check` is style, then static analysis, then tests — the order that fails
+fastest. Run them individually with `composer style`, `composer analyse` and
+`composer test`, or `npm run lint`, `npm run typecheck` and `npm test`. A single
+test is `vendor/bin/phpunit --filter the_test_name` or
+`npx vitest run -t 'part of the name'`.
+
+`composer style:fix` and `npm run lint:fix` apply what can be applied
+automatically, so style is never something to argue about in review.
 
 The Laravel and WordPress packages reach the core through a Composer path
 repository, so a full checkout is all the wiring they need. Their test suites
@@ -36,9 +45,12 @@ checkout only — never from an installed package. That is intended.
 
 ## When OpenAI changes something
 
-The specification is the source of truth, and it lives in three places on
-purpose — the JSON, the PHP, the TypeScript. The parity tests are what make that
-duplication safe.
+The specification is the source of truth, and it lives in four places on
+purpose — the JSON, the PHP, the TypeScript, and the GTM server template's
+sandboxed JavaScript. The parity tests are what make the first three safe. The
+GTM template is **not** covered by them: its normalization is hand-written
+because the sandbox has no regular expressions, so a change to §14's rules has
+to be applied there by hand and its own `___TESTS___` section updated.
 
 1. Re-read the upstream documentation and update `retrieved` and `sources`.
 2. Change `packages/spec/events.json` or `user.json`.
@@ -89,3 +101,8 @@ it has been wrong before and the reasoning is more useful than the rule.
 By contributing you agree your work is licensed under the [MIT License](LICENSE),
 except the WordPress plugin, which is GPL-2.0-or-later as the plugin directory
 requires.
+
+## Conduct
+
+[`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md). The short version: review the code,
+not the person, and treat a naive question as a documentation bug.
