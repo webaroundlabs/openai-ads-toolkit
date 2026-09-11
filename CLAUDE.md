@@ -239,13 +239,16 @@ GTM server template's sandboxed JavaScript are four deliberate copies, and the p
 what make the duplication safe. Code generation was evaluated and rejected — 13 events across
 2 runtimes does not repay a build step, generated stack traces and generated error strings.
 
-The GTM template is the weak copy and should be treated as such: it reimplements the identity
-normalization in sandboxed JavaScript, which has no regular expressions, and `verify.py`
-currently checks only that its event dropdown matches the catalogue. Its normalization is not
-covered by a parity assertion. **Any change to §14's rules must be applied there by hand** —
+The GTM template is the awkward copy: it reimplements the identity normalization in sandboxed
+JavaScript, which has no regular expressions, so it cannot share a line with the browser
+package. **Any change to §14's rules must be applied there by hand** —
 `packages/gtm-server/template.tpl`, the `normalize*` functions — and the template's own
-`___TESTS___` section updated. Extending `verify.py` to extract and exercise those functions is
-the obvious next improvement.
+`___TESTS___` section updated.
+
+It is not unguarded, though. `packages/js/tests/gtmParity.test.ts` lifts those functions out of
+the template, runs them against the same pinned fixtures, and asserts they agree with the
+browser package output for output. Forgetting to update the template turns that red rather than
+producing two hashes for the same person.
 
 **§8's "validate the response shape at the boundary" does not apply to the Conversions API
 response.** OpenAI documents no success body, no status codes, no error shape and no rate

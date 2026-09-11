@@ -70,18 +70,22 @@ is, and what was deliberately left out.
 |---|---|
 | `packages/spec` | **Done** — 13 events, identity mapping, golden fixtures |
 | `packages/php` | **Done** — 13 events, identity hashing, Conversions API client, image tag, 171 tests |
-| `packages/js` | **Done** — typed wrapper over the official `oaiq` SDK, 86 tests |
+| `packages/js` | **Done** — typed wrapper over the official `oaiq` SDK, 114 tests |
 | `packages/laravel` | **Done** — provider, facade, queued delivery, attribution, Blade Pixel, 62 tests |
 | `packages/wordpress` | **Done** — base plugin, Contact Form 7, Elementor Forms, WooCommerce. 102 tests |
 | `packages/gtm-web` | **Template written** — catalogue verified here; tests run inside GTM |
-| `packages/gtm-server` | **Template written** — catalogue verified here; tests run inside GTM |
+| `packages/gtm-server` | **Template written** — catalogue and identity hashing verified here |
 
 Built in that order on purpose: the shared foundation first, the integrations last. Nothing is
 published anywhere yet.
 
-The GTM templates are the one part not covered by a runnable test suite here — their own tests
-run inside GTM's template editor. What this repository does verify is that their event
-dropdowns match the specification exactly, and that the web template contains no credential.
+The GTM templates have no full test suite here — their own tests run inside GTM's template
+editor. What this repository does verify is that their event dropdowns match the specification
+exactly, that the web template contains no credential, and that the server template's
+hand-written identity normalization produces byte-identical output to the browser package for
+every pinned fixture. That last one matters most: the sandbox has no regular expressions, so
+that code could not be shared, and an unwatched copy of the hashing rules is how a Pixel event
+and its server twin quietly stop describing the same person.
 
 The PHP and JavaScript packages are held to the same specification by parity tests, and both
 assert the identity digests in `packages/spec/fixtures/normalization.cases.json` — so a Pixel
