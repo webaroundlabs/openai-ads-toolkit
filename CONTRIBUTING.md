@@ -48,9 +48,12 @@ checkout only — never from an installed package. That is intended.
 The specification is the source of truth, and it lives in four places on
 purpose — the JSON, the PHP, the TypeScript, and the GTM server template's
 sandboxed JavaScript. The parity tests are what make the first three safe. The
-GTM template is **not** covered by them: its normalization is hand-written
-because the sandbox has no regular expressions, so a change to §14's rules has
-to be applied there by hand and its own `___TESTS___` section updated.
+GTM template's normalization is hand-written, because the sandbox has no regular
+expressions — so a change to the identity rules has to be applied there by hand
+and its own `___TESTS___` section updated. `packages/js/tests/gtmParity.test.ts`
+lifts those functions out of the template and asserts they agree with the browser
+package, so forgetting turns the build red rather than producing two hashes for
+the same person.
 
 1. Re-read the upstream documentation and update `retrieved` and `sources`.
 2. Change `packages/spec/events.json` or `user.json`.

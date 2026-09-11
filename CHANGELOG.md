@@ -26,7 +26,11 @@ accident.
   attribution and a Blade Pixel helper.
 - WordPress plugin: Pixel, Conversions API, settings screen, connection test,
   and integrations for Contact Form 7, Elementor Forms and WooCommerce.
-- Google Tag Manager templates for web and server containers.
+- Google Tag Manager templates for web and server containers. The server
+  template's hand-written identity normalization - the sandbox has no regular
+  expressions, so that code could not be shared - is asserted against the same
+  pinned fixtures as PHP and TypeScript, and against the browser package's output
+  directly, by `packages/js/tests/gtmParity.test.ts`.
 - **Image Tag support**, the third measurement channel OpenAI documents: a 1x1
   `<img>` that reports a conversion without JavaScript, for an email body, an AMP
   page or a `<noscript>` fallback. `ImageTag::url()` in the core,
