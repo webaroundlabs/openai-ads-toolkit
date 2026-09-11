@@ -11,19 +11,59 @@ Two properties follow from this and shape every decision below:
 1. **It is a library, not an application.** Its public API is a contract other people depend on. A signature change is a breaking change; an internal refactor is free. Keep that line sharp and deliberate.
 2. **It is multi-target.** The same measurement semantics — event shape, identity normalization, deduplication key — must behave identically whether they run in a browser, in PHP on a server, inside WordPress, or in a GTM template. That shared semantics belongs in **one** place per language runtime; adapters translate host conventions into it and add nothing of their own.
 
-### Repository status
+### Repository layout
 
-Phase 1 only. `packages/spec` holds the canonical event specification, the identity mapping and the golden fixtures; `docs/api-design.md` proposes the PHP public API. **No PHP or JavaScript package exists yet**, so there is no toolchain and no build, lint or test command to document.
+Seven packages, built in dependency order and still pre-`1.0`. Nothing is published to Packagist, npm, the WordPress plugin directory or the GTM gallery.
 
-**When the toolchain lands, record the real commands here** — per package: install, build, lint, full test run, and how to run a *single* test — rather than leaving future sessions to infer them.
-
-Verifying the spec today:
-
-```bash
-python -c "import json,glob; [json.load(open(f,encoding='utf-8')) for f in glob.glob('packages/spec/**/*.json',recursive=True)]"
+```
+packages/spec        the source of truth: 13 events, identity mapping, golden fixtures.
+                     A development-time asset - no package loads it at runtime.
+packages/php         the core. Events, identity hashing, the Conversions API client,
+                     the image tag. Zero runtime dependencies beyond four PSR interfaces.
+packages/js          a typed wrapper over OpenAI's official `oaiq` browser SDK.
+packages/laravel     provider, facade, queued delivery, request attribution, Blade Pixel.
+packages/wordpress   plugin: Pixel, Conversions API, settings, Contact Form 7,
+                     Elementor Forms, WooCommerce.
+packages/gtm-web     Google Tag Manager web container template.
+packages/gtm-server  Google Tag Manager server container template.
 ```
 
-Next step is the `lead_created` vertical slice in `packages/php` — see `docs/api-design.md`, whose §7 lists what must *not* be built yet and what would justify each.
+The adapters reach the core through a Composer **path repository**, and every test suite reads `packages/spec` by relative path. Both run from a monorepo checkout only. That is intended.
+
+### Commands
+
+Run the whole thing exactly as CI does:
+
+```bash
+python packages/spec/verify.py        # the specification and the GTM templates
+python scripts/check-secrets.py       # credential exposure, including the built JS bundle
+
+cd packages/php       && composer install && composer check
+cd packages/js        && npm install      && npm run check
+cd packages/laravel   && composer install && composer check
+cd packages/wordpress && composer install && composer check
+```
+
+`composer check` is style, then static analysis, then tests — the order that fails fastest. Individually:
+
+| | PHP / Laravel / WordPress | JavaScript |
+|---|---|---|
+| Tests | `composer test` | `npm test` |
+| One test | `vendor/bin/phpunit --filter the_test_name` | `npx vitest run -t 'part of the name'` |
+| One file | `vendor/bin/phpunit tests/UserDataTest.php` | `npx vitest run tests/userData.test.ts` |
+| Static analysis | `composer analyse` | `npm run typecheck` |
+| Style | `composer style` / `composer style:fix` | `npm run lint` / `npm run lint:fix` |
+| Build | — | `npm run build` |
+
+PHPStan runs at **level 9 over `packages/php/src`** and level 8 over the adapters, with test suites one level lower; each `phpstan.neon.dist` records why. WordPress and WooCommerce arrive as stubs, so the analysis is of the integration rather than of WordPress's existence.
+
+The GTM templates are the one part with no runnable suite here — their tests live inside GTM's template editor. `verify.py` does check that their event dropdowns match the catalogue exactly, and that the web template contains no credential.
+
+### Where to change what
+
+- **A new or changed OpenAI Ads field** starts in `packages/spec`. Both parity suites go red, and they tell each runtime what it is missing. `packages/spec/README.md` has the checklist.
+- **Measurement semantics** — event shape, normalization, the deduplication key — live in `packages/php/src` and `packages/js/src`. Adapters translate host conventions into them and add nothing of their own.
+- **A normalization or hashing change is a behavioural change to deduplication** even when no signature moves. It needs a pinned fixture in `packages/spec/fixtures/normalization.cases.json`, both runtimes updated, and a changelog entry. See §13 and §14.
 
 ## Code Quality Guidelines
 
@@ -192,14 +232,20 @@ These were settled during Phase 1 against the current OpenAI Ads documentation. 
 tensions in the guidelines above that this project's constraints expose. Do not re-litigate
 them per session; revisit only if the upstream documentation changes.
 
-**The specification exists in three places on purpose.** §4 forbids *scattering* the
+**The specification exists in four places on purpose.** §4 forbids *scattering* the
 accepted-field set within a runtime. It does not require one physical definition across
-languages. `packages/spec/events.json`, the PHP validators and the TypeScript validators are
-three deliberate copies, and the parity tests are what make the duplication safe. Code
-generation was evaluated and rejected — 13 events across 2 runtimes does not repay a build
-step, generated stack traces and generated error strings. Reconsider when a runtime appears
-that cannot share code with the others (a GTM sandboxed-JavaScript template is the likely
-trigger).
+languages. `packages/spec/events.json`, the PHP validators, the TypeScript validators and the
+GTM server template's sandboxed JavaScript are four deliberate copies, and the parity tests are
+what make the duplication safe. Code generation was evaluated and rejected — 13 events across
+2 runtimes does not repay a build step, generated stack traces and generated error strings.
+
+The GTM template is the weak copy and should be treated as such: it reimplements the identity
+normalization in sandboxed JavaScript, which has no regular expressions, and `verify.py`
+currently checks only that its event dropdown matches the catalogue. Its normalization is not
+covered by a parity assertion. **Any change to §14's rules must be applied there by hand** —
+`packages/gtm-server/template.tpl`, the `normalize*` functions — and the template's own
+`___TESTS___` section updated. Extending `verify.py` to extract and exercise those functions is
+the obvious next improvement.
 
 **§8's "validate the response shape at the boundary" does not apply to the Conversions API
 response.** OpenAI documents no success body, no status codes, no error shape and no rate
@@ -228,3 +274,24 @@ pinned in `packages/spec/fixtures/normalization.cases.json`.
 **`oppref` and `obref` are different fields.** `events[].oppref` (event level, `__oppref`
 cookie) and `events[].user.obref` (user level, `__obref` cookie). There is no coherent
 `Attribution` object spanning both.
+
+**Geographic values are normalized, not merely trimmed.** The Conversions API documents a rule
+per field — cities and regions trimmed, lowercased and capped at 128 characters; postal codes
+reduced to letters, digits, spaces and hyphens and capped at 32; countries as two-letter codes —
+and it drops whatever does not satisfy one, silently. "Not hashed" is not "not normalized".
+
+**Phone normalization removes only the four documented separators** — whitespace, parentheses,
+periods, hyphens — then a leading `+`, then leading zeroes. Removing every non-digit instead
+looks equivalent and is not: it turns `ext. 89` into two more digits of a number that passes
+every length check and belongs to nobody. Anything non-digit left over is a refusal.
+
+**The core is strict; host boundaries are lenient.** `UserData::create()` refuses an unusable
+identity field, which is right for a caller's bug and wrong for a value a visitor typed into a
+form — there, losing a paid order to a malformed phone number is the worse outcome. Adapters
+that receive host input use `UserData::fromUntrusted()`, which drops the offending field and
+keeps the conversion. Do not reach for it inside application code.
+
+**A channel that cannot carry something refuses it.** The image tag has no `user` object and no
+`opt_out` parameter, so `ImageTag::url()` rejects an event carrying either rather than stripping
+it. `Event::withoutIdentity()` exists so the loss is visible at the call site. The general rule:
+when a destination silently discards a field, the toolkit is the thing that says so out loud.

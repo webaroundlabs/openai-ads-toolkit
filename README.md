@@ -1,8 +1,8 @@
 # OpenAI Ads Conversion Toolkit
 
-One open-source toolkit for OpenAI Ads measurement — Measurement Pixel, Conversions API, and
-the deduplication between them — with adapters for PHP, JavaScript, Laravel, WordPress and
-Google Tag Manager.
+One open-source toolkit for OpenAI Ads measurement — Measurement Pixel, Conversions API, image
+tag, and the deduplication between them — with adapters for PHP, JavaScript, Laravel, WordPress
+and Google Tag Manager.
 
 > **Pre-alpha, `0.1.x`.** All seven packages are built. Nothing is published to Packagist,
 > npm, the WordPress plugin directory or the GTM gallery. The public API is unstable
@@ -25,7 +25,11 @@ This toolkit defines them **once**:
 shared specification  →  PHP / JavaScript cores  →  framework adapters  →  CMS integrations
 ```
 
-## Planned surface
+All three documented channels are covered: the browser Pixel, the server-side Conversions API,
+and the image tag for the places JavaScript cannot go — an email body, an AMP page, a
+`<noscript>` fallback. All three deduplicate on the same event id.
+
+## The surface
 
 ```js
 // JavaScript — a typed wrapper over OpenAI's official oaiq browser SDK
@@ -37,6 +41,9 @@ OpenAIAds.track('lead_created', undefined, { eventId: leadId });   // same id th
 // PHP — the server-side Conversions API
 $client->send([$event]);          // returns a Response; only a failed round trip throws
 $client->validate([$event]);      // validate_only: the documented way to test an integration
+
+// …and the no-JavaScript channel, for an email body or an AMP page
+ImageTag::url($pixelId, $event->withoutIdentity());
 ```
 
 ```php
@@ -45,8 +52,8 @@ OpenAIAds::queue($event);         // delivered off the request cycle
 ```
 
 ```blade
-{{-- Laravel: the browser Pixel --}}
-@openaiAdsPixel
+{{-- Laravel: the browser Pixel. Raw identity in, hashed server-side, digests out. --}}
+@openaiAdsPixel(['email' => $user->email])
 ```
 
 ```php
@@ -54,18 +61,18 @@ OpenAIAds::queue($event);         // delivered off the request cycle
 openai_ads_track( 'lead_created', [], [ 'event_id' => $lead_id ] );
 ```
 
-Signatures are proposals under review — see [`docs/api-design.md`](docs/api-design.md), which
-argues for some changes to them.
+[`docs/api-design.md`](docs/api-design.md) records why each of those signatures is the shape it
+is, and what was deliberately left out.
 
 ## Status
 
 | Package | State |
 |---|---|
 | `packages/spec` | **Done** — 13 events, identity mapping, golden fixtures |
-| `packages/php` | **Done** — 13 events, identity hashing, Conversions API client, 123 tests |
-| `packages/js` | **Done** — typed wrapper over the official `oaiq` SDK, 75 tests |
-| `packages/laravel` | **Done** — provider, facade, queued delivery, attribution, Blade Pixel, 54 tests |
-| `packages/wordpress` | **Done** — base plugin, Contact Form 7, Elementor Forms, WooCommerce. 82 tests |
+| `packages/php` | **Done** — 13 events, identity hashing, Conversions API client, image tag, 171 tests |
+| `packages/js` | **Done** — typed wrapper over the official `oaiq` SDK, 86 tests |
+| `packages/laravel` | **Done** — provider, facade, queued delivery, attribution, Blade Pixel, 62 tests |
+| `packages/wordpress` | **Done** — base plugin, Contact Form 7, Elementor Forms, WooCommerce. 102 tests |
 | `packages/gtm-web` | **Template written** — catalogue verified here; tests run inside GTM |
 | `packages/gtm-server` | **Template written** — catalogue verified here; tests run inside GTM |
 
@@ -97,6 +104,12 @@ records that are easy to get wrong:
 - **Amounts are integers in the currency's minor unit.** `1299`, not `12.99`.
 - **A batch is atomic** — up to 1,000 events, and if one fails the whole batch fails. Local
   validation before sending is therefore load-bearing, not a convenience.
+- **Geographic values are normalized, not merely passed through.** Cities and regions are
+  lowercased and capped at 128 characters, postal codes reduced to letters, digits, spaces and
+  hyphens, countries required to be two-letter codes. A country named `Romania` is dropped by
+  the API without a word.
+- **Phone normalization removes four separators, not every non-digit.** `+1 (555) 123-4567
+  ext. 89` must be refused, not turned into thirteen digits belonging to nobody.
 - **Name lowercasing must be Unicode-aware.** PHP's byte-wise `strtolower()` leaves `Ștefănescu`
   unchanged where JavaScript's `toLowerCase()` does not, producing two different hashes for the
   same person. Pinned in the fixtures.
@@ -129,14 +142,19 @@ and a WordPress snippet for a form plugin the toolkit does not ship support for.
 python packages/spec/verify.py        # the specification and the GTM templates
 python scripts/check-secrets.py       # credential exposure
 
-cd packages/php       && composer install && composer test
-cd packages/js        && npm install      && npm test
-cd packages/laravel   && composer install && composer test
-cd packages/wordpress && composer install && composer test
+cd packages/php       && composer install && composer check
+cd packages/js        && npm install      && npm run check
+cd packages/laravel   && composer install && composer check
+cd packages/wordpress && composer install && composer check
 ```
+
+`check` is style, then static analysis, then tests — the order that fails fastest.
 
 CI runs all of that across PHP 8.2–8.4, Laravel 11 and 12, and Node 22, and scans the **built**
 JavaScript bundle for anything credential-shaped — the artefact browsers actually receive.
+PHPStan runs at level 9 over the core and level 8 over the adapters, with WordPress and
+WooCommerce stubs loaded so it analyses the integration rather than reporting that WordPress
+exists.
 
 The adapters reach the core through a Composer path repository, and their tests read
 `packages/spec` by relative path, so they run from a monorepo checkout only. That is intended:
