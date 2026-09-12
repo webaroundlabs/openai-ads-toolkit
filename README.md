@@ -4,8 +4,10 @@ One open-source toolkit for OpenAI Ads measurement — Measurement Pixel, Conver
 tag, and the deduplication between them — with adapters for PHP, JavaScript, Laravel, WordPress
 and Google Tag Manager.
 
-> **Pre-alpha, `0.1.x`.** All seven packages are built. Nothing is published to Packagist,
-> npm, the WordPress plugin directory or the GTM gallery. The public API is unstable
+> **An independent open-source project. Not affiliated with, endorsed or certified by
+> OpenAI.** "OpenAI" and "ChatGPT" are trademarks of OpenAI.
+
+> **Pre-alpha, `0.1.x`.** All eight packages are built, and the public API is unstable
 > until `1.0`. See [Status](#status).
 
 [![CI](https://github.com/webaroundlabs/openai-ads-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/webaroundlabs/openai-ads-toolkit/actions/workflows/ci.yml)
@@ -72,16 +74,15 @@ is, and what was deliberately left out.
 | Package | State |
 |---|---|
 | `packages/spec` | **Done** — 13 events, identity mapping, golden fixtures |
-| `packages/php` | **Done** — 13 events, identity hashing, Conversions API client, image tag, 171 tests |
+| `packages/php` | **Done** — 13 events, identity hashing, Conversions API client, image tag, 172 tests |
 | `packages/js` | **Done** — typed wrapper over the official `oaiq` SDK, 114 tests |
-| `packages/laravel` | **Done** — provider, facade, queued delivery, attribution, Blade Pixel, 62 tests |
-| `packages/wordpress` | **Done** — base plugin, six form plugins, WooCommerce, Subscriptions, EDD, registration, a collection endpoint. 130 tests |
+| `packages/laravel` | **Done** — provider, facade, queued delivery, attribution, Blade Pixel, 69 tests |
+| `packages/wordpress` | **Done** — base plugin, six form plugins, WooCommerce, Subscriptions, EDD, registration, a collection endpoint. 145 tests |
 | `packages/gtm-web` | **Template written** — catalogue verified here; tests run inside GTM |
 | `packages/gtm-server` | **Template written** — catalogue and identity hashing verified here |
 | `packages/gtm-collect` | **Template written** — posts to your own site instead of a server container |
 
-Built in that order on purpose: the shared foundation first, the integrations last. Nothing is
-published anywhere yet.
+Built in that order on purpose: the shared foundation first, the integrations last.
 
 The GTM templates have no full test suite here — their own tests run inside GTM's template
 editor. What this repository does verify is that their event dropdowns match the specification
@@ -158,7 +159,7 @@ cd packages/wordpress && composer install && composer check
 
 `check` is style, then static analysis, then tests — the order that fails fastest.
 
-CI runs all of that across PHP 8.2–8.4, Laravel 11 and 12, and Node 22, and scans the **built**
+CI runs all of that across PHP 8.2–8.4, Laravel 12, and Node 22, and scans the **built**
 JavaScript bundle for anything credential-shaped — the artefact browsers actually receive.
 PHPStan runs at level 9 over the core and level 8 over the adapters, with WordPress and
 WooCommerce stubs loaded so it analyses the integration rather than reporting that WordPress

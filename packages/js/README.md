@@ -1,4 +1,4 @@
-# @webaroundlabs/openai-ads
+# @webaround/openai-ads
 
 The OpenAI Ads Measurement Pixel for the browser: a typed, consent-aware wrapper
 over the official `oaiq` SDK, built to deduplicate cleanly against the
@@ -22,7 +22,7 @@ Zero runtime dependencies. ESM, tree-shakeable, `sideEffects: false`.
 ## Usage
 
 ```ts
-import { OpenAIAds } from '@webaroundlabs/openai-ads';
+import { OpenAIAds } from '@webaround/openai-ads';
 
 OpenAIAds.init({ pixelId: 'YOUR-PIXEL-ID' });
 
@@ -49,7 +49,7 @@ secure context. Raw values are never sent; if Web Crypto is unavailable, hashing
 fails loudly instead of degrading.
 
 ```ts
-import { OpenAIAds, hashUser } from '@webaroundlabs/openai-ads';
+import { OpenAIAds, hashUser } from '@webaround/openai-ads';
 
 OpenAIAds.init({ pixelId: 'YOUR-PIXEL-ID' });
 
