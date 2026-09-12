@@ -12,6 +12,52 @@ While the version is `0.x` the public API may change in any release. See
 
 Nothing yet.
 
+## [0.1.2] - 2026-09-12
+
+### Changed
+
+- **The settings live in the admin menu rather than under Settings**, split
+  across three screens: General (Pixel, Conversions API, privacy and the
+  connection test), Integrations (the host plugins found here, and how consent
+  is decided) and Tag manager (the collection endpoint and what it has
+  received). The handbook recommends Settings for a plugin with a single option
+  page; this one has three, plus a live log people come back to. The warning
+  that a site is measuring everybody without asking appears on General too, so
+  splitting the screens cannot hide it. It sits just under Comments, at a
+  fractional menu position - WordPress keys the menu by position, so two plugins
+  picking the same integer means one silently replaces the other.
+
+### Fixed
+
+- **Saving one settings screen no longer blanks another.** The settings live in
+  a single option row, and `sanitize()` rebuilt the whole row from whatever the
+  form posted - so a field on another screen was indistinguishable from an
+  unchecked checkbox. It also hit fields the one screen deliberately hid:
+  Deferred delivery is only rendered where Action Scheduler exists, and `timeout`
+  and `integration_source` have no field at all, so every save quietly wrote a
+  default over them. Forms now declare which settings they rendered, the way the
+  integrations section already declared its checkboxes, and nothing else is
+  touched.
+
+### Added
+
+- The brand assets the WordPress plugin directory asks for: the icon as PNG and
+  SVG, both banner sizes, three screenshots and a Playground blueprint for the
+  directory's Live Preview. The mark is drawn from geometry and type in
+  `scripts/assets/frame.html`, rendered by a headless browser rather than
+  plotted by a script, so it is provably the project's own work and carries no
+  third party's logo.
+- The plugin's own mark in the admin menu, in colour.
+
+### Security
+
+- `build-plugin.sh` checks `vendor/` against Composer's own manifest instead of
+  looking for one dev package by name. An interrupted extraction leaves a
+  directory behind WITHOUT recording the package, so `composer install --no-dev`
+  cannot remove it - php-cs-fixer reached a built zip that way, 4.6MB of a
+  development tool bound for every installed site, and only the size check
+  noticed. A smaller one would have shipped in silence.
+
 ## [0.1.1] - 2026-09-12
 
 ### Fixed
@@ -113,16 +159,6 @@ accident.
   config records why its level is what it is.
 
 ### Changed
-- **The settings live in the admin menu rather than under Settings**, split
-  across three screens: General (Pixel, Conversions API, privacy and the
-  connection test), Integrations (the host plugins found here, and how consent
-  is decided) and Tag manager (the collection endpoint and what it has
-  received). The handbook recommends Settings for a plugin with a single option
-  page; this one has three, plus a live log people come back to. The warning
-  that a site is measuring everybody without asking appears on General too, so
-  splitting the screens cannot hide it. It sits just under Comments, at a
-  fractional menu position - WordPress keys the menu by position, so two plugins
-  picking the same integer means one silently replaces the other.
 
 - **The WordPress plugin's slug is `conversion-tracking-for-openai-ads`.** The
   plugin directory refuses a slug beginning with somebody else's trademark, and
@@ -204,15 +240,6 @@ accident.
   who clones this repository.
 
 
-- **Saving one settings screen no longer blanks another.** The settings live in
-  a single option row, and `sanitize()` rebuilt the whole row from whatever the
-  form posted - so a field on another screen was indistinguishable from an
-  unchecked checkbox. It also hit fields the one screen deliberately hid:
-  Deferred delivery is only rendered where Action Scheduler exists, and `timeout`
-  and `integration_source` have no field at all, so every save quietly wrote a
-  default over them. Forms now declare which settings they rendered, the way the
-  integrations section already declared its checkboxes, and nothing else is
-  touched.
 - **A conversion submitted in the background reports the page it came from.**
   Contact Form 7 posts to a REST route; Elementor, WPForms and Ninja Forms post
   to `admin-ajax.php`; a Laravel form posted with fetch(), Inertia or Livewire
@@ -251,6 +278,7 @@ accident.
   Pixel documentation lists `postal_code`, which is what both runtimes already
   emitted. The `UNRESOLVED` note in `packages/spec/user.json` is closed.
 
-[Unreleased]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.1.1...main
+[Unreleased]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.1.2...main
+[0.1.2]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/webaroundlabs/openai-ads-toolkit/releases/tag/v0.1.0

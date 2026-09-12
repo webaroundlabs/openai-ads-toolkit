@@ -3,7 +3,7 @@
  * Plugin Name:       Conversion Tracking for OpenAI Ads
  * Plugin URI:        https://github.com/webaroundlabs/openai-ads-toolkit
  * Description:       Measurement Pixel and Conversions API for OpenAI Ads, with browser/server deduplication. An independent community integration, not affiliated with OpenAI.
- * Version:           0.1.1
+ * Version:           0.1.2
  * Requires at least: 6.4
  * Requires PHP:      8.2
  * Author:            Webaround
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-const OPENAI_ADS_VERSION = '0.1.1';
+const OPENAI_ADS_VERSION = '0.1.2';
 
 $openAiAdsAutoloader = __DIR__ . '/vendor/autoload.php';
 
