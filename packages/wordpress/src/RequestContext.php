@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace WebaroundLabs\OpenAIAds\WordPress;
 
+// Loaded by WordPress through Composer's autoloader. A direct request for this
+// file would parse a class whose parents are not loaded, and a fatal error
+// discloses the installation path.
+defined('ABSPATH') || exit;
+
 use WebaroundLabs\OpenAIAds\HostContext as HostContextValue;
 
 /**
@@ -69,7 +74,9 @@ final class RequestContext
      */
     public function ipAddress(): ?string
     {
-        $remote = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
+        $remote = isset($_SERVER['REMOTE_ADDR'])
+            ? (string) \wp_unslash($_SERVER['REMOTE_ADDR'])
+            : '';
 
         /** @var string $ip */
         $ip = \apply_filters('openai_ads_client_ip', $remote);
@@ -83,7 +90,7 @@ final class RequestContext
             return null;
         }
 
-        $agent = trim((string) $_SERVER['HTTP_USER_AGENT']);
+        $agent = trim((string) \wp_unslash($_SERVER['HTTP_USER_AGENT']));
 
         return $agent !== '' ? $agent : null;
     }
@@ -101,7 +108,9 @@ final class RequestContext
     {
         $canonical = $this->settings->canonicalOrigin();
         $path = $this->referringPage()
-            ?? (isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '/');
+            ?? (isset($_SERVER['REQUEST_URI'])
+                ? (string) \wp_unslash($_SERVER['REQUEST_URI'])
+                : '/');
 
         $parts = \wp_parse_url($path);
         $pathOnly = is_array($parts) && isset($parts['path']) ? (string) $parts['path'] : '/';
@@ -174,10 +183,13 @@ final class RequestContext
             return null;
         }
 
-        // Deliberately not sanitized: the value is opaque and must reach the API
-        // byte for byte. It is never rendered, never interpolated into a query,
-        // and never logged next to identity data.
-        $value = $_COOKIE[$name];
+        // Unslashed but not sanitized. WordPress runs add_magic_quotes() over
+        // $_COOKIE on every request, so the bytes here are already not the bytes
+        // the browser sent; wp_unslash() puts them back. Sanitizing beyond that
+        // would be wrong: the value is opaque and has to reach the API exactly as
+        // OpenAI's own SDK wrote it. It is never rendered, never interpolated
+        // into a query, and never logged next to identity data.
+        $value = (string) \wp_unslash($_COOKIE[$name]);
 
         return trim($value) !== '' ? $value : null;
     }

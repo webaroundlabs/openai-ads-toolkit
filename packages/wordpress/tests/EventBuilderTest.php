@@ -87,6 +87,35 @@ final class EventBuilderTest extends TestCase
         self::assertArrayNotHasKey('obref', $payload);
     }
 
+    /**
+     * WordPress runs add_magic_quotes() over $_COOKIE and $_SERVER before any
+     * plugin sees them, so a value containing a quote arrives with a backslash
+     * in front of it. Sending that on means OpenAI receives a user agent, a page
+     * address and an attribution reference that nobody ever had.
+     */
+    #[Test]
+    public function slashes_wordpress_added_are_removed_before_sending(): void
+    {
+        $_COOKIE[RequestContext::OPPREF_COOKIE] = 'opp\\"quoted\\"';
+        $_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0 (compatible; \\"Bot\\"/1.0)';
+
+        $payload = $this->builder()->build('lead_created')->toCapiArray();
+
+        self::assertSame('opp"quoted"', $payload['oppref']);
+        self::assertSame('Mozilla/5.0 (compatible; "Bot"/1.0)', $payload['user']['user_agent']);
+    }
+
+    #[Test]
+    public function a_slashed_request_uri_does_not_reach_the_source_url(): void
+    {
+        $_SERVER['REQUEST_URI'] = '/thanks/\\"odd\\"';
+
+        $payload = $this->builder()->build('lead_created')->toCapiArray();
+
+        self::assertStringEndsWith('/thanks/"odd"', (string) $payload['source_url']);
+        self::assertStringNotContainsString('\\', (string) $payload['source_url']);
+    }
+
     #[Test]
     public function raw_identity_is_hashed_before_it_leaves(): void
     {

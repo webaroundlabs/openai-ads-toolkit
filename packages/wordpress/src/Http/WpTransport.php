@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace WebaroundLabs\OpenAIAds\WordPress\Http;
 
+// Loaded by WordPress through Composer's autoloader. A direct request for this
+// file would parse a class whose parents are not loaded, and a fatal error
+// discloses the installation path.
+defined('ABSPATH') || exit;
+
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseFactoryInterface;

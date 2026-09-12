@@ -55,6 +55,27 @@ While the version is `0.x` the public API may change in any release. See
   ways: every address in the section appears in the code, and every address in
   the code appears in the section.
 
+### Fixed
+
+- **WordPress: values read from `$_COOKIE` and `$_SERVER` are unslashed before
+  they are sent.** WordPress runs `add_magic_quotes()` over both on every
+  request, so a user agent, a page address or an `__oppref` value containing a
+  quote arrived with a backslash in front of it and was reported to OpenAI that
+  way - a user agent nobody has, and an attribution reference that matches
+  nothing. The comment on the cookie reader said the value "must reach the API
+  byte for byte", which was the intent and not what happened: WordPress had
+  already changed the bytes. Every read now goes through `wp_unslash()`.
+
+### Security
+
+- **Every file in the WordPress plugin refuses to run without `ABSPATH`.** The
+  source files are loaded through Composer's autoloader and none of them does
+  anything at include time, but twelve of them extend or implement something,
+  so a direct request for one produced a fatal error naming the installation
+  path. The bundled `vendor/` is deliberately left alone: the PHP core is
+  published on Packagist for use outside WordPress and must not learn a
+  WordPress constant.
+
 ## [0.1.2] - 2026-09-12
 
 ### Changed

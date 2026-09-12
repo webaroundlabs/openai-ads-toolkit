@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace WebaroundLabs\OpenAIAds\WordPress\Http;
 
+// Loaded by WordPress through Composer's autoloader. A direct request for this
+// file would parse a class whose parents are not loaded, and a fatal error
+// discloses the installation path.
+defined('ABSPATH') || exit;
+
 use WebaroundLabs\OpenAIAds\HostContext;
 use WebaroundLabs\OpenAIAds\InvalidArgument;
 use WebaroundLabs\OpenAIAds\WordPress\Plugin;
@@ -305,7 +310,9 @@ final class Ingest
             return true;
         }
 
-        $address = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : 'unknown';
+        $address = isset($_SERVER['REMOTE_ADDR'])
+            ? (string) \wp_unslash($_SERVER['REMOTE_ADDR'])
+            : 'unknown';
         $key = 'openai_ads_rate_' . md5($address);
 
         /** @var mixed $count */
