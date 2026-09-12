@@ -42,6 +42,18 @@ While the version is `0.x` the public API may change in any release. See
   `packages/gtm-collect` is unaffected and stays MIT.
 - `.github/workflows/split.yml` is now `mirrors.yml`. It no longer only splits:
   half of it does, for Packagist, and half of it does not, for the gallery.
+- **The WordPress plugin's `External services` section names every address and
+  the commerce data.** It described a commerce event as carrying "the amount and
+  currency", but both the Pixel and the Conversions API send the whole basket:
+  each item's SKU or product id, its name, the quantity, that line's price and
+  the variation attributes. Product names leave the site unhashed, which a site
+  owner is entitled to know before switching this on. The section now also lists
+  the three OpenAI addresses in one place and states what the plugin does *not*
+  contact - no author endpoint, no telemetry, no licensing or update service -
+  because a reviewer reading a third-party plugin that talks to an ad platform
+  will ask, and the answer should not require reading the source. Verified both
+  ways: every address in the section appears in the code, and every address in
+  the code appears in the section.
 
 ## [0.1.2] - 2026-09-12
 
