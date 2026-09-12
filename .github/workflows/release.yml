@@ -121,8 +121,9 @@ jobs:
           # fails with ENEEDAUTH, the question is always which of those is
           # missing - so say so here rather than guessing from the failure.
           echo "npm $(npm --version), node $(node --version)"
-          echo "OIDC request url set: ${ACTIONS_ID_TOKEN_REQUEST_URL:+yes}${ACTIONS_ID_TOKEN_REQUEST_URL:-NO}"
-          echo "OIDC request token set: ${ACTIONS_ID_TOKEN_REQUEST_TOKEN:+yes}${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-NO}"
+          for var in ACTIONS_ID_TOKEN_REQUEST_URL ACTIONS_ID_TOKEN_REQUEST_TOKEN; do
+            if [ -n "${!var}" ]; then echo "$var: present"; else echo "$var: MISSING"; fi
+          done
 
       # --provenance signs the package with this workflow run, so anyone can
       # verify the published tarball came from this commit.
