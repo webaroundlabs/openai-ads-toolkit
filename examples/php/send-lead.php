@@ -3,7 +3,7 @@
 /**
  * Send one lead through the Conversions API, with no framework.
  *
- *   composer require webaroundlabs/openai-ads guzzlehttp/guzzle
+ *   composer require webaround/openai-ads guzzlehttp/guzzle
  *   OPENAI_ADS_PIXEL_ID=... OPENAI_ADS_CAPI_KEY=... php send-lead.php
  *
  * Nothing here is WordPress- or Laravel-specific. Any PSR-18 client works;

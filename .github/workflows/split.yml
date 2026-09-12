@@ -1,0 +1,79 @@
+# Packagist indexes a repository by the composer.json at its root, and has no
+# concept of a package living in a subdirectory. The two Composer packages here
+# do live in subdirectories, so each one is mirrored into a repository whose
+# root *is* the package, and Packagist watches those instead.
+#
+# The mirrors are generated. Nothing is developed in them, and every run
+# overwrites their `main` - `git subtree split` is deterministic, so this is a
+# republish of the same history rather than a rewrite of a different one.
+name: Split
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Two runs pushing to the same mirror would race; a tag must not overtake the
+  # branch push that carries the commit it points at.
+  group: split
+  cancel-in-progress: false
+
+jobs:
+  split:
+    name: Mirror packages/${{ matrix.package }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: php
+            mirror: openai-ads-php
+          - package: laravel
+            mirror: openai-ads-laravel
+    steps:
+      # subtree split walks the whole history, so a shallow clone will not do.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Split the package out of the monorepo
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          sha="$(git subtree split --prefix="packages/${{ matrix.package }}")"
+          echo "Split packages/${{ matrix.package }} to $sha"
+          echo "split_sha=$sha" >> "$GITHUB_OUTPUT"
+        id: split
+
+      - name: Push it to the mirror
+        env:
+          # A fine-grained token with Contents: write on the two mirrors.
+          # GITHUB_TOKEN cannot reach another repository.
+          SPLIT_TOKEN: ${{ secrets.SPLIT_TOKEN }}
+          SPLIT_SHA: ${{ steps.split.outputs.split_sha }}
+          MIRROR: ${{ matrix.mirror }}
+        run: |
+          if [ -z "$SPLIT_TOKEN" ]; then
+            echo "SPLIT_TOKEN is not set - see docs/releasing.md." >&2
+            exit 1
+          fi
+          remote="https://x-access-token:${SPLIT_TOKEN}@github.com/${{ github.repository_owner }}/${MIRROR}.git"
+          git push --force "$remote" "${SPLIT_SHA}:refs/heads/main"
+
+      # Packagist takes its versions from tags, so the tag has to reach the
+      # mirror as well - pointing at the split commit, not at this one.
+      - name: Carry the tag over
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          SPLIT_TOKEN: ${{ secrets.SPLIT_TOKEN }}
+          SPLIT_SHA: ${{ steps.split.outputs.split_sha }}
+          MIRROR: ${{ matrix.mirror }}
+        run: |
+          remote="https://x-access-token:${SPLIT_TOKEN}@github.com/${{ github.repository_owner }}/${MIRROR}.git"
+          git tag -f "$GITHUB_REF_NAME" "$SPLIT_SHA"
+          git push --force "$remote" "refs/tags/$GITHUB_REF_NAME"

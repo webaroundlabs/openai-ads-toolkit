@@ -125,7 +125,7 @@ final class Response { public readonly int $statusCode; public readonly array $h
 Plus three exception types: a marker `interface Exception`, `InvalidArgument`, and
 `Capi\TransportException`.
 
-Namespace `WebaroundLabs\OpenAIAds\`. Composer package `webaroundlabs/openai-ads`.
+Namespace `WebaroundLabs\OpenAIAds\`. Composer package `webaround/openai-ads`.
 
 ### `Money` — one class, one use, deliberately
 

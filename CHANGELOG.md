@@ -139,6 +139,18 @@ accident.
   `openai_ads_identity_field_dropped` action. Form input is untrusted, and a
   customer typing an extension after their phone number should not cost the site
   a paid order.
+- **The Composer packages are `webaround/openai-ads` and
+  `webaround/openai-ads-laravel`,** matching the npm scope. The PHP namespace is
+  unchanged, and so is `integration_source` - that one is a value on the wire
+  with a pinned fixture behind it, not a name.
+- **Packagist is fed from generated mirror repositories.** Packagist reads the
+  `composer.json` at a repository root and has no concept of a package in a
+  subdirectory, so `packages/php` and `packages/laravel` are mirrored into
+  repositories whose root is the package. The path repository in
+  `packages/laravel/composer.json` now points at `../php*`: Composer errors on a
+  non-glob path whose directory is missing, which is exactly the state inside a
+  mirror, and without the glob the published Laravel package could not be
+  installed at all.
 - **The npm package is `@webaround/openai-ads`.** The scope is the brand rather
   than the GitHub account it is developed under, and it is settled now because
   an npm name cannot be reclaimed after the first publish. Publishing itself no
@@ -153,6 +165,13 @@ accident.
   check off to earn a tick would report a guarantee nobody has.
 
 ### Fixed
+- **The JavaScript test runner no longer carries known vulnerabilities.** vitest
+  2 pulled in vite and esbuild versions with seven advisories against them, one
+  critical. vitest 5 resolves all of them, and needed no change to a test.
+  Nothing reached the published package, which has no runtime dependencies and
+  ships only `dist/` - but a dev-server advisory is still a real one for anyone
+  who clones this repository.
+
 
 - **WooCommerce: a refund is no longer reported as a purchase.** `wc_get_order()`
   returns a `WC_Order_Refund` as readily as a `WC_Order`; both carry
