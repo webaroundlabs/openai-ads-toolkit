@@ -42,6 +42,8 @@ final class Measurement
 
     private ?Client $client = null;
 
+    private ?Consent $consent = null;
+
     private bool $flushRegistered = false;
 
     public function __construct(
@@ -141,14 +143,18 @@ final class Measurement
      * Whether the visitor has consented to measurement.
      *
      * The plugin ships no consent banner and no privacy model of its own. It
-     * asks, through a filter, and defaults to true so it does not silently
-     * disable measurement on a site that gates consent elsewhere. Wire it up:
-     *
-     *     add_filter( 'openai_ads_consent', fn () => has_consent( 'marketing' ) );
+     * finds one instead - see Consent, which reads the WP Consent API and
+     * Complianz - and the `openai_ads_consent` filter still overrides whatever
+     * it finds.
      */
     public function consented(): bool
     {
-        return (bool) \apply_filters('openai_ads_consent', true);
+        return $this->consent()->granted();
+    }
+
+    public function consent(): Consent
+    {
+        return $this->consent ??= new Consent($this->settings);
     }
 
     public function settings(): Settings

@@ -13,14 +13,17 @@
 #
 #     bash scripts/build-plugin.sh
 #
-# Produces build/openai-ads.zip with everything under a single `openai-ads/`
-# directory, which is what WordPress expects of an uploaded plugin.
+# Produces build/conversion-tracking-for-openai-ads.zip, everything under a
+# single directory named for the plugin slug - which is what WordPress expects of
+# an uploaded plugin, and what the plugin directory uses as its permanent
+# identity. The slug does NOT begin with "openai", deliberately: the WordPress
+# plugin directory refuses a slug that starts with somebody else's trademark.
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source_dir="$root/packages/wordpress"
-stage="$root/build/openai-ads"
-archive="$root/build/openai-ads.zip"
+stage="$root/build/conversion-tracking-for-openai-ads"
+archive="$root/build/conversion-tracking-for-openai-ads.zip"
 
 if [ ! -d "$source_dir/vendor" ]; then
 	echo "packages/wordpress/vendor is missing. Run:" >&2
@@ -43,7 +46,7 @@ mkdir -p "$stage"
 # absent from the zip until somebody names it, which is the safe direction. The
 # opposite - shipping something nobody meant to - is how a .env or a test
 # fixture reaches a production site.
-for path in openai-ads.php uninstall.php readme.txt README.md src assets vendor; do
+for path in conversion-tracking-for-openai-ads.php uninstall.php readme.txt README.md src assets languages vendor; do
 	if [ ! -e "$source_dir/$path" ]; then
 		echo "Expected $path in packages/wordpress, but it is missing." >&2
 		exit 1
@@ -72,9 +75,9 @@ find "$stage" -type f \( -name 'phpunit*' -o -name 'phpstan*' -o -name '.php-cs-
 # `zip` is not installed everywhere a maintainer might run this; Python is,
 # because the specification checks already need it.
 if command -v zip > /dev/null 2>&1; then
-	( cd "$root/build" && zip -qr openai-ads.zip openai-ads )
+	( cd "$root/build" && zip -qr conversion-tracking-for-openai-ads.zip conversion-tracking-for-openai-ads )
 else
-	python -c "import shutil, sys; shutil.make_archive(sys.argv[1], 'zip', sys.argv[2], 'openai-ads')" 		"${archive%.zip}" "$root/build"
+	python -c "import shutil, sys; shutil.make_archive(sys.argv[1], 'zip', sys.argv[2], 'conversion-tracking-for-openai-ads')" 		"${archive%.zip}" "$root/build"
 fi
 
 size="$(du -sh "$stage" | cut -f1)"

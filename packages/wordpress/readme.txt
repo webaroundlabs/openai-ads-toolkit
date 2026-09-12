@@ -87,21 +87,102 @@ items_added, checkout_started, order_created, lead_created,
 registration_completed, appointment_scheduled, subscription_created,
 trial_started, and custom.
 
-Filters: `openai_ads_enabled`, `openai_ads_consent`, `openai_ads_event`,
-`openai_ads_pixel_user`, `openai_ads_client_ip`.
-Actions: `openai_ads_sent`, `openai_ads_failed`, `openai_ads_invalid_event`.
+Filters: `openai_ads_enabled`, `openai_ads_consent`, `openai_ads_consent_providers`,
+`openai_ads_event`, `openai_ads_pixel_identity`, `openai_ads_client_ip`,
+`openai_ads_integrations`, `openai_ads_form_event`, `openai_ads_form_user_data`,
+`openai_ads_should_report_registration`, `openai_ads_ingest_rate_limit`.
+
+Actions: `openai_ads_sent`, `openai_ads_failed`, `openai_ads_invalid_event`,
+`openai_ads_form_recorded`, `openai_ads_identity_field_dropped`.
+
+== External services ==
+
+This plugin connects to OpenAI in order to measure advertising conversions.
+That is its entire purpose, and nothing here happens without you entering a
+Pixel ID or an API key first.
+
+= 1. The OpenAI Ads Measurement Pixel =
+
+When the Pixel is switched on, the plugin loads a script from
+https://bzrcdn.openai.com/sdk/oaiq.min.js into your pages and initializes it
+with your public Pixel ID.
+
+That script is written and hosted by OpenAI. It sets first-party cookies named
+__oppref and __obref to remember which advertisement a visitor arrived from, and
+it reports the conversion events you configure.
+
+WHAT IS SENT: the event name, a deduplication id, the page address, the amount
+and currency where the event carries one, and - only when your site supplies it -
+identity as irreversible SHA-256 hashes. It runs in the visitor's browser, so
+their IP address and browser user agent reach OpenAI as part of any web request.
+
+WHEN: on any page view, once you have enabled the Pixel.
+
+= 2. The OpenAI Ads Conversions API =
+
+When server-side events are switched on, your server sends conversions to
+https://bzr.openai.com/v1/events using the API key you provide.
+
+WHAT IS SENT: the same event data as above, plus the visitor's IP address and
+user agent, plus the attribution values from the two cookies. Email addresses,
+phone numbers, names and customer ids are hashed with SHA-256 on your server
+before they leave it - the raw values are never transmitted.
+
+WHEN: after a conversion your site confirms - a paid order, an accepted form
+submission - and never on a page view.
+
+= 3. The image tag =
+
+Only if you call openai_ads_image_tag() yourself. It requests a 1x1 image from
+https://bzr.openai.com/v1/sdk/events, carrying the event name, the deduplication
+id and the amount. It carries no personal data of any kind, by design.
+
+= Terms and privacy =
+
+OpenAI's terms: https://openai.com/policies/
+OpenAI's privacy policy: https://openai.com/policies/privacy-policy/
+Advertising documentation: https://developers.openai.com/ads/
+
+= Your responsibilities =
+
+Sending a visitor's data to OpenAI is a disclosure to a third party. You are
+responsible for saying so in your own privacy policy and for obtaining consent
+where the law requires it.
+
+The plugin helps rather than decides. It detects a consent plugin - the WP
+Consent API and Complianz are read directly - and when consent for the
+"marketing" category is refused, no Pixel is loaded and no event is constructed.
+If it finds no consent mechanism at all, it says so on its settings screen
+rather than assuming you meant to measure everybody.
+
+= What is NOT sent =
+
+* No raw email address, phone number or name. Ever. Only SHA-256 hashes.
+* No query strings from your page addresses by default - they routinely carry
+  email addresses, password reset tokens and order keys.
+* No data at all until you enter credentials, and none for a visitor who has
+  refused marketing consent.
+
+This plugin is an independent community integration. It is not created,
+certified, endorsed or supported by OpenAI. "OpenAI" and "ChatGPT" are
+trademarks of OpenAI.
 
 == Installation ==
 
 1. Install and activate the plugin.
 2. Go to Settings → OpenAI Ads.
 3. Enter your Pixel ID and your Conversions API key.
-4. Use "Send a test event" to confirm the credentials work. It uses the API's
+4. Check what the Consent section says. If it reports that no consent mechanism
+   was found, decide what you want before going further.
+5. Use "Send a test event" to confirm the credentials work. It uses the API's
    validation mode, so nothing is recorded and no fake conversion is created.
 
-For a stronger setup, define the key in `wp-config.php` instead of the database:
+Everything is configured from that one screen. Nothing requires editing a file.
 
-`define( 'OPENAI_ADS_CAPI_KEY', 'your-key' );`
+Developers who prefer to keep credentials out of the database entirely - so they
+are absent from backups and staging copies - may define them as constants in
+`wp-config.php` instead, and the settings screen will show them as fixed there.
+That is an option, never a requirement.
 
 == Frequently Asked Questions ==
 

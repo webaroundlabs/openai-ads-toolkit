@@ -14,7 +14,7 @@ parameters:
     level: 8
     paths:
         - src
-        - openai-ads.php
+        - conversion-tracking-for-openai-ads.php
         - uninstall.php
     treatPhpDocTypesAsCertain: false
     # WooCommerce and Action Scheduler are optional hosts, not dependencies -

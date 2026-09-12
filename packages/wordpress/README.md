@@ -76,7 +76,8 @@ flows with no stable id — mint once, use on both sides, never regenerate.
 | Filter | Purpose |
 |---|---|
 | `openai_ads_enabled` | Turn measurement off entirely |
-| `openai_ads_consent` | Your consent mechanism. Returns false → nothing is sent, silently |
+| `openai_ads_consent` | The last word on consent. Returns false → nothing is sent, silently. Overrides whatever the plugin detected |
+| `openai_ads_consent_providers` | Add a consent plugin the toolkit does not know |
 | `openai_ads_event` | Inspect or amend an `Event` before it is queued; return null to veto |
 | `openai_ads_pixel_user` | Already-hashed identity for the Pixel |
 | `openai_ads_client_ip` | Supply the real client IP behind a proxy |
