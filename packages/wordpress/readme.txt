@@ -2,7 +2,7 @@
 Contributors: webaround
 Tags: openai, conversion tracking, analytics, pixel, conversions api
 Requires at least: 6.4
-Tested up to: 6.7
+Tested up to: 7.1
 Requires PHP: 8.2
 Stable tag: 0.1.1
 License: GPLv2 or later
@@ -30,6 +30,16 @@ endorsed or supported by OpenAI. "OpenAI" and "ChatGPT" are trademarks of OpenAI
   order keys and password-reset tokens do not reach an ad platform.
 * Defers to your existing consent mechanism. It ships no cookie banner and makes
   no privacy decisions for you.
+* Never makes the visitor wait. Conversions are collected during the request and
+  sent after the page has gone out.
+* Survives the request that produced them. Where the site has Action Scheduler -
+  which every WooCommerce site does - the batch is handed to it, so a fatal error
+  later in the request cannot lose the conversion.
+* Retries nothing, deliberately. Repeating a request whose outcome is unknown
+  risks reporting a purchase twice, and a silently inflated conversion count
+  corrupts the bidding it feeds and cannot be undone afterwards.
+* Works on any WordPress site. WooCommerce, a form plugin and a consent banner
+  are each optional; the plugin finds what is there and uses it.
 
 = Form integrations =
 
@@ -43,7 +53,7 @@ report server-side only, which needs no deduplication because nothing fires a
 second report for the same conversion.
 
 None of them is required. Each can be switched off individually under
-Settings -> OpenAI Ads.
+OpenAI Ads -> Integrations.
 
 = Tag manager endpoint =
 
@@ -85,7 +95,24 @@ Record a conversion at a confirmed boundary:
 Supported events are the ones OpenAI documents: page_viewed, contents_viewed,
 items_added, checkout_started, order_created, lead_created,
 registration_completed, appointment_scheduled, subscription_created,
-trial_started, and custom.
+trial_started, and custom. Two more - app_installed and app_opened - exist in
+the API but accept only action_source "mobile_app", so they are refused from a
+web page rather than silently reshaped.
+
+Other functions:
+
+* `openai_ads_event_id()` - a deduplication id for a flow with no id of its own.
+  Generate once, use for both the server event and the browser event.
+* `openai_ads_pixel_event( $event, $event_id, $data )` - prints the browser half
+  of a conversion the server has already recorded, so the two are matched.
+* `openai_ads_hash_user( [ 'email' => $email ] )` - the documented normalization
+  and SHA-256, if you need the hashes yourself.
+* `openai_ads_image_tag( $event, $data )` - a 1x1 image conversion, for an email
+  or anywhere JavaScript cannot run. Carries no identity at all: the channel has
+  no user object, so an event carrying one is refused rather than quietly
+  stripped.
+* `openai_ads_is_configured()` - whether measurement is switched on and has
+  credentials.
 
 Filters: `openai_ads_enabled`, `openai_ads_consent`, `openai_ads_consent_providers`,
 `openai_ads_event`, `openai_ads_pixel_identity`, `openai_ads_client_ip`,
@@ -170,11 +197,13 @@ trademarks of OpenAI.
 == Installation ==
 
 1. Install and activate the plugin.
-2. Go to Settings → OpenAI Ads.
+2. Go to OpenAI Ads in the admin menu.
 3. Enter your Pixel ID and your Conversions API key.
-4. Check what the Consent section says. If it reports that no consent mechanism
-   was found, decide what you want before going further.
-5. Use "Send a test event" to confirm the credentials work. It uses the API's
+4. Open Integrations and check what the Consent section says. If it reports
+   that no consent mechanism was found, decide what you want before going
+   further.
+5. Use "Send a test event" on the General screen to confirm the credentials
+   work. It uses the API's
    validation mode, so nothing is recorded and no fake conversion is created.
 
 Everything is configured from that one screen. Nothing requires editing a file.
@@ -185,6 +214,34 @@ are absent from backups and staging copies - may define them as constants in
 That is an option, never a requirement.
 
 == Frequently Asked Questions ==
+
+= What does deduplication actually do? =
+
+A purchase measured in the browser and again on the server is one purchase, but
+two reports. Both halves of this plugin send the same event id, so OpenAI matches
+them and counts one. You get the browser's reach and the server's reliability
+without the conversion count drifting upwards.
+
+= Do I need the Conversions API key, or is the Pixel enough? =
+
+The Pixel alone works, and needs only a Pixel ID. It is also the half an ad
+blocker, an iOS privacy setting or a failed script can remove. The API key adds
+the server-side half, which nothing in the browser can block - and because the
+two are deduplicated, adding it does not inflate anything.
+
+= I have no cookie banner. What happens? =
+
+Everything is measured, and the settings screen tells you so in as many words.
+That is the uncomfortable default and it is deliberate: the alternative is a
+plugin that silently measures nothing while you hunt for the fault. Install a
+banner that supports the WP Consent API and it is used automatically.
+
+= Can I use this with Google Tag Manager? =
+
+Yes, and without paying for a server-side container. Switch on the collection
+endpoint, point a tag at it, and your server forwards the conversion to OpenAI
+with the API key never leaving it. It is off until you switch it on and it
+refuses every request that does not carry the generated secret.
 
 = Does this slow down my site? =
 
@@ -208,7 +265,21 @@ submission or registration still completes.
 No. It is used only server-side and is never printed into a page. The plugin's
 test suite asserts this.
 
+== Screenshots ==
+
+1. General - the Pixel, the Conversions API, what is trimmed before anything is
+   sent, and a connection test that validates your credentials without recording
+   a conversion.
+2. Integrations and consent - every supported plugin found on the site, each one
+   switchable, and a plain statement of which consent mechanism is being asked.
+3. Tag manager endpoint - an address your tag manager can post conversions to,
+   protected by a generated secret, with a log of what it has received lately.
+
 == Changelog ==
+
+= 0.1.1 =
+* No change to this plugin. The release fixed attribution in the toolkit's
+  Laravel adapter, which this plugin does not use.
 
 = 0.1.0 =
 * First release: Pixel, Conversions API, deduplication, settings screen and a

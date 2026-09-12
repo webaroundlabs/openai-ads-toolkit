@@ -257,7 +257,7 @@ final class Plugin
             \add_filter(
                 'plugin_action_links_' . \plugin_basename($this->file),
                 static function (array $links): array {
-                    $url = \admin_url('options-general.php?page=' . SettingsPage::SLUG);
+                    $url = \admin_url('admin.php?page=' . SettingsPage::SLUG);
                     $settings = '<a href="' . \esc_url($url) . '">'
                         . \esc_html__('Settings', 'conversion-tracking-for-openai-ads') . '</a>';
 

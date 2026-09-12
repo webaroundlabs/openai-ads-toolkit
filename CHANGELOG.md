@@ -113,6 +113,16 @@ accident.
   config records why its level is what it is.
 
 ### Changed
+- **The settings live in the admin menu rather than under Settings**, split
+  across three screens: General (Pixel, Conversions API, privacy and the
+  connection test), Integrations (the host plugins found here, and how consent
+  is decided) and Tag manager (the collection endpoint and what it has
+  received). The handbook recommends Settings for a plugin with a single option
+  page; this one has three, plus a live log people come back to. The warning
+  that a site is measuring everybody without asking appears on General too, so
+  splitting the screens cannot hide it. It sits just under Comments, at a
+  fractional menu position - WordPress keys the menu by position, so two plugins
+  picking the same integer means one silently replaces the other.
 
 - **The WordPress plugin's slug is `conversion-tracking-for-openai-ads`.** The
   plugin directory refuses a slug beginning with somebody else's trademark, and
@@ -194,6 +204,15 @@ accident.
   who clones this repository.
 
 
+- **Saving one settings screen no longer blanks another.** The settings live in
+  a single option row, and `sanitize()` rebuilt the whole row from whatever the
+  form posted - so a field on another screen was indistinguishable from an
+  unchecked checkbox. It also hit fields the one screen deliberately hid:
+  Deferred delivery is only rendered where Action Scheduler exists, and `timeout`
+  and `integration_source` have no field at all, so every save quietly wrote a
+  default over them. Forms now declare which settings they rendered, the way the
+  integrations section already declared its checkboxes, and nothing else is
+  touched.
 - **A conversion submitted in the background reports the page it came from.**
   Contact Form 7 posts to a REST route; Elementor, WPForms and Ninja Forms post
   to `admin-ajax.php`; a Laravel form posted with fetch(), Inertia or Livewire
