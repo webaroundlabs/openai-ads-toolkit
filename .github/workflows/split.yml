@@ -58,9 +58,17 @@ jobs:
           SPLIT_SHA: ${{ steps.split.outputs.split_sha }}
           MIRROR: ${{ matrix.mirror }}
         run: |
+          # A missing token means the one-time setup in docs/releasing.md has not
+          # been done. On a branch push that is recoverable at any time - the
+          # next run republishes everything - so it is a warning. On a tag it is
+          # a release that never reached Packagist, so it is a failure.
           if [ -z "$SPLIT_TOKEN" ]; then
-            echo "SPLIT_TOKEN is not set - see docs/releasing.md." >&2
-            exit 1
+            if [ "${GITHUB_REF_TYPE}" = 'tag' ]; then
+              echo "::error::SPLIT_TOKEN is not set, so $GITHUB_REF_NAME cannot reach the mirror. See docs/releasing.md."
+              exit 1
+            fi
+            echo "::warning::SPLIT_TOKEN is not set, so the mirrors are not being updated. See docs/releasing.md."
+            exit 0
           fi
           remote="https://x-access-token:${SPLIT_TOKEN}@github.com/${{ github.repository_owner }}/${MIRROR}.git"
           git push --force "$remote" "${SPLIT_SHA}:refs/heads/main"
