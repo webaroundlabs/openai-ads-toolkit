@@ -76,8 +76,8 @@ is, and what was deliberately left out.
 | `packages/spec` | **Done** — 13 events, identity mapping, golden fixtures |
 | `packages/php` | **Done** — 13 events, identity hashing, Conversions API client, image tag, 172 tests |
 | `packages/js` | **Done** — typed wrapper over the official `oaiq` SDK, 114 tests |
-| `packages/laravel` | **Done** — provider, facade, queued delivery, attribution, Blade Pixel, 69 tests |
-| `packages/wordpress` | **Done** — base plugin, six form plugins, WooCommerce, Subscriptions, EDD, registration, a collection endpoint. 145 tests |
+| `packages/laravel` | **Done** — provider, facade, queued delivery, attribution, Blade Pixel, 73 tests |
+| `packages/wordpress` | **Done** — base plugin, six form plugins, WooCommerce, Subscriptions, EDD, registration, a collection endpoint. 155 tests |
 | `packages/gtm-web` | **Template written** — catalogue verified here; tests run inside GTM |
 | `packages/gtm-server` | **Template written** — catalogue and identity hashing verified here |
 | `packages/gtm-collect` | **Template written** — posts to your own site instead of a server container |
