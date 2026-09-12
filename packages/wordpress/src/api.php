@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+// Loaded by WordPress through Composer's autoloader. A direct request for this
+// file would parse a class whose parents are not loaded, and a fatal error
+// discloses the installation path.
+defined('ABSPATH') || exit;
+
 /**
  * The plugin's public API.
  *

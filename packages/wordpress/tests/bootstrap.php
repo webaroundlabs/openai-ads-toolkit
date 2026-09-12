@@ -12,7 +12,13 @@ declare(strict_types=1);
  *
  * Anything that genuinely needs WordPress (the admin screen's rendering, hook
  * registration order) is exercised on a real site instead.
+ *
+ * ABSPATH is the first of them: every source file refuses to run without it, so
+ * that a direct request for one returns nothing rather than a fatal error naming
+ * the installation path. WordPress always defines it; so must this.
  */
+
+defined('ABSPATH') || define('ABSPATH', __DIR__ . '/');
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -258,6 +264,20 @@ function sanitize_key(string $key): string
 function has_filter(string $hook): bool
 {
     return isset(WpStubs::$filters[$hook]) && WpStubs::$filters[$hook] !== [];
+}
+
+/**
+ * WordPress runs add_magic_quotes() over $_GET, $_POST, $_COOKIE and $_SERVER on
+ * every request, so anything read from them is slashed until this undoes it.
+ * Mirrors core: stripslashes, recursively, leaving non-strings alone.
+ */
+function wp_unslash(mixed $value): mixed
+{
+    if (is_array($value)) {
+        return array_map('wp_unslash', $value);
+    }
+
+    return is_string($value) ? stripslashes($value) : $value;
 }
 
 function sanitize_text_field(string $value): string
