@@ -173,6 +173,17 @@ accident.
   who clones this repository.
 
 
+- **A conversion submitted in the background reports the page it came from.**
+  Contact Form 7 posts to a REST route; Elementor, WPForms and Ninja Forms post
+  to `admin-ajax.php`; a Laravel form posted with fetch(), Inertia or Livewire
+  reaches an API route. `source_url` was taken from the request being served, so
+  every lead on a site arrived labelled `/wp-admin/admin-ajax.php` and the
+  landing page that earned it was lost. Both adapters now take the referring page
+  on a background request, and only there - on an ordinary page view the request
+  URL is still the page, because a referer there is the page *before* this one.
+  The referer is client-controlled and treated as such: the origin is rebuilt
+  from the canonical origin, so a forged one cannot put another domain into the
+  payload, and a client that sends none falls back to the old behaviour.
 - **WordPress: a queued batch is delivered again.** `ScheduledDelivery` stores
   the batch and queues `openai_ads_deliver_batch`, but nothing was ever hooked to
   that action, so Action Scheduler ran it, found no callback, marked it complete
