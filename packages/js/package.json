@@ -1,6 +1,6 @@
 {
   "name": "@webaround/openai-ads",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "OpenAI Ads Measurement Pixel for the browser: a typed, consent-aware wrapper over the official oaiq SDK, with Pixel/Conversions API deduplication.",
   "keywords": [
     "openai",
