@@ -314,6 +314,71 @@ final class WooCommerceTest extends TestCase
 
     // ------------------------------------------------------------- helpers
 
+    // ------------------------------------------------- browsing the catalogue
+
+    /**
+     * The event that fires on every product page, and the one whose absence is
+     * hardest to notice: nothing errors, no order is affected, and the site
+     * owner sees purchases arriving normally while the top of the funnel stays
+     * empty.
+     */
+    #[Test]
+    public function a_product_page_reports_what_was_viewed(): void
+    {
+        WooStubs::$isProduct = true;
+        WooStubs::$currentProduct = new FakeWcProduct(10, 'Mug', '12.99', 'SKU-MUG');
+
+        $this->woo()->onProductViewed();
+
+        $sent = $this->lastEvent();
+        self::assertSame('contents_viewed', $sent['type']);
+        self::assertSame(1299, $sent['data']['amount']);
+        self::assertSame('EUR', $sent['data']['currency']);
+        self::assertSame(
+            [['id' => 'SKU-MUG', 'name' => 'Mug', 'content_type' => 'product', 'quantity' => 1, 'amount' => 1299, 'currency' => 'EUR']],
+            $sent['data']['contents'],
+        );
+    }
+
+    #[Test]
+    public function a_page_that_is_not_a_product_reports_nothing(): void
+    {
+        WooStubs::$isProduct = false;
+        WooStubs::$currentProduct = new FakeWcProduct(10, 'Mug', '12.99');
+
+        $this->woo()->onProductViewed();
+
+        self::assertSame([], WpStubs::$requests);
+    }
+
+    /** The cart mutation carries its own product id, so it is looked up by id. */
+    #[Test]
+    public function adding_to_the_cart_reports_the_line_that_was_added(): void
+    {
+        WooStubs::$products[10] = new FakeWcProduct(10, 'Mug', '12.99', 'SKU-MUG');
+
+        $this->woo()->onAddToCart('key', 10, 3);
+
+        $sent = $this->lastEvent();
+        self::assertSame('items_added', $sent['type']);
+        self::assertSame(3897, $sent['data']['amount']);
+        self::assertSame(3, $sent['data']['contents'][0]['quantity']);
+    }
+
+    /** A variation is measured as itself, not as its parent. */
+    #[Test]
+    public function adding_a_variation_reports_the_variation(): void
+    {
+        WooStubs::$products[10] = new FakeWcProduct(10, 'Mug', '12.99');
+        WooStubs::$products[11] = new FakeWcProduct(11, 'Mug, large', '15.99', 'SKU-LARGE', 'variation', 10);
+
+        $this->woo()->onAddToCart('key', 10, 1, 11);
+
+        $sent = $this->lastEvent();
+        self::assertSame('SKU-LARGE', $sent['data']['contents'][0]['id']);
+        self::assertSame(1599, $sent['data']['amount']);
+    }
+
     private function woo(): WooCommerce
     {
         return new WooCommerce(Plugin::boot(__FILE__, '0.1.0'));

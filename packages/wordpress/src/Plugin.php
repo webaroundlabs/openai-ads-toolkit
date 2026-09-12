@@ -9,6 +9,7 @@ use WebaroundLabs\OpenAIAds\ImageTag;
 use WebaroundLabs\OpenAIAds\InvalidArgument;
 use WebaroundLabs\OpenAIAds\SystemClock;
 use WebaroundLabs\OpenAIAds\WordPress\Admin\SettingsPage;
+use WebaroundLabs\OpenAIAds\WordPress\Delivery\ScheduledDelivery;
 use WebaroundLabs\OpenAIAds\WordPress\Http\Ingest;
 use WebaroundLabs\OpenAIAds\WordPress\Integrations\Registry;
 
@@ -215,6 +216,19 @@ final class Plugin
         }, 1);
 
         \add_action('wp_head', [$this->pixel(), 'render'], 1);
+
+        // The other half of the deferred delivery in ScheduledDelivery. Without
+        // this, a site with Action Scheduler - which is every WooCommerce site -
+        // stores each batch, queues an action nothing listens to, and loses the
+        // conversion silently.
+        //
+        // The key arrives from Action Scheduler's own table, so it is host data
+        // rather than something this plugin still holds: hence mixed, checked.
+        \add_action(ScheduledDelivery::HOOK, function (mixed $key): void {
+            if (is_string($key)) {
+                $this->measurement()->deliverScheduledBatch($key);
+            }
+        }, 10, 1);
 
         // Registers one hook, nothing more. The route itself is only declared if
         // the site switched the endpoint on, and that is checked inside

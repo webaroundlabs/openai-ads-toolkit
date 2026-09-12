@@ -440,11 +440,22 @@ final class WooStubs
     /** @var array<int, object> */
     public static array $orders = [];
 
+    /** @var array<int, object> */
+    public static array $products = [];
+
+    /** What wc_get_product() returns when asked for the product this page is about. */
+    public static ?object $currentProduct = null;
+
+    public static bool $isProduct = false;
+
     public static string $currency = 'EUR';
 
     public static function reset(): void
     {
         self::$orders = [];
+        self::$products = [];
+        self::$currentProduct = null;
+        self::$isProduct = false;
         self::$currency = 'EUR';
     }
 }
@@ -452,6 +463,33 @@ final class WooStubs
 function wc_get_order(mixed $id): mixed
 {
     return WooStubs::$orders[(int) $id] ?? false;
+}
+
+/**
+ * Mirrors WC_Product_Factory::get_product_id(), strictness included.
+ *
+ * WooCommerce recognizes "the product this page is about" as `false ===
+ * $the_product` - a strict comparison. Null, which looks like the same
+ * intention, matches no branch and comes back as false. Reproducing that here
+ * is the whole point of this double: a forgiving stub would accept both and let
+ * the real site report nothing.
+ */
+function wc_get_product(mixed $the_product = false): mixed
+{
+    if (false === $the_product) {
+        return WooStubs::$currentProduct ?? false;
+    }
+
+    if (!is_numeric($the_product)) {
+        return false;
+    }
+
+    return WooStubs::$products[(int) $the_product] ?? false;
+}
+
+function is_product(): bool
+{
+    return WooStubs::$isProduct;
 }
 
 function get_woocommerce_currency(): string

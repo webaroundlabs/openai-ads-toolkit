@@ -437,7 +437,12 @@ final class WooCommerce implements Integration
             return null;
         }
 
-        $product = \wc_get_product($id > 0 ? $id : null);
+        // false, not null: WC_Product_Factory::get_product_id() compares with
+        // `false ===` when deciding whether the caller means "the product this
+        // page is about". Anything else - null included - falls through every
+        // branch and comes back as false, so a null here would silently stop
+        // contents_viewed from ever firing on a product page.
+        $product = \wc_get_product($id > 0 ? $id : false);
 
         return $product instanceof \WC_Product ? $product : null;
     }
