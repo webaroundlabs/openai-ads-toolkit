@@ -100,7 +100,8 @@ final class RequestContext
     public function sourceUrl(): ?string
     {
         $canonical = $this->settings->canonicalOrigin();
-        $path = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '/';
+        $path = $this->referringPage()
+            ?? (isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '/');
 
         $parts = \wp_parse_url($path);
         $pathOnly = is_array($parts) && isset($parts['path']) ? (string) $parts['path'] : '/';
@@ -117,6 +118,54 @@ final class RequestContext
         }
 
         return $url;
+    }
+
+    /**
+     * The page a background request was made from, or null on a page view.
+     *
+     * Every AJAX and REST integration here runs on a request the visitor never
+     * navigated to: Contact Form 7 posts to a REST route, Elementor, WPForms and
+     * Ninja Forms to admin-ajax.php. REQUEST_URI is the endpoint on those, so
+     * taking it would file every lead on the site under
+     * `/wp-admin/admin-ajax.php` and lose the landing page that earned it.
+     *
+     * Only asked on those requests. On an ordinary page view REQUEST_URI IS the
+     * page, and a referer there is the page BEFORE this one.
+     *
+     * The referer is host data and therefore untrusted. wp_get_referer() drops
+     * one pointing off this site, and sourceUrl() rebuilds the origin from the
+     * canonical one either way - so what comes back from here is a path this
+     * site served, never another domain.
+     */
+    private function referringPage(): ?string
+    {
+        if (!$this->isBackgroundRequest()) {
+            return null;
+        }
+
+        $referer = \wp_get_referer();
+
+        return is_string($referer) && $referer !== '' ? $referer : null;
+    }
+
+    /**
+     * Whether the browser asked for this in the background rather than
+     * navigating to it.
+     *
+     * `wp_is_serving_rest_request()` is WordPress 6.5 and later; the plugin
+     * supports 6.4, where the REST_REQUEST constant is the only marker there is.
+     */
+    private function isBackgroundRequest(): bool
+    {
+        if (\function_exists('wp_doing_ajax') && \wp_doing_ajax()) {
+            return true;
+        }
+
+        if (\function_exists('wp_is_serving_rest_request')) {
+            return \wp_is_serving_rest_request();
+        }
+
+        return \defined('REST_REQUEST') && \REST_REQUEST === true;
     }
 
     private function cookie(string $name): ?string

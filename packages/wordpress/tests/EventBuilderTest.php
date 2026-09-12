@@ -171,6 +171,81 @@ final class EventBuilderTest extends TestCase
     }
 
     /**
+     * Every AJAX and REST integration here runs on a request the visitor never
+     * navigated to. REQUEST_URI is the endpoint on those, so reporting it files
+     * every lead on the site under one admin URL and loses the landing page that
+     * earned it.
+     */
+    #[Test]
+    public function an_ajax_submission_reports_the_page_it_was_made_from(): void
+    {
+        WpStubs::$doingAjax = true;
+        $_SERVER['REQUEST_URI'] = '/wp-admin/admin-ajax.php';
+        WpStubs::$referer = 'https://shop.example.com/landing/black-friday/';
+
+        $payload = $this->builder()->build('lead_created')->toCapiArray();
+
+        self::assertSame('https://shop.example.com/landing/black-friday/', $payload['source_url']);
+    }
+
+    #[Test]
+    public function a_rest_submission_reports_the_page_it_was_made_from(): void
+    {
+        WpStubs::$servingRest = true;
+        $_SERVER['REQUEST_URI'] = '/wp-json/contact-form-7/v1/contact-forms/14/feedback';
+        WpStubs::$referer = 'https://shop.example.com/contact/';
+
+        $payload = $this->builder()->build('lead_created')->toCapiArray();
+
+        self::assertSame('https://shop.example.com/contact/', $payload['source_url']);
+    }
+
+    /**
+     * The referer is host data. wp_get_referer() has already refused an off-site
+     * one, and the origin is rebuilt from the canonical origin regardless, so
+     * nothing a header claims can put another domain into the payload.
+     */
+    #[Test]
+    public function a_referer_cannot_change_the_origin_that_is_reported(): void
+    {
+        WpStubs::$doingAjax = true;
+        $_SERVER['REQUEST_URI'] = '/wp-admin/admin-ajax.php';
+        WpStubs::$referer = 'https://evil.example.net/attacker/page/';
+
+        $payload = $this->builder()->build('lead_created')->toCapiArray();
+
+        self::assertSame('https://shop.example.com/attacker/page/', $payload['source_url']);
+    }
+
+    /** A background request with no usable referer still reports something. */
+    #[Test]
+    public function an_ajax_submission_without_a_referer_falls_back_to_the_request(): void
+    {
+        WpStubs::$doingAjax = true;
+        $_SERVER['REQUEST_URI'] = '/wp-admin/admin-ajax.php';
+        WpStubs::$referer = false;
+
+        $payload = $this->builder()->build('lead_created')->toCapiArray();
+
+        self::assertSame('https://shop.example.com/wp-admin/admin-ajax.php', $payload['source_url']);
+    }
+
+    /**
+     * On an ordinary page view REQUEST_URI is the page. A referer there is the
+     * page BEFORE this one, which is not where the conversion happened.
+     */
+    #[Test]
+    public function a_page_view_reports_itself_and_not_where_the_visitor_came_from(): void
+    {
+        $_SERVER['REQUEST_URI'] = '/checkout/done';
+        WpStubs::$referer = 'https://shop.example.com/cart/';
+
+        $payload = $this->builder()->build('lead_created')->toCapiArray();
+
+        self::assertSame('https://shop.example.com/checkout/done', $payload['source_url']);
+    }
+
+    /**
      * The site's own origin is used regardless of what the request claims, so a
      * spoofed Host header cannot put another domain into the advertiser's data.
      */

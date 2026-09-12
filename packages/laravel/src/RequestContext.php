@@ -110,7 +110,7 @@ final class RequestContext
         // fullUrl(), not url(): url() has already dropped the query string, which
         // would make the strip_query_string setting a no-op in one direction.
         // Fragments never reach the server, so there is nothing to strip there.
-        $candidate = $this->request->fullUrl();
+        $candidate = $this->referringPage() ?? $this->request->fullUrl();
 
         $parts = parse_url($candidate);
 
@@ -138,6 +138,36 @@ final class RequestContext
         }
 
         return $url;
+    }
+
+    /**
+     * The page a background request was made from, or null when this request IS
+     * the page.
+     *
+     * A form posted with fetch(), an Inertia visit or a Livewire action reaches
+     * a route the visitor never navigated to, so the request's own URL is the
+     * endpoint rather than the page that produced the conversion. Reporting the
+     * endpoint files every lead under one route and loses the landing page that
+     * earned it.
+     *
+     * Only consulted on those requests: on an ordinary page view the request URL
+     * IS the page, and the referer there is the page BEFORE this one.
+     *
+     * The header is client-controlled, which costs nothing here: sourceUrl()
+     * refuses any origin that is not the canonical one, so the worst a forged
+     * referer achieves is a wrong path on a domain that is already ours. An API
+     * called by a mobile app or another server sends none, and the request URL
+     * is used as before.
+     */
+    private function referringPage(): ?string
+    {
+        if (!$this->request->ajax() && !$this->request->expectsJson()) {
+            return null;
+        }
+
+        $referer = $this->request->headers->get('referer');
+
+        return is_string($referer) && trim($referer) !== '' ? trim($referer) : null;
     }
 
     /**

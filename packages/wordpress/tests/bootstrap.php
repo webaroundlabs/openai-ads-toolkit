@@ -44,6 +44,15 @@ final class WpStubs
     /** Whether this request is an admin one, for the registration integration. */
     public static bool $isAdmin = false;
 
+    /** Whether this request is an admin-ajax one, for the source URL. */
+    public static bool $doingAjax = false;
+
+    /** Whether this request is a REST one, for the source URL. */
+    public static bool $servingRest = false;
+
+    /** What wp_get_referer() finds, or false when it finds nothing usable. */
+    public static string|false $referer = false;
+
     /** @var list<array{namespace: string, route: string, args: array<string, mixed>}> */
     public static array $restRoutes = [];
 
@@ -59,6 +68,9 @@ final class WpStubs
         self::$nextResponse = null;
         self::$users = [];
         self::$isAdmin = false;
+        self::$doingAjax = false;
+        self::$servingRest = false;
+        self::$referer = false;
         self::$restRoutes = [];
         self::$transients = [];
 
@@ -217,6 +229,25 @@ function home_url(string $path = ''): string
 function wp_parse_url(string $url, int $component = -1): mixed
 {
     return parse_url($url, $component);
+}
+
+function wp_doing_ajax(): bool
+{
+    return WpStubs::$doingAjax;
+}
+
+function wp_is_serving_rest_request(): bool
+{
+    return WpStubs::$servingRest;
+}
+
+/**
+ * WordPress validates the referer against this site and hands back false for
+ * anything else, so the stub deals in already-validated values.
+ */
+function wp_get_referer(): string|false
+{
+    return WpStubs::$referer;
 }
 
 function sanitize_key(string $key): string

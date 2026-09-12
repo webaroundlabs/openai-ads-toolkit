@@ -71,6 +71,67 @@ final class RequestContextTest extends TestCase
     }
 
     /**
+     * A form posted with fetch(), an Inertia visit or a Livewire action reaches
+     * a route the visitor never navigated to. Reporting that route files every
+     * conversion under one URL and loses the page that produced it.
+     */
+    #[Test]
+    public function a_background_request_reports_the_page_it_was_made_from(): void
+    {
+        $context = $this->context(
+            url: 'https://shop.example.com/api/leads',
+            server: [
+                'HTTP_X_REQUESTED_WITH' => 'XMLHttpRequest',
+                'HTTP_REFERER' => 'https://shop.example.com/landing/black-friday',
+            ],
+        );
+
+        self::assertSame('https://shop.example.com/landing/black-friday', $context->sourceUrl());
+    }
+
+    /** A JSON client that sends no referer is left exactly as it was. */
+    #[Test]
+    public function a_background_request_without_a_referer_reports_its_own_url(): void
+    {
+        $context = $this->context(
+            url: 'https://shop.example.com/api/leads',
+            server: ['HTTP_ACCEPT' => 'application/json'],
+        );
+
+        self::assertSame('https://shop.example.com/api/leads', $context->sourceUrl());
+    }
+
+    /**
+     * On an ordinary page view the request URL is the page. The referer there is
+     * the page BEFORE this one, which is not where the conversion happened.
+     */
+    #[Test]
+    public function a_page_view_reports_itself_and_not_where_the_visitor_came_from(): void
+    {
+        $context = $this->context(
+            url: 'https://shop.example.com/checkout/done',
+            server: ['HTTP_REFERER' => 'https://shop.example.com/cart'],
+        );
+
+        self::assertSame('https://shop.example.com/checkout/done', $context->sourceUrl());
+    }
+
+    /** The referer is client-controlled, so it gets the same treatment as the Host. */
+    #[Test]
+    public function a_forged_referer_cannot_report_another_domain(): void
+    {
+        $context = $this->context(
+            url: 'https://shop.example.com/api/leads',
+            server: [
+                'HTTP_X_REQUESTED_WITH' => 'XMLHttpRequest',
+                'HTTP_REFERER' => 'https://evil.example.net/attacker/page',
+            ],
+        );
+
+        self::assertSame('https://shop.example.com', $context->sourceUrl());
+    }
+
+    /**
      * A spoofed Host header, or a misconfigured proxy, must not be able to put
      * a third party's domain into the advertiser's measurement data.
      */
