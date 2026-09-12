@@ -115,15 +115,6 @@ jobs:
       - name: Publish
         working-directory: packages/js
         run: npm publish --provenance --access public
-        env:
-          # TEMPORARY, for the first publish only. npm registers a trusted
-          # publisher against a package, and @webaround/openai-ads does not
-          # exist until something publishes it - so the first release
-          # authenticates with a short-lived granular token and every release
-          # after it uses Trusted Publishing. Delete this env block and the
-          # NPM_TOKEN environment secret once the trusted publisher is
-          # configured; provenance does not depend on it.
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   plugin-zip:
     name: Build the WordPress plugin

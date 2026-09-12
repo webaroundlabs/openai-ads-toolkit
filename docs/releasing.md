@@ -32,19 +32,16 @@ configured once on npmjs.com, on the package's settings, as:
 | Workflow filename | `release.yml` |
 | Environment | `npm` |
 
-npm registers a trusted publisher **against a package**, and a package does not
-exist until something publishes it. So the first release cannot use Trusted
-Publishing, and bootstraps instead: a granular access token scoped to
-`@webaround/*`, stored as the `NPM_TOKEN` secret **of the `npm` environment**
-(not of the repository — only a job that declares the environment can read it,
-and that job is the one behind the approval gate). `release.yml` passes it as
-`NODE_AUTH_TOKEN` for exactly that release.
+There is no `NPM_TOKEN` anywhere, and adding one back would be a step
+backwards. `0.1.0` needed one — npm registers a trusted publisher against a
+package, and a package does not exist until something publishes it, so the first
+release authenticated with a short-lived granular token that was deleted the
+same day. Every release since is OIDC only.
 
-Afterwards: configure the trusted publisher, delete the `NPM_TOKEN` secret and
-the `env:` block that reads it, and turn on **Require two-factor authentication
-and disallow tokens** on the package. Provenance does not depend on any of this
-— it comes from the workflow's OIDC identity either way — so `0.1.0` is signed
-like every version after it.
+If a publish ever fails with `EOTP`, the trusted publisher is not matching and
+npm has fallen back to asking a human for a one-time password. Check the four
+values above against the workflow rather than reaching for a token: the
+environment name and the workflow filename are the two that drift.
 
 ## Cutting a release
 
