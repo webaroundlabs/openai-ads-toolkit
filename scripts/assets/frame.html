@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mark frame</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+  /*
+   * One frame of the plugin's mark, at an exact pixel size.
+   *
+   * Driven entirely by the query string so a headless browser can rasterize it
+   * deterministically: ?mode=icon|banner&w=&h=&t=
+   * `t` is the position in the animation loop, 0 to 1. Omit it for the mark at
+   * rest, which is the logo.
+   *
+   * Palette: webaround's own graphite (#121b1d, #4a4b55, #6e6f7c, #e0e1eb),
+   * with two saturated channel gradients that carry the meaning - the browser
+   * Pixel and the Conversions API - meeting as one conversion.
+   */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    background: #0c1416;
+    overflow: hidden;
+  }
+
+  #stage {
+    position: relative;
+    overflow: hidden;
+    background: #0c1416;
+  }
+
+  .banner {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+  }
+
+  .banner .mark {
+    flex: 0 0 auto;
+    background: radial-gradient(circle at 58% 50%, #1b2c30 0%, rgba(17, 29, 32, 0) 68%);
+  }
+
+  .banner .type {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .name {
+    font-family: "Sora", system-ui, sans-serif;
+    font-weight: 700;
+    color: #f2f6f8;
+    letter-spacing: -0.022em;
+    line-height: 1.06;
+    white-space: nowrap;
+  }
+
+  .qualifier {
+    font-family: "Sora", system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.022em;
+    line-height: 1.06;
+    white-space: nowrap;
+    background: linear-gradient(96deg, #3bf0d8 0%, #12a8ff 46%, #ff8a5c 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .capabilities {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-weight: 500;
+    color: #6e7f84;
+    white-space: nowrap;
+    text-transform: lowercase;
+  }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const mode = params.get("mode") || "icon";
+const W = parseInt(params.get("w") || "256", 10);
+const H = parseInt(params.get("h") || String(W), 10);
+const T = params.has("t") ? parseFloat(params.get("t")) : null;
+
+/* The action occupies the first part of the loop; the rest is stillness, which
+   is what stops a looping mark feeling frantic. */
+const ACTION = 0.7;
+
+const BARE = params.get("bare") === "1";
+
+const svg = (size) => `
+<svg width="${size}" height="${size}" viewBox="0 0 256 256" fill="none"
+     xmlns="http://www.w3.org/2000/svg" aria-label="Conversion tracking mark">
+  <defs>
+    <radialGradient id="ground" cx="0.58" cy="0.5" r="0.72">
+      <stop offset="0" stop-color="#1b2c30"/>
+      <stop offset="0.55" stop-color="#111d20"/>
+      <stop offset="1" stop-color="#0a1113"/>
+    </radialGradient>
+
+    <linearGradient id="client" x1="34" y1="48" x2="150" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3bf0d8"/>
+      <stop offset="1" stop-color="#12a8ff"/>
+    </linearGradient>
+
+    <linearGradient id="server" x1="34" y1="208" x2="150" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffc94a"/>
+      <stop offset="1" stop-color="#ff7a45"/>
+    </linearGradient>
+
+    <linearGradient id="merged" x1="150" y1="128" x2="226" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#b7e6ff"/>
+    </linearGradient>
+
+    <radialGradient id="core" cx="0.42" cy="0.36" r="0.85">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.7" stop-color="#f4fbff"/>
+      <stop offset="1" stop-color="#d3ecfa"/>
+    </radialGradient>
+
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="7" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/></feMerge>
+    </filter>
+
+    <filter id="bloom" x="-90%" y="-90%" width="280%" height="280%">
+      <feGaussianBlur stdDeviation="11"/>
+    </filter>
+  </defs>
+
+  ${BARE ? "" : '<rect width="256" height="256" fill="url(#ground)"/>'}
+
+  <!-- The glow layer sits under the strokes, so the colour bleeds into the
+       ground the way light does rather than outlining the shape. -->
+  <g filter="url(#glow)" opacity="0.55" stroke-linecap="round" fill="none">
+    <path d="M34 48 C 80 48, 114 86, 150 128" stroke="url(#client)" stroke-width="15"/>
+    <path d="M34 208 C 80 208, 114 170, 150 128" stroke="url(#server)" stroke-width="15"/>
+    <path d="M150 128 L 226 128" stroke="url(#merged)" stroke-width="17"/>
+  </g>
+
+  <g stroke-linecap="round" fill="none">
+    <path id="pClient" d="M34 48 C 80 48, 114 86, 150 128" stroke="url(#client)" stroke-width="17"/>
+    <path id="pServer" d="M34 208 C 80 208, 114 170, 150 128" stroke="url(#server)" stroke-width="17"/>
+    <path id="pOut" d="M150 128 L 226 128" stroke="url(#merged)" stroke-width="21"/>
+  </g>
+
+  <!-- Travelling pulses: one dash per path, moved by stroke-dashoffset. -->
+  <g stroke-linecap="round" fill="none" filter="url(#glow)">
+    <path id="uClient" d="M34 48 C 80 48, 114 86, 150 128" stroke="#eafcff" stroke-width="13" opacity="0"/>
+    <path id="uServer" d="M34 208 C 80 208, 114 170, 150 128" stroke="#fff1df" stroke-width="13" opacity="0"/>
+    <path id="uOut" d="M150 128 L 226 128" stroke="#ffffff" stroke-width="17" opacity="0"/>
+  </g>
+
+  <circle cx="34" cy="48" r="11.5" fill="#4ff0e0"/>
+  <circle cx="34" cy="208" r="11.5" fill="#ffc247"/>
+
+  <circle id="ring" cx="150" cy="128" r="34" stroke="#cfeeff" stroke-width="3" opacity="0" fill="none"/>
+  <circle id="halo" cx="150" cy="128" r="23" fill="#ffffff" opacity="0.22" filter="url(#bloom)"/>
+  <circle id="disc" cx="150" cy="128" r="23" fill="url(#core)"/>
+</svg>`;
+
+function build() {
+  const stage = document.getElementById("stage");
+  stage.style.width = W + "px";
+  stage.style.height = H + "px";
+
+  if (mode === "icon") {
+    stage.innerHTML = svg(W);
+    return;
+  }
+
+  // Banner: the mark in its own optical square, then a three-part type block.
+  const pad = Math.round(H * 0.17);
+  const tile = H - pad * 2;
+  const nameSize = Math.round(H * 0.165);
+  const capSize = Math.round(H * 0.062);
+
+  stage.innerHTML = `
+    <div class="banner" style="padding:${pad}px ${Math.round(H * 0.13)}px; gap:${Math.round(H * 0.12)}px;">
+      <div class="mark">${svg(tile)}</div>
+      <div class="type" style="gap:${Math.round(H * 0.045)}px;">
+        <div>
+          <div class="name" style="font-size:${nameSize}px;">Conversion Tracking</div>
+          <div class="qualifier" style="font-size:${nameSize}px;">for OpenAI Ads</div>
+        </div>
+        <div class="capabilities" style="font-size:${capSize}px; letter-spacing:${(capSize * 0.04).toFixed(2)}px;">
+          pixel &nbsp;+&nbsp; conversions api &nbsp;+&nbsp; deduplication
+        </div>
+      </div>
+    </div>`;
+}
+
+/* Ease that starts and ends calm, so a signal looks launched rather than
+   switched on. */
+const ease = (t) => t * t * (3 - 2 * t);
+const clamp = (v) => Math.max(0, Math.min(1, v));
+
+function pulse(path, from, to, head, dash) {
+  const len = path.getTotalLength();
+  const span = len * dash;
+  path.style.strokeDasharray = `${span} ${len + span}`;
+  path.style.strokeDashoffset = `${span - head * (len + span)}`;
+  path.style.opacity = head > 0 && head < 1 ? "1" : "0";
+}
+
+function frame(t) {
+  if (t === null) {
+    // At rest: the logo, with nothing that only exists mid-animation.
+    document.getElementById("ring").setAttribute("opacity", "0");
+    return;
+  }
+
+  const a = clamp(t / ACTION);
+
+  const inbound = a < 0.62 ? ease(clamp(a / 0.52)) : 1;
+  pulse(document.getElementById("uClient"), 0, 1, a < 0.62 ? inbound : 0, 0.2);
+  pulse(document.getElementById("uServer"), 0, 1, a < 0.62 ? inbound : 0, 0.2);
+
+  const outbound = a >= 0.5 ? ease(clamp((a - 0.5) / 0.42)) : 0;
+  pulse(document.getElementById("uOut"), 0, 1, outbound, 0.42);
+
+  // The junction takes the arrival and gives it back as light.
+  const flare = a >= 0.46 && a < 0.82 ? 1 - (a - 0.46) / 0.36 : 0;
+
+  const disc = document.getElementById("disc");
+  const halo = document.getElementById("halo");
+  const ring = document.getElementById("ring");
+
+  disc.setAttribute("r", String(23 + 3.5 * flare));
+  halo.setAttribute("opacity", String(0.22 + 0.62 * flare));
+  halo.setAttribute("r", String(23 + 10 * flare));
+
+  if (flare > 0.06 && flare < 0.92) {
+    ring.setAttribute("r", String(30 + 44 * (1 - flare)));
+    ring.setAttribute("opacity", String(0.5 * flare));
+  } else {
+    ring.setAttribute("opacity", "0");
+  }
+}
+
+build();
+frame(T);
+
+/* A static export drops the nodes that only exist mid-animation, so the SVG
+   the plugin directory gets is the logo and nothing else. */
+if (params.get("static") === "1") {
+  document.querySelectorAll("#uClient, #uServer, #uOut, #ring").forEach((n) => n.remove());
+}
+
+// Tells the rasterizer the fonts have settled and the frame is final.
+document.fonts.ready.then(() => {
+  const root = document.documentElement;
+  root.setAttribute("data-ready", "1");
+  root.setAttribute("data-fonts", String(
+    document.fonts.check('700 24px Sora') && document.fonts.check('500 16px "JetBrains Mono"'),
+  ));
+});
+</script>
+</body>
+</html>
