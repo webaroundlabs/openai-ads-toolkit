@@ -38,10 +38,20 @@ package, and a package does not exist until something publishes it, so the first
 release authenticated with a short-lived granular token that was deleted the
 same day. Every release since is OIDC only.
 
-If a publish ever fails with `EOTP`, the trusted publisher is not matching and
-npm has fallen back to asking a human for a one-time password. Check the four
-values above against the workflow rather than reaching for a token: the
-environment name and the workflow filename are the two that drift.
+Two failures mean two different things, and neither is "add a token":
+
+- **`EOTP`** - the trusted publisher is not matching, so npm fell back to asking
+  a human for a one-time password. Check the four values above against the
+  workflow; the environment name and the workflow filename are the two that
+  drift.
+- **`E404` on `PUT`** - npm never attempted Trusted Publishing at all. The
+  registry answers 404 rather than 401 for writes it will not explain, so this
+  reads as "the package does not exist" when it means "you sent no usable
+  credential". The usual cause is an `.npmrc` that declares one: `setup-node`
+  writes `//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}` whenever it is
+  given `registry-url`, and with no such variable in the environment npm still
+  treats that line as a credential and never falls back to OIDC. The publish job
+  therefore does not pass `registry-url`.
 
 ## Cutting a release
 
