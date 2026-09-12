@@ -157,10 +157,19 @@ gallery requires and nothing else:
 
 ```
 template.tpl     copied
-LICENSE          copied - the Apache 2.0 text, byte for byte
+LICENSE          copied - the Apache 2.0 text with its copyright line filled in
 README.md        the package README, with its relative links absolutised
-metadata.yaml    generated: the homepage, and one entry per published version
+metadata.yaml    generated: homepage, documentation, and the published versions
 ```
+
+The licence has to satisfy two rules at once: the gallery wants that file and
+nothing else, *and* wants `Copyright [yyyy] [name of copyright owner]` replaced.
+So the check puts the placeholder back and compares the result against the
+canonical text — which says which of the two rules was broken, where a pinned
+digest of our own file would only say that something moved.
+
+`versions` is ordered **newest first**. The gallery reads it in reverse
+chronological order, so appending would publish the oldest template for ever.
 
 A release is two commits, and has to be: a version entry names the commit holding
 the template it publishes, and no commit can contain its own sha. So the sync
@@ -235,25 +244,54 @@ Before either one is submitted or updated, confirm:
 - `packages/js/tests/gtmParity.test.ts` passes — it checks the server template's
   hand-written identity normalization still matches the browser package exactly.
 
-The first submission of each template is done by hand, once, from the GTM
-template editor: open the template, and from the ⋮ menu choose **Add to Community
-Template Gallery**. It asks for the GitHub repository — the mirror, not this one —
-and you have to be signed in to GitHub as somebody who can administer it. Google
-then checks the repository has the four files and that `LICENSE` is Apache 2.0,
-which is why `mirror-gtm.py` refuses to publish a `LICENSE` that is not that text
-byte for byte.
+### Agreeing to the gallery's terms, once per template
 
-After that, a new version is what the release workflow already writes: an entry
-appended to `metadata.yaml` naming the commit to serve. Google's own
+A gallery template carries a `___TERMS_OF_SERVICE___` section, ahead of
+`___INFO___`. Tag Manager writes it into the exported file when a person ticks
+**Agree to the Community Template Gallery Terms of Service** on the **Info** tab
+of the template editor. It is a legal act by a human, so it cannot be generated
+here — and `mirror-gtm.py` refuses to publish a version of a template that lacks
+it, rather than letting the submission be rejected days later.
+
+So before the first release of either template:
+
+1. Import `packages/gtm-<web|server>/template.tpl` into a container of the right
+   type — a **web** container for gtm-web, a **server** container for gtm-server.
+2. On the editor's **Info** tab, tick the terms-of-service box.
+3. Export the template, and commit the exported file over
+   `packages/gtm-<web|server>/template.tpl`.
+
+The exported file should differ only by that section. If it differs anywhere
+else, the editor has reformatted something, and `verify.py` and the GTM parity
+test are what say whether that changed any behaviour.
+
+### The first submission
+
+Done by hand, once per template, and **not** from the template editor:
+
+1. Sign in to GitHub as somebody with access to the mirror.
+2. Go to [tagmanager.google.com/gallery](https://tagmanager.google.com/gallery).
+3. From the menu, choose **Submit Template**.
+4. Give it the mirror's repository URL — `openai-ads-gtm-web` or
+   `openai-ads-gtm-server`, never this repository — and submit.
+
+Google then checks the repository: the files in the root, the `LICENSE`, and that
+`metadata.yaml` names a commit to serve. Which is why there is nothing to submit
+until a tag has been cut — before that the versions list is empty and the gallery
+has no template to fetch.
+
+### Afterwards
+
+A new version is what the release workflow already writes: an entry at the **top**
+of `versions`, naming the commit to serve. The gallery reads that list newest
+first, and takes a couple of days to show an update. Google's own
 [gallery documentation](https://developers.google.com/tag-platform/tag-manager/templates/gallery)
-is the authority on what it does with one and how long it takes; nothing here can
-hurry it.
+is the authority on both.
 
-Two fields in the `___INFO___` block are worth knowing about first. `brand` is
-what groups templates under one publisher name in the gallery, so both carry
-`webaround` deliberately. `id` is still `cvt_temp_public_id` — the placeholder the
-template editor writes for a template that has never been submitted — and the
-gallery assigns the real one.
+Two fields in `___INFO___` are worth knowing about. `brand` is what groups
+templates under one publisher name, so both carry `webaround` deliberately. `id`
+stays `cvt_temp_public_id` — that is not a placeholder to fill in before
+submitting; published gallery templates carry it too.
 
 ## After publishing
 

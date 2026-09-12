@@ -2,9 +2,10 @@
 
 Google indexes a gallery template from a repository whose root *is* the template:
 one template per repository, and `template.tpl`, `metadata.yaml`, `LICENSE` and
-`README.md` directly in the root, with `LICENSE` carrying the Apache 2.0 text and
-nothing else. Two of the templates here live in subdirectories of a monorepo that
-is MIT, so each is mirrored into a repository shaped the way the gallery reads.
+`README.md` directly in the root, with `LICENSE` carrying the Apache 2.0 text -
+nothing but that text, and its copyright line filled in. Two of the templates
+here live in subdirectories of a monorepo that is MIT, so each is mirrored into a
+repository shaped the way the gallery reads.
 
     python scripts/mirror-gtm.py --into build/gtm-mirrors            # build both, no network
     python scripts/mirror-gtm.py --package gtm-web --push URL        # sync the mirror
@@ -26,6 +27,7 @@ commits are.
 
 import argparse
 import hashlib
+import json
 import re
 import shutil
 import subprocess
@@ -42,6 +44,11 @@ MONOREPO = 'https://github.com/webaroundlabs/openai-ads-toolkit'
 # monorepo has that the mirror does not - the other packages, the specification,
 # the issue tracker people should actually use.
 HOMEPAGE = MONOREPO
+
+# The gallery wants documentation separately, and here it genuinely is separate:
+# the package README carries the field rules, the deduplication contract and what
+# each template deliberately refuses.
+DOCUMENTATION = MONOREPO + '/blob/main/packages/%s/README.md'
 
 MIRRORS = {
     'gtm-web': 'openai-ads-gtm-web',
@@ -64,16 +71,28 @@ GALLERY_FILES = ('template.tpl', 'metadata.yaml', 'LICENSE', 'README.md')
 # where the shas it names are reachable.
 SOURCE_FILES = {'template.tpl', 'LICENSE', 'README.md'}
 
-# The canonical Apache License 2.0, byte for byte, from
-# https://www.apache.org/licenses/LICENSE-2.0.txt. The gallery checks the file,
-# and the usual way to fail that check is somebody helpfully adding a copyright
-# line to the top of it.
+# The gallery asks for two things that pull against each other: the licence file
+# must be "only Apache 2.0", and the appendix's `Copyright [yyyy] [name of
+# copyright owner]` must be filled in. So the file is the canonical text from
+# https://www.apache.org/licenses/LICENSE-2.0.txt with exactly one line changed,
+# and that is what is checked - put the placeholder back and the digest must be
+# the canonical one. Checking it this way rather than pinning the digest of our
+# own file says which of the two rules was broken.
 APACHE_2_SHA256 = 'cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30'
+
+APACHE_2_PLACEHOLDER = b'   Copyright [yyyy] [name of copyright owner]\n'
+COPYRIGHT = b'   Copyright 2026 Webaround Labs\n'
+
+# Agreeing to the gallery's developer terms is done by a person, in the Tag
+# Manager template editor, and the editor writes this section into the exported
+# file. It cannot be forged here, and a template without it cannot be submitted.
+TERMS_OF_SERVICE = '___TERMS_OF_SERVICE___'
 
 RELATIVE_LINK = re.compile(r'\]\((\.\.\/[^)\s]+)\)')
 REFERENCE_LINK = re.compile(r'^\[[^\]]+\]:\s*\.\.\/', re.M)
 
-VERSION_ENTRY = re.compile(r'^- sha: ([0-9a-f]{40})$')
+VERSION_ENTRY = re.compile(r'^  - sha: ([0-9a-f]{40})$')
+CHANGE_NOTES = re.compile(r'^    changeNotes: (".*")$')
 
 # Goes directly under the title, not at the foot of the page. The gallery links
 # people straight here, and somebody who arrived with a problem needs to know
@@ -131,9 +150,20 @@ def absolutize(readme, package):
     return rewritten
 
 
-def render_metadata(versions):
-    """The gallery's metadata.yaml. The last entry is the published version."""
-    lines = ['homepage: %s' % HOMEPAGE]
+def render_metadata(package, versions):
+    """The gallery's metadata.yaml.
+
+    Newest version first: the gallery reads the list in reverse chronological
+    order, so appending would publish the oldest template forever.
+
+    Every value is written as a JSON string, which is also a valid YAML
+    double-quoted scalar. Plain scalars would be fine until the day a change note
+    contains ": ", which YAML reads as a nested mapping and rejects.
+    """
+    lines = [
+        'homepage: %s' % json.dumps(HOMEPAGE),
+        'documentation: %s' % json.dumps(DOCUMENTATION % package),
+    ]
 
     if not versions:
         lines.append('versions: []')
@@ -142,10 +172,8 @@ def render_metadata(versions):
     lines.append('versions:')
 
     for version in versions:
-        lines.append('- sha: %s' % version['sha'])
-        lines.append('  changeNotes: |-')
-        for line in version['changeNotes'].splitlines():
-            lines.append(('    ' + line).rstrip())
+        lines.append('  - sha: %s' % version['sha'])
+        lines.append('    changeNotes: %s' % json.dumps(version['changeNotes']))
 
     return '\n'.join(lines) + '\n'
 
@@ -157,27 +185,22 @@ def parse_metadata(text):
     silently dropping a published version - and a version the gallery still
     serves but the file no longer lists is unrecoverable without git archaeology.
     """
-    versions, current = [], None
+    versions = []
 
     for line in text.splitlines():
         entry = VERSION_ENTRY.match(line)
+        notes = CHANGE_NOTES.match(line)
 
         if entry:
-            current = {'sha': entry.group(1), 'changeNotes': []}
-            versions.append(current)
-        elif line.startswith('    ') and current is not None:
-            current['changeNotes'].append(line[4:])
-        elif line == '' and current is not None:
-            current['changeNotes'].append('')
-        elif line.startswith('homepage:') or line in ('versions:', 'versions: []', ''):
-            continue
-        elif line == '  changeNotes: |-':
+            versions.append({'sha': entry.group(1), 'changeNotes': ''})
+        elif notes:
+            if not versions:
+                raise Failure('metadata.yaml has change notes before any version')
+            versions[-1]['changeNotes'] = json.loads(notes.group(1))
+        elif line.startswith(('homepage:', 'documentation:')) or line in ('versions:', 'versions: []', ''):
             continue
         else:
             raise Failure('metadata.yaml is not in the shape this script writes: %r' % line)
-
-    for version in versions:
-        version['changeNotes'] = '\n'.join(version['changeNotes']).strip('\n')
 
     return versions
 
@@ -194,9 +217,15 @@ def write_tree(package, into, versions):
 
     licence = (source / 'LICENSE').read_bytes()
 
-    if hashlib.sha256(licence).hexdigest() != APACHE_2_SHA256:
-        raise Failure('packages/%s/LICENSE is not the Apache 2.0 text; the gallery '
-                      'rejects the repository without it' % package)
+    if COPYRIGHT not in licence:
+        raise Failure('packages/%s/LICENSE does not carry the copyright line the gallery '
+                      'asks for: %r' % (package, COPYRIGHT.decode().strip()))
+
+    canonical = licence.replace(COPYRIGHT, APACHE_2_PLACEHOLDER)
+
+    if hashlib.sha256(canonical).hexdigest() != APACHE_2_SHA256:
+        raise Failure('packages/%s/LICENSE is not the Apache 2.0 text with only its copyright '
+                      'line filled in; the gallery wants that file and nothing else' % package)
 
     into.mkdir(parents=True, exist_ok=True)
 
@@ -213,7 +242,8 @@ def write_tree(package, into, versions):
     readme = title + '\n' + HEADER.format(package=package, monorepo=MONOREPO) + body
 
     (into / 'README.md').write_text(readme, encoding='utf-8', newline='\n')
-    (into / 'metadata.yaml').write_text(render_metadata(versions), encoding='utf-8', newline='\n')
+    (into / 'metadata.yaml').write_text(
+        render_metadata(package, versions), encoding='utf-8', newline='\n')
 
     for path in into.iterdir():
         if path.name != '.git' and path.name not in GALLERY_FILES:
@@ -256,7 +286,12 @@ def redact(remote):
 
 
 def change_notes(package, tag):
-    """What changed in this package since the previous tag."""
+    """What changed in this package since the previous tag, on one line.
+
+    One line because that is what the gallery shows, and what every template
+    published there writes. A version whose notes need a paragraph is a version
+    whose notes belong in the changelog that `documentation` already points at.
+    """
     previous = git('describe', '--tags', '--abbrev=0', '--match', 'v*',
                    tag + '^', cwd=ROOT, check=False)
 
@@ -269,13 +304,9 @@ def change_notes(package, tag):
     if not subjects:
         return tag
 
-    notes = [tag, '']
-    notes += ['- %s' % subject for subject in subjects[:20]]
+    notes = '%s - %s' % (tag, '; '.join(subjects))
 
-    if len(subjects) > 20:
-        notes.append('- ...and %d more.' % (len(subjects) - 20))
-
-    return '\n'.join(notes)
+    return notes if len(notes) <= 300 else notes[:297].rstrip(' ;-') + '...'
 
 
 def push(package, remote, tag):
@@ -335,14 +366,22 @@ def publish(package, work, tag, versions):
     if head is None:
         raise Failure('the mirror has no commit to publish')
 
-    if versions and not differs_from_published(work, versions[-1]['sha']):
-        print('%s serves the same template as the last published version; no new entry' % tag)
+    if TERMS_OF_SERVICE not in (work / 'template.tpl').read_text(encoding='utf-8'):
+        raise Failure(
+            'packages/%s/template.tpl has no %s section, so the gallery cannot accept it. '
+            'Tick "Agree to the Community Template Gallery Terms of Service" on the Info '
+            'tab of the Tag Manager template editor, export the template, and commit that.'
+            % (package, TERMS_OF_SERVICE))
+
+    # versions[0], not versions[-1]: the gallery reads the list newest first.
+    if versions and not differs_from_published(work, versions[0]['sha']):
+        print('%s serves the same template as the published version; no new entry' % tag)
         return
 
-    versions.append({'sha': head, 'changeNotes': change_notes(package, tag)})
+    versions.insert(0, {'sha': head, 'changeNotes': change_notes(package, tag)})
 
     (work / 'metadata.yaml').write_text(
-        render_metadata(versions), encoding='utf-8', newline='\n')
+        render_metadata(package, versions), encoding='utf-8', newline='\n')
 
     git('add', 'metadata.yaml', cwd=work)
     git('commit', '--quiet', '-m',
