@@ -81,7 +81,7 @@ SOURCE_FILES = {'template.tpl', 'LICENSE', 'README.md'}
 APACHE_2_SHA256 = 'cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30'
 
 APACHE_2_PLACEHOLDER = b'   Copyright [yyyy] [name of copyright owner]\n'
-COPYRIGHT = b'   Copyright 2026 Webaround Labs\n'
+COPYRIGHT = b'   Copyright 2026 Webaround\n'
 
 # Agreeing to the gallery's developer terms is done by a person, in the Tag
 # Manager template editor, and the editor writes this section into the exported
