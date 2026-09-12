@@ -149,10 +149,16 @@ jobs:
       - name: Assemble
         run: bash scripts/build-plugin.sh
 
+      # The zip is named after the plugin slug, which is not the repository's
+      # name. Without if-no-files-found: error, a path that matches nothing is a
+      # warning: the job goes green, uploads an empty artifact, and the failure
+      # surfaces two jobs later as "Artifact not found" - which is what happened
+      # when the slug was renamed and this path was not.
       - uses: actions/upload-artifact@v4
         with:
           name: openai-ads-wordpress-plugin
-          path: build/openai-ads.zip
+          path: build/conversion-tracking-for-openai-ads.zip
+          if-no-files-found: error
           retention-days: 14
 
   github-release:
@@ -179,4 +185,4 @@ jobs:
             --draft \
             --title "$GITHUB_REF_NAME" \
             --notes "See CHANGELOG.md for what changed in this release." \
-            build/openai-ads.zip
+            build/conversion-tracking-for-openai-ads.zip
