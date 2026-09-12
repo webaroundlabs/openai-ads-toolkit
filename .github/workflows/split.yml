@@ -37,9 +37,17 @@ jobs:
             mirror: openai-ads-laravel
     steps:
       # subtree split walks the whole history, so a shallow clone will not do.
+      #
+      # persist-credentials: false matters more than it looks. Checkout
+      # otherwise leaves an http.<github>.extraheader in the local git config
+      # carrying GITHUB_TOKEN, and that header wins over credentials in a remote
+      # url - so the push to the mirror goes out as github-actions[bot], which
+      # has no access to another repository, and fails with a 403 that says
+      # nothing about SPLIT_TOKEN.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Split the package out of the monorepo
         run: |

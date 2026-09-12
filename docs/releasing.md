@@ -22,10 +22,29 @@ because the table above is one-directional: every other mistake in this
 repository can be fixed with another commit, and this one cannot.
 
 npm authentication is Trusted Publishing — the job exchanges its OIDC token for
-a short-lived credential — so there is no `NPM_TOKEN` to leak or rotate. It has
-to be configured once on npmjs.com, against this repository and this workflow,
-**before** the first tag. Until it is, the publish step fails, which is the safe
-direction to fail in.
+a short-lived credential — so there is no `NPM_TOKEN` to leak or rotate. It is
+configured once on npmjs.com, on the package's settings, as:
+
+| Field | Value |
+|---|---|
+| Organization or username | `webaroundlabs` |
+| Repository | `openai-ads-toolkit` |
+| Workflow filename | `release.yml` |
+| Environment | `npm` |
+
+npm registers a trusted publisher **against a package**, and a package does not
+exist until something publishes it. So the first release cannot use Trusted
+Publishing, and bootstraps instead: a granular access token scoped to
+`@webaround/*`, stored as the `NPM_TOKEN` secret **of the `npm` environment**
+(not of the repository — only a job that declares the environment can read it,
+and that job is the one behind the approval gate). `release.yml` passes it as
+`NODE_AUTH_TOKEN` for exactly that release.
+
+Afterwards: configure the trusted publisher, delete the `NPM_TOKEN` secret and
+the `env:` block that reads it, and turn on **Require two-factor authentication
+and disallow tokens** on the package. Provenance does not depend on any of this
+— it comes from the workflow's OIDC identity either way — so `0.1.0` is signed
+like every version after it.
 
 ## Cutting a release
 
