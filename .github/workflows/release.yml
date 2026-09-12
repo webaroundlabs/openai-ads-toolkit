@@ -154,7 +154,7 @@ jobs:
       # warning: the job goes green, uploads an empty artifact, and the failure
       # surfaces two jobs later as "Artifact not found" - which is what happened
       # when the slug was renamed and this path was not.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: openai-ads-wordpress-plugin
           path: build/conversion-tracking-for-openai-ads.zip
