@@ -173,6 +173,23 @@ accident.
   who clones this repository.
 
 
+- **WordPress: a queued batch is delivered again.** `ScheduledDelivery` stores
+  the batch and queues `openai_ads_deliver_batch`, but nothing was ever hooked to
+  that action, so Action Scheduler ran it, found no callback, marked it complete
+  and the conversion was gone. Every WooCommerce site took this path by default —
+  Action Scheduler ships inside WooCommerce and `use_scheduler` defaults to on —
+  which meant the plugin's largest audience lost every event, silently and with
+  debug logging switched on. The stored `openai_ads_batch_*` option was orphaned
+  in `wp_options` on top of it. Found on a real site; the unit suite exercised
+  `deliverScheduledBatch()` directly and never asked whether WordPress would ever
+  call it.
+- **WooCommerce: `contents_viewed` fires on a product page again.** The current
+  product was fetched with `wc_get_product(null)`, and
+  `WC_Product_Factory::get_product_id()` recognizes "the product this page is
+  about" as `false ===` — strictly. Null matched no branch and came back as
+  `false`, so the integration saw no product and returned early on every product
+  page. Purchases still arrived, which is what made it hard to notice: only the
+  top of the funnel was missing.
 - **WooCommerce: a refund is no longer reported as a purchase.** `wc_get_order()`
   returns a `WC_Order_Refund` as readily as a `WC_Order`; both carry
   `get_total()` and `get_order_number()`, and the integration was checking for

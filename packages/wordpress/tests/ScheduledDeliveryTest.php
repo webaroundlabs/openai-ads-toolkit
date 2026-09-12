@@ -10,18 +10,26 @@ use PHPUnit\Framework\TestCase;
 use SchedulerStubs;
 use WebaroundLabs\OpenAIAds\WordPress\Delivery\ScheduledDelivery;
 use WebaroundLabs\OpenAIAds\WordPress\Measurement;
+use WebaroundLabs\OpenAIAds\WordPress\Plugin;
 use WebaroundLabs\OpenAIAds\WordPress\Settings;
 use WpStubs;
 
 #[CoversClass(ScheduledDelivery::class)]
 #[CoversClass(Measurement::class)]
+#[CoversClass(Plugin::class)]
 final class ScheduledDeliveryTest extends TestCase
 {
     protected function setUp(): void
     {
         WpStubs::reset();
         SchedulerStubs::reset();
+        Plugin::reset();
         WpStubs::$options[Settings::OPTION] = ['pixel_id' => 'px-1', 'capi_key' => 'secret'];
+    }
+
+    protected function tearDown(): void
+    {
+        Plugin::reset();
     }
 
     #[Test]
@@ -185,6 +193,32 @@ final class ScheduledDeliveryTest extends TestCase
         self::assertNotNull($measurement->flush());
         self::assertCount(1, WpStubs::$requests);
         self::assertSame([], SchedulerStubs::$scheduled);
+    }
+
+    /**
+     * The half of the handover that lives in WordPress rather than in this
+     * class, and the half that is easy to leave out: queueing an action works
+     * perfectly well when nothing is listening for it, and the conversion
+     * disappears without an error. Every WooCommerce site takes this path by
+     * default.
+     */
+    #[Test]
+    public function booting_the_plugin_registers_the_callback_action_scheduler_will_run(): void
+    {
+        Plugin::boot(__DIR__ . '/../conversion-tracking-for-openai-ads.php', '0.1.0');
+
+        $listeners = WpStubs::$filters[ScheduledDelivery::HOOK] ?? [];
+        self::assertCount(1, $listeners, 'Nothing would ever deliver a queued batch.');
+
+        $measurement = $this->measurement();
+        $measurement->record(EventFactory::lead());
+        $measurement->flush();
+
+        $listeners[0]((string) SchedulerStubs::$scheduled[0]['args'][0]);
+
+        self::assertCount(1, WpStubs::$requests, 'The queued batch was not delivered.');
+        $body = json_decode((string) WpStubs::$requests[0]['args']['body'], true);
+        self::assertSame('lead_created', $body['events'][0]['type']);
     }
 
     private function measurement(): Measurement
