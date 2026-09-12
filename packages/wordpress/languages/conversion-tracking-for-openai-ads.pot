@@ -12,51 +12,51 @@ msgstr ""
 "X-Generator: scripts/make-pot.py\n"
 "X-Domain: conversion-tracking-for-openai-ads\n"
 
-#: packages/wordpress/src/Admin/SettingsPage.php:216
+#: packages/wordpress/src/Admin/SettingsPage.php:220
 msgid "API key"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:463
+#: packages/wordpress/src/Admin/SettingsPage.php:467
 msgid "Accept events"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:617
+#: packages/wordpress/src/Admin/SettingsPage.php:671
 msgid "Add a Pixel ID and an API key first."
 msgstr ""
 
 #. translators: %s: the name of a consent plugin, such as Complianz
-#: packages/wordpress/src/Admin/SettingsPage.php:726
+#: packages/wordpress/src/Admin/SettingsPage.php:780
 msgid "Always ask %s"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:570
+#: packages/wordpress/src/Admin/SettingsPage.php:624
 msgid "An independent community integration. Not created, certified, endorsed or supported by OpenAI."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:455
+#: packages/wordpress/src/Admin/SettingsPage.php:459
 msgid "Anyone who can reach the endpoint and knows the secret can record conversions in your account. That does not cost you money directly, but it corrupts the figures your campaigns are optimized against."
 msgstr ""
 
 #. translators: %s: the name of a consent plugin
-#: packages/wordpress/src/Admin/SettingsPage.php:749
+#: packages/wordpress/src/Admin/SettingsPage.php:803
 msgid "Asking %s for marketing consent. Nothing is measured without it."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:269
+#: packages/wordpress/src/Admin/SettingsPage.php:273
 msgid "Canonical origin"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:246
+#: packages/wordpress/src/Admin/SettingsPage.php:250
 msgid "Check events against the API without recording them. Use on staging."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:396
+#: packages/wordpress/src/Admin/SettingsPage.php:400
 msgid "Consent"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:66
-#: packages/wordpress/src/Admin/SettingsPage.php:80
-#: packages/wordpress/src/Admin/SettingsPage.php:163
+#: packages/wordpress/src/Admin/SettingsPage.php:69
+#: packages/wordpress/src/Admin/SettingsPage.php:84
+#: packages/wordpress/src/Admin/SettingsPage.php:167
 msgid "Conversion Tracking for OpenAI Ads"
 msgstr ""
 
@@ -64,189 +64,189 @@ msgstr ""
 msgid "Conversion Tracking for OpenAI Ads is missing its dependencies. Run \"composer install\" in the plugin directory."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:202
+#: packages/wordpress/src/Admin/SettingsPage.php:206
 msgid "Conversions API"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:294
+#: packages/wordpress/src/Admin/SettingsPage.php:298
 msgid "Debug logging"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:280
+#: packages/wordpress/src/Admin/SettingsPage.php:284
 msgid "Deferred delivery"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:368
+#: packages/wordpress/src/Admin/SettingsPage.php:372
 msgid "Detected on this site. Each one measures its own confirmed success boundary - a lead is recorded when the submission is accepted, not when the button is clicked."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:205
+#: packages/wordpress/src/Admin/SettingsPage.php:209
 msgid "Enable server-side events"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:178
+#: packages/wordpress/src/Admin/SettingsPage.php:182
 msgid "Enable the Pixel"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:473
+#: packages/wordpress/src/Admin/SettingsPage.php:477
 msgid "Endpoint URL"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:686
+#: packages/wordpress/src/Admin/SettingsPage.php:740
 msgid "Event"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:793
+#: packages/wordpress/src/Admin/SettingsPage.php:847
 msgid "Every visitor is measured. That may be exactly what you want. If you have visitors in the EU or the UK, it probably is not - install a consent plugin that supports the WP Consent API, or choose one of the other options below."
 msgstr ""
 
 #. translators: %s: a link reading "Integrations and consent"
-#: packages/wordpress/src/Admin/SettingsPage.php:800
+#: packages/wordpress/src/Admin/SettingsPage.php:854
 msgid "Every visitor is measured. That may be exactly what you want. If you have visitors in the EU or the UK, it probably is not - install a consent plugin that supports the WP Consent API, or decide it yourself under %s."
 msgstr ""
 
 #. translators: %s: a comma-separated list of consent plugin names
-#: packages/wordpress/src/Admin/SettingsPage.php:764
+#: packages/wordpress/src/Admin/SettingsPage.php:818
 msgid "Found %s, but this plugin cannot read it directly. Enable its WP Consent API support and it will be used automatically. Guessing at its internals instead would produce a consent check that answers confidently and wrongly."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:81
+#: packages/wordpress/src/Admin/SettingsPage.php:85
 msgid "General"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:285
+#: packages/wordpress/src/Admin/SettingsPage.php:289
 msgid "Hand conversions to Action Scheduler so they survive the request that created them. Recommended. Turn off if this site has no working cron."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:402
+#: packages/wordpress/src/Admin/SettingsPage.php:406
 msgid "How consent is decided"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:90
-#: packages/wordpress/src/Admin/SettingsPage.php:358
+#: packages/wordpress/src/Admin/SettingsPage.php:94
+#: packages/wordpress/src/Admin/SettingsPage.php:362
 msgid "Integrations"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:89
-#: packages/wordpress/src/Admin/SettingsPage.php:350
-#: packages/wordpress/src/Admin/SettingsPage.php:807
+#: packages/wordpress/src/Admin/SettingsPage.php:93
+#: packages/wordpress/src/Admin/SettingsPage.php:354
+#: packages/wordpress/src/Admin/SettingsPage.php:861
 msgid "Integrations and consent"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:454
+#: packages/wordpress/src/Admin/SettingsPage.php:458
 msgid "Leave this off unless you are using it."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:448
+#: packages/wordpress/src/Admin/SettingsPage.php:452
 msgid "Lets Google Tag Manager, or anything else, hand a conversion to this site and have it forwarded to OpenAI from your server. Useful when you want server-side tagging without paying for a server container: the API key stays here, and no ad blocker sees the request to OpenAI."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:183
+#: packages/wordpress/src/Admin/SettingsPage.php:187
 msgid "Load the Pixel in the site head."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:388
+#: packages/wordpress/src/Admin/SettingsPage.php:392
 msgid "Measure conversions from this plugin."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:175
+#: packages/wordpress/src/Admin/SettingsPage.php:179
 msgid "Measurement Pixel"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:814
+#: packages/wordpress/src/Admin/SettingsPage.php:868
 msgid "No consent mechanism was found."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:361
+#: packages/wordpress/src/Admin/SettingsPage.php:365
 msgid "None of the plugins this one integrates with are active here. Contact Form 7, Elementor Pro, Gravity Forms, WPForms, Fluent Forms, Ninja Forms, WooCommerce and Easy Digital Downloads are picked up automatically when they are."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:678
+#: packages/wordpress/src/Admin/SettingsPage.php:732
 msgid "Nothing yet. Send one and reload this page."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:514
+#: packages/wordpress/src/Admin/SettingsPage.php:518
 msgid "One is generated when you switch the endpoint on and save."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:468
+#: packages/wordpress/src/Admin/SettingsPage.php:472
 msgid "Open the collection endpoint."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:67
+#: packages/wordpress/src/Admin/SettingsPage.php:70
 msgid "OpenAI Ads"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:687
+#: packages/wordpress/src/Admin/SettingsPage.php:741
 msgid "Outcome"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:479
+#: packages/wordpress/src/Admin/SettingsPage.php:483
 msgid "POST JSON here. Public information; the secret below is not."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:230
+#: packages/wordpress/src/Admin/SettingsPage.php:234
 msgid "Paste your key"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:189
+#: packages/wordpress/src/Admin/SettingsPage.php:193
 msgid "Pixel ID"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:252
+#: packages/wordpress/src/Admin/SettingsPage.php:256
 msgid "Privacy and diagnostics"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:196
+#: packages/wordpress/src/Admin/SettingsPage.php:200
 msgid "Public. It appears in your pages, which is expected."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:688
+#: packages/wordpress/src/Admin/SettingsPage.php:742
 msgid "Reason"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:674
+#: packages/wordpress/src/Admin/SettingsPage.php:728
 msgid "Recent events received"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:260
+#: packages/wordpress/src/Admin/SettingsPage.php:264
 msgid "Remove query strings from the page URL before sending it. Recommended: they often carry search terms, order keys and reset tokens."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:506
+#: packages/wordpress/src/Admin/SettingsPage.php:510
 msgid "Replace it when I save. Anything still using the old one stops working."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:229
+#: packages/wordpress/src/Admin/SettingsPage.php:233
 msgid "Saved. Leave blank to keep it."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:317
+#: packages/wordpress/src/Admin/SettingsPage.php:321
 msgid "Send a test event"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:210
+#: packages/wordpress/src/Admin/SettingsPage.php:214
 msgid "Send conversions from the server as well as the browser."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:498
+#: packages/wordpress/src/Admin/SettingsPage.php:502
 msgid "Send it as the X-OpenAI-Ads-Key header on every request. Treat it like a password."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:523
+#: packages/wordpress/src/Admin/SettingsPage.php:527
 msgid "Sending from a server rather than a browser? Include source_url, oppref, obref, ip_address and user_agent in the payload. Without them the conversion is attributed to the machine that called this endpoint, not to the visitor."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:310
+#: packages/wordpress/src/Admin/SettingsPage.php:314
 msgid "Sends one event in the API's validation mode. Nothing is recorded, so this cannot create a fake conversion."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:232
+#: packages/wordpress/src/Admin/SettingsPage.php:236
 msgid "Server-side only. Never rendered into a page, never written to a log."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:221
-#: packages/wordpress/src/Admin/SettingsPage.php:490
+#: packages/wordpress/src/Admin/SettingsPage.php:225
+#: packages/wordpress/src/Admin/SettingsPage.php:494
 msgid "Set in wp-config.php."
 msgstr ""
 
@@ -254,76 +254,76 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:485
+#: packages/wordpress/src/Admin/SettingsPage.php:489
 msgid "Shared secret"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:255
+#: packages/wordpress/src/Admin/SettingsPage.php:259
 msgid "Strip query strings"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:643
+#: packages/wordpress/src/Admin/SettingsPage.php:697
 msgid "Success. The credentials work and the event validated."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:99
+#: packages/wordpress/src/Admin/SettingsPage.php:103
 msgid "Tag manager"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:98
-#: packages/wordpress/src/Admin/SettingsPage.php:439
+#: packages/wordpress/src/Admin/SettingsPage.php:102
+#: packages/wordpress/src/Admin/SettingsPage.php:443
 msgid "Tag manager endpoint"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:308
+#: packages/wordpress/src/Admin/SettingsPage.php:312
 msgid "Test the connection"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:324
+#: packages/wordpress/src/Admin/SettingsPage.php:328
 msgid "Testing…"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:491
+#: packages/wordpress/src/Admin/SettingsPage.php:495
 msgid "That is the safer place for it."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:637
+#: packages/wordpress/src/Admin/SettingsPage.php:691
 msgid "The API could not be reached. Check the site can make outbound requests."
 msgstr ""
 
 #. translators: %d: HTTP status code
-#: packages/wordpress/src/Admin/SettingsPage.php:650
+#: packages/wordpress/src/Admin/SettingsPage.php:704
 msgid "The API returned HTTP %d. Check the Pixel ID and API key."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:333
+#: packages/wordpress/src/Admin/SettingsPage.php:337
 msgid "The request failed."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:222
+#: packages/wordpress/src/Admin/SettingsPage.php:226
 msgid "This is the safer place for it, and it cannot be edited here."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:415
+#: packages/wordpress/src/Admin/SettingsPage.php:419
 msgid "This plugin ships no cookie banner and makes no privacy decision for you. It asks yours. Nothing is collected and no Pixel is loaded when the answer is no."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:241
+#: packages/wordpress/src/Admin/SettingsPage.php:245
 msgid "Validation mode"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:685
+#: packages/wordpress/src/Admin/SettingsPage.php:739
 msgid "When (UTC)"
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:299
+#: packages/wordpress/src/Admin/SettingsPage.php:303
 msgid "Write failures to the PHP error log. Payloads are never logged."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:610
+#: packages/wordpress/src/Admin/SettingsPage.php:664
 msgid "You are not allowed to do this."
 msgstr ""
 
-#: packages/wordpress/src/Admin/SettingsPage.php:560
+#: packages/wordpress/src/Admin/SettingsPage.php:614
 msgid "You do not have permission to manage these settings."
 msgstr ""

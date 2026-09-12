@@ -31,13 +31,48 @@ if [ ! -d "$source_dir/vendor" ]; then
 	exit 1
 fi
 
-# A dev install leaves PHPUnit and PHPStan in vendor/, which would be shipped to
-# every site. Catching it here is the difference between a 200KB plugin and a
-# 20MB one containing an analyser.
-if [ -d "$source_dir/vendor/phpunit" ]; then
-	echo "vendor/ contains dev dependencies. Re-run composer install with --no-dev." >&2
-	exit 1
-fi
+# What is in vendor/ decides what every installed site receives, so it is checked
+# against what Composer says should be there rather than against a list of names
+# somebody has to remember to extend.
+#
+# Two different failures, and the second one is the reason this is not a
+# `[ -d vendor/phpunit ]` test any more. A dev install is obvious and
+# installed.json records it. An orphan is not: a Composer extraction that fails
+# part way - antivirus or the search indexer holding a file open is enough on
+# Windows - leaves the directory behind WITHOUT recording the package, so a
+# later `composer install --no-dev` cannot remove what it was never told about.
+# php-cs-fixer reached a built zip that way, 4.6MB of it, and only the size
+# check below noticed. A smaller one would have shipped in silence.
+python - "$source_dir" <<'CHECK'
+import json
+import sys
+from pathlib import Path
+
+vendor = Path(sys.argv[1]) / "vendor"
+manifest = vendor / "composer" / "installed.json"
+
+if not manifest.is_file():
+    sys.exit(f"{manifest} is missing. Run composer install --no-dev in packages/wordpress.")
+
+installed = json.loads(manifest.read_text(encoding="utf-8"))
+
+if installed.get("dev") or installed.get("dev-package-names"):
+    sys.exit("vendor/ was installed with dev dependencies. Re-run composer install with --no-dev.")
+
+# Composer lays packages out as vendor/<publisher>/<package>, plus its own two.
+accounted = {package["name"].split("/")[0] for package in installed["packages"]}
+accounted |= {"composer", "bin"}
+
+stray = sorted(entry.name for entry in vendor.iterdir() if entry.is_dir() and entry.name not in accounted)
+
+if stray:
+    sys.exit(
+        "vendor/ holds directories Composer does not account for: "
+        + ", ".join(stray)
+        + ". These are debris from an interrupted install and would be shipped."
+        + " Delete them, then re-run composer install --no-dev."
+    )
+CHECK
 
 rm -rf "$stage" "$archive"
 mkdir -p "$stage"

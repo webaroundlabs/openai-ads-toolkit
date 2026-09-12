@@ -4,7 +4,7 @@ Tags: openai, conversion tracking, analytics, pixel, conversions api
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 0.1.1
+Stable tag: 0.1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -276,6 +276,15 @@ test suite asserts this.
    protected by a generated secret, with a log of what it has received lately.
 
 == Changelog ==
+
+= 0.1.2 =
+* The settings moved out of Settings and into their own menu, split across
+  General, Integrations and Tag manager.
+* Fixed: saving one settings screen could blank the settings on another,
+  including the Pixel ID and the API key. It could also overwrite a setting the
+  screen had hidden - on a site without WooCommerce, every save turned deferred
+  delivery off.
+* The plugin's mark now appears in the admin menu.
 
 = 0.1.1 =
 * No change to this plugin. The release fixed attribution in the toolkit's
