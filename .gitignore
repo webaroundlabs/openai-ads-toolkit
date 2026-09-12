@@ -135,3 +135,11 @@ phpstan.tests.neon
 # ---------------------------------------------------------------------------
 # scripts/build-plugin.sh stages and zips the WordPress plugin here.
 build/
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+# The scripts are normally run, not imported, so this only appears when
+# something imports one - a test of scripts/mirror-gtm.py's metadata round-trip,
+# for instance.
+__pycache__/

@@ -204,6 +204,12 @@ MIT rather than Apache-2.0 specifically so the WordPress plugin can bundle the P
 Apache-2.0 is incompatible with GPLv2, and the WordPress plugin directory requires
 GPLv2-or-later compatibility.
 
+Two packages differ, each because of where it is published. The WordPress plugin is
+GPL-2.0-or-later. `packages/gtm-web` and `packages/gtm-server` are
+[Apache-2.0](packages/gtm-web/LICENSE), which the GTM Community Template Gallery
+requires of a repository it indexes — nothing bundles those two into the plugin, so
+the incompatibility above never arises.
+
 ---
 
 This is an independent, community-built integration. It is **not** created, certified,

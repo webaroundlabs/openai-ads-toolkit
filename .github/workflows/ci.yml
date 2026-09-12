@@ -31,6 +31,13 @@ jobs:
       - name: Verify the shared specification
         run: python packages/spec/verify.py
 
+      # The two gallery packages are published as standalone repositories, where
+      # a relative README link 404s and a LICENSE that is not the Apache 2.0 text
+      # is refused outright. Building the mirror trees here says so on the pull
+      # request, rather than on the tag that was meant to publish them.
+      - name: Build the GTM gallery mirrors
+        run: python scripts/mirror-gtm.py --into "${RUNNER_TEMP}/gtm-mirrors"
+
   php:
     name: PHP core (${{ matrix.php }})
     runs-on: ubuntu-latest

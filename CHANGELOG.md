@@ -10,7 +10,38 @@ While the version is `0.x` the public API may change in any release. See
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **The two GTM templates are mirrored into single-template repositories** —
+  `openai-ads-gtm-web` and `openai-ads-gtm-server` — which is the shape the
+  Community Template Gallery indexes: one template per repository, with
+  `template.tpl`, `metadata.yaml`, `LICENSE` and `README.md` in the root.
+  `scripts/mirror-gtm.py` builds them and the `Mirrors` workflow keeps them
+  current. Unlike the Packagist mirrors these are append-only and never
+  force-pushed: the gallery serves each published version from the commit sha
+  `metadata.yaml` names, and a sha that stops being reachable is a template that
+  stops loading. A release there is two commits, because a version entry names
+  the commit holding the template it publishes and no commit can contain its own
+  sha. `packages/gtm-collect` has no mirror — it needs this project's WordPress
+  plugin to do anything, so in the gallery it would be a tag that does nothing
+  for nearly everyone who found it.
+- `python scripts/mirror-gtm.py --into build/gtm-mirrors` shows what the gallery
+  would receive, with no network and no credentials. CI runs it on every pull
+  request, so a stray file in either package, a `LICENSE` that is no longer the
+  Apache 2.0 text, or a README link that would 404 outside the monorepo fails
+  there rather than in a review round at Google.
+
+### Changed
+
+- **`packages/gtm-web` and `packages/gtm-server` are Apache-2.0**, where the rest
+  of the toolkit is MIT. The gallery requires a repository whose `LICENSE` is the
+  Apache 2.0 text and nothing else, so a template published there cannot carry
+  another licence. The reason the rest of the repository is MIT — Apache-2.0 is
+  incompatible with GPLv2, and the WordPress plugin bundles the PHP core — does
+  not reach these two, because nothing bundles them into the plugin.
+  `packages/gtm-collect` is unaffected and stays MIT.
+- `.github/workflows/split.yml` is now `mirrors.yml`. It no longer only splits:
+  half of it does, for Packagist, and half of it does not, for the gallery.
 
 ## [0.1.2] - 2026-09-12
 

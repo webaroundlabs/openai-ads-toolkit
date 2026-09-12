@@ -103,7 +103,8 @@ it has been wrong before and the reasoning is more useful than the rule.
 
 By contributing you agree your work is licensed under the [MIT License](LICENSE),
 except the WordPress plugin, which is GPL-2.0-or-later as the plugin directory
-requires.
+requires, and `packages/gtm-web` and `packages/gtm-server`, which are Apache-2.0
+as the GTM Community Template Gallery requires.
 
 ## Releasing
 

@@ -1,0 +1,168 @@
+# Two registries index a package by the repository it sits at the root of, and
+# neither has a concept of a package in a subdirectory. Every package here does
+# live in one, so each is mirrored into a repository whose root *is* the package.
+#
+# The mirrors are generated. Nothing is developed in them, and anything committed
+# to one directly is lost.
+#
+# The two halves are built differently, and the difference is not cosmetic:
+#
+#   Packagist reads the tag, and only the tag. So `git subtree split` produces
+#   the mirror and every run force-pushes the result. The split is deterministic,
+#   so that republishes the same commits rather than inventing new ones.
+#
+#   The GTM Community Template Gallery reads a commit sha out of metadata.yaml
+#   and serves the template exactly as it stood there, for as long as that
+#   version is published. So that history is append-only and never force-pushed -
+#   rewriting it would unpublish every version ever submitted. scripts/mirror-gtm.py
+#   has the details.
+name: Mirrors
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Two runs pushing to the same mirror would race; a tag must not overtake the
+  # branch push that carries the commit it points at.
+  group: mirrors
+  cancel-in-progress: false
+
+jobs:
+  composer:
+    name: Mirror packages/${{ matrix.package }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: php
+            mirror: openai-ads-php
+          - package: laravel
+            mirror: openai-ads-laravel
+    steps:
+      # subtree split walks the whole history, so a shallow clone will not do.
+      #
+      # persist-credentials: false matters more than it looks. Checkout
+      # otherwise leaves an http.<github>.extraheader in the local git config
+      # carrying GITHUB_TOKEN, and that header wins over credentials in a remote
+      # url - so the push to the mirror goes out as github-actions[bot], which
+      # has no access to another repository, and fails with a 403 that says
+      # nothing about SPLIT_TOKEN.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Split the package out of the monorepo
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          sha="$(git subtree split --prefix="packages/${{ matrix.package }}")"
+          echo "Split packages/${{ matrix.package }} to $sha"
+          echo "split_sha=$sha" >> "$GITHUB_OUTPUT"
+        id: split
+
+      - name: Push it to the mirror
+        env:
+          # A fine-grained token with Contents: write on the mirrors.
+          # GITHUB_TOKEN cannot reach another repository.
+          SPLIT_TOKEN: ${{ secrets.SPLIT_TOKEN }}
+          SPLIT_SHA: ${{ steps.split.outputs.split_sha }}
+          MIRROR: ${{ matrix.mirror }}
+        run: |
+          # A missing token means the one-time setup in docs/releasing.md has not
+          # been done. On a branch push that is recoverable at any time - the
+          # next run republishes everything - so it is a warning. On a tag it is
+          # a release that never reached Packagist, so it is a failure.
+          if [ -z "$SPLIT_TOKEN" ]; then
+            if [ "${GITHUB_REF_TYPE}" = 'tag' ]; then
+              echo "::error::SPLIT_TOKEN is not set, so $GITHUB_REF_NAME cannot reach the mirror. See docs/releasing.md."
+              exit 1
+            fi
+            echo "::warning::SPLIT_TOKEN is not set, so the mirrors are not being updated. See docs/releasing.md."
+            exit 0
+          fi
+          remote="https://x-access-token:${SPLIT_TOKEN}@github.com/${{ github.repository_owner }}/${MIRROR}.git"
+          git push --force "$remote" "${SPLIT_SHA}:refs/heads/main"
+
+      # Packagist takes its versions from tags, so the tag has to reach the
+      # mirror as well - pointing at the split commit, not at this one.
+      - name: Carry the tag over
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          SPLIT_TOKEN: ${{ secrets.SPLIT_TOKEN }}
+          SPLIT_SHA: ${{ steps.split.outputs.split_sha }}
+          MIRROR: ${{ matrix.mirror }}
+        run: |
+          remote="https://x-access-token:${SPLIT_TOKEN}@github.com/${{ github.repository_owner }}/${MIRROR}.git"
+          git tag -f "$GITHUB_REF_NAME" "$SPLIT_SHA"
+          git push --force "$remote" "refs/tags/$GITHUB_REF_NAME"
+
+  gallery:
+    name: Mirror packages/${{ matrix.package }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: gtm-web
+            mirror: openai-ads-gtm-web
+          - package: gtm-server
+            mirror: openai-ads-gtm-server
+    steps:
+      # Tags and full history, because the change notes for a version are the
+      # commits that touched the package since the previous tag. Same
+      # persist-credentials reasoning as above.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      # Runs before anything is pushed, so a package that no longer has the shape
+      # the gallery requires - a stray file, a LICENSE that is not Apache 2.0, a
+      # README link that would 404 outside the monorepo - fails here rather than
+      # in a human review round at Google.
+      - name: Build both mirror trees
+        run: python scripts/mirror-gtm.py --into "${RUNNER_TEMP}/gtm-mirrors"
+
+      - name: Sync the mirror
+        env:
+          SPLIT_TOKEN: ${{ secrets.SPLIT_TOKEN }}
+          MIRROR: ${{ matrix.mirror }}
+        run: |
+          if [ -z "$SPLIT_TOKEN" ]; then
+            if [ "${GITHUB_REF_TYPE}" = 'tag' ]; then
+              echo "::error::SPLIT_TOKEN is not set, so $GITHUB_REF_NAME cannot reach the mirror. See docs/releasing.md."
+              exit 1
+            fi
+            echo "::warning::SPLIT_TOKEN is not set, so the mirrors are not being updated. See docs/releasing.md."
+            exit 0
+          fi
+
+          # On a tag the sync is followed by a commit adding the version entry
+          # that names it, which is what the gallery reads. On a branch push the
+          # mirror is only brought up to date - a published version is a
+          # deliberate act, the same as every other release here.
+          remote="https://x-access-token:${SPLIT_TOKEN}@github.com/${{ github.repository_owner }}/${MIRROR}.git"
+
+          if [ "${GITHUB_REF_TYPE}" != 'tag' ]; then
+            python scripts/mirror-gtm.py --package "${{ matrix.package }}" --push "$remote"
+            exit 0
+          fi
+
+          python scripts/mirror-gtm.py --package "${{ matrix.package }}" \
+            --push "$remote" --tag "$GITHUB_REF_NAME"
+
+          # The gallery is submitted by hand and reviewed by a human, so the
+          # workflow cannot finish the job - only say the version is waiting.
+          echo "::notice::$MIRROR now carries $GITHUB_REF_NAME. Submit it from the GTM template editor - see docs/releasing.md."

@@ -13,7 +13,7 @@ Two properties follow from this and shape every decision below:
 
 ### Repository layout
 
-Eight packages, built in dependency order and still pre-`1.0`. `packages/php` and `packages/laravel` are published to Packagist from generated mirror repositories, because Packagist reads the `composer.json` at a repository root and has no concept of a package in a subdirectory - see `docs/releasing.md`.
+Eight packages, built in dependency order and still pre-`1.0`. Four of them are published from generated mirror repositories, because neither registry that indexes them understands a package in a subdirectory: `packages/php` and `packages/laravel` reach Packagist, which reads the `composer.json` at a repository root, and `packages/gtm-web` and `packages/gtm-server` reach the GTM Community Template Gallery, which wants one template per repository with `template.tpl`, `metadata.yaml`, `LICENSE` and `README.md` in the root. Those two carry the **Apache 2.0** text as their `LICENSE`, which the gallery requires and the rest of this MIT repository does not use - see `docs/releasing.md`.
 
 ```
 packages/spec        the source of truth: 13 events, identity mapping, golden fixtures.
@@ -59,12 +59,13 @@ cd packages/wordpress && composer install && composer check
 | Style | `composer style` / `composer style:fix` | `npm run lint` / `npm run lint:fix` |
 | Build | — | `npm run build` |
 
-Two repository-wide scripts:
+Repository-wide scripts:
 
 ```bash
-python scripts/make-pot.py           # regenerate the WordPress translation catalogue
-python scripts/check-version.py 0.2.0  # a release tag agrees with every manifest
-bash   scripts/build-plugin.sh       # the installable WordPress plugin zip
+python scripts/make-pot.py                        # regenerate the WordPress translation catalogue
+python scripts/check-version.py 0.2.0             # a release tag agrees with every manifest
+bash   scripts/build-plugin.sh                    # the installable WordPress plugin zip
+python scripts/mirror-gtm.py --into build/gtm-mirrors   # what the GTM gallery would receive
 ```
 
 The WordPress plugin's slug is **`conversion-tracking-for-openai-ads`**, not
