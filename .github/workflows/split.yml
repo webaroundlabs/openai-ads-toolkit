@@ -44,7 +44,7 @@ jobs:
       # url - so the push to the mirror goes out as github-actions[bot], which
       # has no access to another repository, and fails with a 403 that says
       # nothing about SPLIT_TOKEN.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
