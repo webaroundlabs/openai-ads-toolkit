@@ -93,10 +93,16 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # No registry-url on purpose. It makes setup-node write an .npmrc holding
+      # `//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}` and point
+      # NPM_CONFIG_USERCONFIG at it. With no NODE_AUTH_TOKEN in the environment
+      # that line still reads as a credential, so npm believes it is
+      # authenticated, never falls back to Trusted Publishing, and the registry
+      # answers a bare 404 on PUT - the status it uses for writes it will not
+      # explain. registry.npmjs.org is the default registry anyway.
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
           cache: npm
           cache-dependency-path: packages/js/package-lock.json
 
