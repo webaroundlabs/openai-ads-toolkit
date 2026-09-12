@@ -13,7 +13,7 @@ Two properties follow from this and shape every decision below:
 
 ### Repository layout
 
-Seven packages, built in dependency order and still pre-`1.0`. Nothing is published to Packagist, npm, the WordPress plugin directory or the GTM gallery.
+Eight packages, built in dependency order and still pre-`1.0`. `packages/php` and `packages/laravel` are published to Packagist from generated mirror repositories, because Packagist reads the `composer.json` at a repository root and has no concept of a package in a subdirectory - see `docs/releasing.md`.
 
 ```
 packages/spec        the source of truth: 13 events, identity mapping, golden fixtures.
@@ -26,9 +26,13 @@ packages/wordpress   plugin: Pixel, Conversions API, settings, Contact Form 7,
                      Elementor Forms, WooCommerce.
 packages/gtm-web     Google Tag Manager web container template.
 packages/gtm-server  Google Tag Manager server container template.
+packages/gtm-collect a GTM template that posts to your own site instead of to a
+                     server container, for sites with no server-side GTM.
 ```
 
 The adapters reach the core through a Composer **path repository**, and every test suite reads `packages/spec` by relative path. Both run from a monorepo checkout only. That is intended.
+
+That path repository's url is `../php*`, with the asterisk. Composer errors outright on a non-glob path repository whose directory is missing, and in the generated Packagist mirror it is missing; a glob matching nothing is skipped silently. So the same `composer.json` resolves the core locally and from Packagist once published. Removing the asterisk makes the published Laravel package impossible to install.
 
 ### Commands
 
