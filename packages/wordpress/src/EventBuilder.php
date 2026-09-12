@@ -7,6 +7,7 @@ namespace WebaroundLabs\OpenAIAds\WordPress;
 use WebaroundLabs\OpenAIAds\Clock;
 use WebaroundLabs\OpenAIAds\Event;
 use WebaroundLabs\OpenAIAds\EventFactory;
+use WebaroundLabs\OpenAIAds\HostContext;
 use WebaroundLabs\OpenAIAds\InvalidArgument;
 
 /**
@@ -42,11 +43,26 @@ final class EventBuilder
      * @param array<string, mixed> $options event_id, custom_event_name, opt_out, user,
      *                                      action_source, source_url, timestamp_ms,
      *                                      contents, plan_id.
+     * @param HostContext|null     $context Overrides what this request knows. The
+     *                                      collection endpoint needs it: a POST to
+     *                                      /wp-json did not happen on the page the
+     *                                      conversion did, so the request's own URL,
+     *                                      cookies and address describe the wrong
+     *                                      thing. Everything else leaves it null.
      *
      * @throws InvalidArgument when the caller supplied something the API cannot accept
      */
-    public function build(string $eventName, array $data = [], array $options = []): Event
-    {
-        return $this->factory->build($eventName, $data, $options, $this->context->forMeasurement());
+    public function build(
+        string $eventName,
+        array $data = [],
+        array $options = [],
+        ?HostContext $context = null,
+    ): Event {
+        return $this->factory->build(
+            $eventName,
+            $data,
+            $options,
+            $context ?? $this->context->forMeasurement(),
+        );
     }
 }

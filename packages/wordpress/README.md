@@ -169,7 +169,53 @@ add_filter( 'openai_ads_form_event', function ( $event, $form_id, $source ) {
 Any documented event works. For `custom`, supply the name via
 `openai_ads_form_custom_event_name` — it is used on both sides, as it must be.
 
-### Adding your own
+### Receiving events from a tag manager
+
+Server-side tagging in GTM normally needs a server container hosted on Google
+Cloud. If you would rather not pay for one, the plugin can accept the event
+itself and forward it:
+
+```
+Browser → GTM web container → your site (/wp-json/openai-ads/v1/collect) → OpenAI
+```
+
+The API key stays on your server, and the request to OpenAI is not something an
+ad blocker can see. Switch it on under **Settings → OpenAI Ads → Tag manager
+endpoint**, which also shows you the URL and generates a shared secret.
+
+```bash
+curl -X POST https://yoursite.com/wp-json/openai-ads/v1/collect   -H 'Content-Type: application/json'   -H 'X-OpenAI-Ads-Key: YOUR-SECRET'   -d '{"event":"lead_created","event_id":"lead_123",
+       "source_url":"https://yoursite.com/thank-you",
+       "user":{"email":"visitor@example.com"}}'
+```
+
+The payload takes the same fields `openai_ads_track()` does, so anything you can
+measure in PHP you can measure from here — custom events included.
+
+**Treat the secret like a password.** An endpoint that forwards conversions
+writes into your measurement data: anyone who can reach it and knows the secret
+can record conversions that never happened. That does not cost you money
+directly, but it corrupts the figures your campaigns are optimized against, and
+nothing downstream will flag it. The endpoint is off until you switch it on, it
+refuses to run without a secret, comparisons are constant-time, and requests are
+rate limited to 120 per minute per address (`openai_ads_ingest_rate_limit`).
+
+Prefer to keep the secret out of the database entirely:
+
+```php
+define( 'OPENAI_ADS_INGEST_SECRET', '…' );   // in wp-config.php
+```
+
+**Posting from a server rather than a browser?** Send `source_url`, `oppref`,
+`obref`, `ip_address` and `user_agent` explicitly. A browser posting same-origin
+supplies all five and the plugin reads them itself; a server does not, and
+without them the conversion is attributed to the machine that called the
+endpoint rather than to the visitor.
+
+There is a ready-made GTM tag template for this in
+[`packages/gtm-collect`](../gtm-collect/README.md).
+
+## Adding your own
 
 ```php
 add_filter( 'openai_ads_integrations', function ( array $integrations ) {

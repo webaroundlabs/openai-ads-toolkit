@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WebaroundLabs\OpenAIAds\WordPress;
 
+use WebaroundLabs\OpenAIAds\WordPress\Http\Ingest;
+
 /**
  * Typed access to the plugin's stored options.
  *
@@ -31,6 +33,9 @@ final class Settings
      * @var list<string>
      */
     private const OFF_BY_DEFAULT = ['user_registration'];
+
+    /** Lets the collection endpoint's secret live in wp-config.php. */
+    public const INGEST_SECRET_CONSTANT = 'OPENAI_ADS_INGEST_SECRET';
 
     /** @var array<string, mixed>|null */
     private ?array $cache = null;
@@ -193,6 +198,47 @@ final class Settings
     }
 
     /**
+     * Whether the REST collection endpoint accepts events.
+     *
+     * Off by default, and the only setting in this class where that is a
+     * security decision rather than a preference: an open endpoint that forwards
+     * conversions lets anyone who finds it write into the advertiser's data.
+     */
+    public function ingestEnabled(): bool
+    {
+        return $this->bool('ingest_enabled', false) && $this->ingestSecret() !== null;
+    }
+
+    /**
+     * The shared secret callers must present.
+     *
+     * Like the API key, it may live in wp-config.php instead of the database -
+     * which keeps it out of database dumps and staging copies, and out of reach
+     * of anyone who can edit options but not files.
+     */
+    public function ingestSecret(): ?string
+    {
+        if (\defined(self::INGEST_SECRET_CONSTANT)) {
+            $value = trim((string) \constant(self::INGEST_SECRET_CONSTANT));
+
+            return $value !== '' ? $value : null;
+        }
+
+        return $this->stringOrNull('ingest_secret');
+    }
+
+    public function ingestSecretIsConstant(): bool
+    {
+        return \defined(self::INGEST_SECRET_CONSTANT);
+    }
+
+    /** The URL callers post to. Public information; the secret is not. */
+    public function ingestUrl(): string
+    {
+        return \rest_url(Ingest::NAMESPACE . Ingest::ROUTE);
+    }
+
+    /**
      * Validate and normalize a submitted settings array.
      *
      * This is the boundary: everything here arrives from an HTTP form and is
@@ -239,6 +285,8 @@ final class Settings
             'canonical_origin' => $canonical,
             'timeout' => max(1, min(30, (int) ($input['timeout'] ?? 5))),
             'integrations' => $this->sanitizeIntegrations($input),
+            'ingest_enabled' => !empty($input['ingest_enabled']),
+            'ingest_secret' => $this->ingestSecretFrom($input, $current),
         ];
     }
 
@@ -291,6 +339,28 @@ final class Settings
     public function forget(): void
     {
         $this->cache = null;
+    }
+
+    /**
+     * Keep, rotate or mint the endpoint's secret.
+     *
+     * Minted rather than typed: a secret somebody chooses is a secret somebody
+     * can guess. 32 bytes from the platform CSPRNG, hex encoded.
+     *
+     * @param array<string, mixed> $input
+     * @param array<string, mixed> $current
+     */
+    private function ingestSecretFrom(array $input, array $current): string
+    {
+        $existing = isset($current['ingest_secret']) && is_string($current['ingest_secret'])
+            ? $current['ingest_secret']
+            : '';
+
+        if (!empty($input['ingest_rotate']) || ($existing === '' && !empty($input['ingest_enabled']))) {
+            return bin2hex(random_bytes(32));
+        }
+
+        return $existing;
     }
 
     private function stringOrNull(string $key): ?string

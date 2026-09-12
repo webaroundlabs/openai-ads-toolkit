@@ -33,6 +33,14 @@ accident.
   Registration is **off by default**: `user_register` also fires for an
   administrator adding a colleague and for an importer restoring a backup, and
   counting those inflates the number the advertiser optimizes against.
+- **A collection endpoint for WordPress**, at
+  `/wp-json/openai-ads/v1/collect`, so a tag manager can hand a conversion to
+  the site and have it forwarded from there. Server-side measurement without
+  paying for a GTM server container: the API key stays on the server, and the
+  request to OpenAI is not something an ad blocker sees. Off until switched on,
+  refuses to run without a secret, constant-time comparison, rate limited, with
+  a diagnostics table that never records the payload. Plus a third GTM template,
+  `packages/gtm-collect`, that posts to it from a web container.
 - Google Tag Manager templates for web and server containers. The server
   template's hand-written identity normalization - the sandbox has no regular
   expressions, so that code could not be shared - is asserted against the same

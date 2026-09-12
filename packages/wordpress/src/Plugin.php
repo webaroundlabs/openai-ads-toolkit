@@ -9,6 +9,7 @@ use WebaroundLabs\OpenAIAds\ImageTag;
 use WebaroundLabs\OpenAIAds\InvalidArgument;
 use WebaroundLabs\OpenAIAds\SystemClock;
 use WebaroundLabs\OpenAIAds\WordPress\Admin\SettingsPage;
+use WebaroundLabs\OpenAIAds\WordPress\Http\Ingest;
 use WebaroundLabs\OpenAIAds\WordPress\Integrations\Registry;
 
 /**
@@ -33,6 +34,8 @@ final class Plugin
     private ?Pixel $pixel = null;
 
     private ?Registry $integrations = null;
+
+    private ?Ingest $ingest = null;
 
     private function __construct(
         public readonly string $file,
@@ -84,6 +87,12 @@ final class Plugin
     public function integrations(): Registry
     {
         return $this->integrations ??= new Registry($this, $this->settings());
+    }
+
+    /** The REST endpoint that accepts conversions from a tag manager. */
+    public function ingest(): Ingest
+    {
+        return $this->ingest ??= new Ingest($this, $this->settings());
     }
 
     public function builder(): EventBuilder
@@ -193,6 +202,12 @@ final class Plugin
     private function registerHooks(): void
     {
         \add_action('wp_head', [$this->pixel(), 'render'], 1);
+
+        // Registers one hook, nothing more. The route itself is only declared if
+        // the site switched the endpoint on, and that is checked inside
+        // rest_api_init rather than here: reading an option on every request is
+        // the tax this class exists to avoid.
+        $this->ingest()->register();
 
         // Integrations attach to their host plugin's hooks, which are declared
         // after plugins_loaded. `init` is late enough that every host has

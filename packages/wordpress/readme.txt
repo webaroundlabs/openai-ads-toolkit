@@ -45,6 +45,16 @@ second report for the same conversion.
 None of them is required. Each can be switched off individually under
 Settings -> OpenAI Ads.
 
+= Tag manager endpoint =
+
+Optional, and off by default. Lets Google Tag Manager hand a conversion to your
+site, which forwards it to OpenAI - server-side measurement without paying for a
+GTM server container. Your API key stays on your server and the request to
+OpenAI is not something an ad blocker can see.
+
+Protected by a generated secret, rate limited, and it refuses to run without
+one. Only switch it on if you are using it.
+
 = Other integrations =
 
 * **Easy Digital Downloads** - a purchase once the payment completes, with line

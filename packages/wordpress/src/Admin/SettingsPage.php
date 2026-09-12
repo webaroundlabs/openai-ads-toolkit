@@ -6,6 +6,7 @@ namespace WebaroundLabs\OpenAIAds\WordPress\Admin;
 
 use WebaroundLabs\OpenAIAds\InvalidArgument;
 use WebaroundLabs\OpenAIAds\WordPress\EventBuilder;
+use WebaroundLabs\OpenAIAds\WordPress\Http\Ingest;
 use WebaroundLabs\OpenAIAds\WordPress\Integrations\Registry;
 use WebaroundLabs\OpenAIAds\WordPress\Measurement;
 use WebaroundLabs\OpenAIAds\WordPress\Settings;
@@ -267,8 +268,109 @@ final class SettingsPage
                     </tr>
                 </table>
 
+                <h2><?php echo \esc_html__('Tag manager endpoint', 'openai-ads'); ?></h2>
+                <p class="description">
+                    <?php echo \esc_html__(
+                        'Lets Google Tag Manager, or anything else, hand a conversion to this site and have it forwarded to OpenAI from your server. Useful when you want server-side tagging without paying for a server container: the API key stays here, and no ad blocker sees the request to OpenAI.',
+                        'openai-ads',
+                    ); ?>
+                </p>
+                <p class="description">
+                    <strong><?php echo \esc_html__('Leave this off unless you are using it.', 'openai-ads'); ?></strong>
+                    <?php echo \esc_html__(
+                        'Anyone who can reach the endpoint and knows the secret can record conversions in your account. That does not cost you money directly, but it corrupts the figures your campaigns are optimized against.',
+                        'openai-ads',
+                    ); ?>
+                </p>
+
+                <table class="form-table" role="presentation">
+                    <tr>
+                        <th scope="row"><?php echo \esc_html__('Accept events', 'openai-ads'); ?></th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="<?php echo \esc_attr(Settings::OPTION); ?>[ingest_enabled]"
+                                       value="1" <?php \checked($s->ingestEnabled()); ?>>
+                                <?php echo \esc_html__('Open the collection endpoint.', 'openai-ads'); ?>
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php echo \esc_html__('Endpoint URL', 'openai-ads'); ?></th>
+                        <td>
+                            <input type="text" class="large-text code" readonly
+                                   onfocus="this.select()"
+                                   value="<?php echo \esc_attr($s->ingestUrl()); ?>">
+                            <p class="description">
+                                <?php echo \esc_html__('POST JSON here. Public information; the secret below is not.', 'openai-ads'); ?>
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">
+                            <?php echo \esc_html__('Shared secret', 'openai-ads'); ?>
+                        </th>
+                        <td>
+                            <?php if ($s->ingestSecretIsConstant()) { ?>
+                                <p>
+                                    <strong><?php echo \esc_html__('Set in wp-config.php.', 'openai-ads'); ?></strong>
+                                    <?php echo \esc_html__('That is the safer place for it.', 'openai-ads'); ?>
+                                </p>
+                            <?php } elseif ($s->ingestSecret() !== null) { ?>
+                                <input type="text" class="large-text code" readonly
+                                       onfocus="this.select()"
+                                       value="<?php echo \esc_attr((string) $s->ingestSecret()); ?>">
+                                <p class="description">
+                                    <?php echo \esc_html__(
+                                        'Send it as the X-OpenAI-Ads-Key header on every request. Treat it like a password.',
+                                        'openai-ads',
+                                    ); ?>
+                                </p>
+                                <p>
+                                    <label>
+                                        <input type="checkbox" name="<?php echo \esc_attr(Settings::OPTION); ?>[ingest_rotate]" value="1">
+                                        <?php echo \esc_html__(
+                                            'Replace it when I save. Anything still using the old one stops working.',
+                                            'openai-ads',
+                                        ); ?>
+                                    </label>
+                                </p>
+                            <?php } else { ?>
+                                <p class="description">
+                                    <?php echo \esc_html__('One is generated when you switch the endpoint on and save.', 'openai-ads'); ?>
+                                </p>
+                            <?php } ?>
+                        </td>
+                    </tr>
+                </table>
+
+                <?php if ($s->ingestEnabled()) { ?>
+                    <p class="description">
+                        <?php echo \esc_html__(
+                            'Sending from a server rather than a browser? Include source_url, oppref, obref, ip_address and user_agent in the payload. Without them the conversion is attributed to the machine that called this endpoint, not to the visitor.',
+                            'openai-ads',
+                        ); ?>
+                    </p>
+                    <pre class="code" style="overflow:auto;padding:1em;background:#f6f7f7;"><?php
+                        echo \esc_html(sprintf(
+                            "curl -X POST %s \\\n  -H 'Content-Type: application/json' \\\n"
+                            . "  -H '%s: YOUR-SECRET' \\\n"
+                            . "  -d '%s'",
+                            $s->ingestUrl(),
+                            Ingest::SECRET_HEADER,
+                            (string) \wp_json_encode([
+                                'event' => 'lead_created',
+                                'event_id' => 'lead_123',
+                                'source_url' => \home_url('/thank-you'),
+                                'user' => ['email' => 'visitor@example.com'],
+                            ]),
+                        ));
+                    ?></pre>
+                <?php } ?>
+
                 <?php \submit_button(); ?>
             </form>
+
+            <?php $this->renderIngestLog(); ?>
 
             <h2><?php echo \esc_html__('Test the connection', 'openai-ads'); ?></h2>
             <p class="description">
@@ -356,5 +458,57 @@ final class SettingsPage
                 $response->statusCode,
             ),
         ]);
+    }
+
+    /**
+     * What the collection endpoint has seen lately.
+     *
+     * Only shown with debug logging on, and only ever four columns: when, which
+     * event, what happened, and why. Never the payload - it carries raw email
+     * addresses and phone numbers, and an options row is readable by anyone who
+     * can read options.
+     */
+    private function renderIngestLog(): void
+    {
+        if (!$this->settings->ingestEnabled() || !$this->settings->debug()) {
+            return;
+        }
+
+        /** @var mixed $stored */
+        $stored = \get_option(Ingest::LOG_OPTION, []);
+        $log = is_array($stored) ? $stored : [];
+
+        echo '<h2>' . \esc_html__('Recent events received', 'openai-ads') . '</h2>';
+
+        if ($log === []) {
+            echo '<p class="description">'
+                . \esc_html__('Nothing yet. Send one and reload this page.', 'openai-ads')
+                . '</p>';
+
+            return;
+        }
+
+        echo '<table class="widefat striped"><thead><tr>';
+        echo '<th>' . \esc_html__('When (UTC)', 'openai-ads') . '</th>';
+        echo '<th>' . \esc_html__('Event', 'openai-ads') . '</th>';
+        echo '<th>' . \esc_html__('Outcome', 'openai-ads') . '</th>';
+        echo '<th>' . \esc_html__('Reason', 'openai-ads') . '</th>';
+        echo '</tr></thead><tbody>';
+
+        foreach ($log as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+
+            echo '<tr>';
+
+            foreach (['at', 'event', 'outcome', 'reason'] as $column) {
+                echo '<td>' . \esc_html((string) ($entry[$column] ?? '')) . '</td>';
+            }
+
+            echo '</tr>';
+        }
+
+        echo '</tbody></table>';
     }
 }

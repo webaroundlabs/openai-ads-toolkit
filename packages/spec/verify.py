@@ -295,7 +295,11 @@ def gtm_sections(path):
     return blocks
 
 
+# gtm-collect posts to the site's own endpoint rather than to OpenAI, but it runs
+# in a web container and is therefore held to the same two rules as gtm-web: it
+# may only offer events a browser can send, and it must contain no credential.
 for path, channel in [('packages/gtm-web/template.tpl', 'pixel'),
+                      ('packages/gtm-collect/template.tpl', 'pixel'),
                       ('packages/gtm-server/template.tpl', 'capi')]:
     if not os.path.exists(path):
         continue

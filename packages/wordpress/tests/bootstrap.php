@@ -43,6 +43,12 @@ final class WpStubs
     /** Whether this request is an admin one, for the registration integration. */
     public static bool $isAdmin = false;
 
+    /** @var list<array{namespace: string, route: string, args: array<string, mixed>}> */
+    public static array $restRoutes = [];
+
+    /** @var array<string, mixed> */
+    public static array $transients = [];
+
     public static function reset(): void
     {
         self::$options = [];
@@ -52,6 +58,8 @@ final class WpStubs
         self::$nextResponse = null;
         self::$users = [];
         self::$isAdmin = false;
+        self::$restRoutes = [];
+        self::$transients = [];
         $_COOKIE = [];
         $_SERVER['REQUEST_URI'] = '/';
         $_SERVER['REMOTE_ADDR'] = '203.0.113.7';
@@ -61,10 +69,21 @@ final class WpStubs
 
 final class WP_Error
 {
+    /** @var array<string, mixed> */
+    public array $data;
+
     public function __construct(
-        private readonly string $code = 'error',
-        private readonly string $message = 'Something went wrong',
+        public readonly string $code = 'error',
+        public readonly string $message = 'Something went wrong',
+        array $data = [],
     ) {
+        $this->data = $data;
+    }
+
+    /** The HTTP status a REST refusal carries, or null. */
+    public function status(): ?int
+    {
+        return isset($this->data['status']) ? (int) $this->data['status'] : null;
     }
 
     public function get_error_message(): string
@@ -76,6 +95,94 @@ final class WP_Error
     {
         return $this->code;
     }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function get_error_data(): array
+    {
+        return $this->data;
+    }
+}
+
+/**
+ * The slice of the REST API the collection endpoint touches.
+ *
+ * A request is a payload plus headers, and a response is a status plus data.
+ * Nothing here routes anything - the endpoint's handler is called directly,
+ * which is what keeps these tests about the endpoint rather than about
+ * WordPress's router.
+ */
+final class WP_REST_Request
+{
+    /** @var array<string, string> */
+    private array $headers = [];
+
+    /**
+     * @param array<string, mixed> $params
+     */
+    public function __construct(private readonly array $params = [])
+    {
+    }
+
+    public function setHeader(string $name, string $value): void
+    {
+        $this->headers[strtolower($name)] = $value;
+    }
+
+    public function get_header(string $name): ?string
+    {
+        return $this->headers[strtolower($name)] ?? null;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function get_json_params(): array
+    {
+        return $this->params;
+    }
+}
+
+final class WP_REST_Response
+{
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function __construct(
+        public readonly array $data = [],
+        public readonly int $status = 200,
+    ) {
+    }
+}
+
+function register_rest_route(string $namespace, string $route, array $args = []): bool
+{
+    WpStubs::$restRoutes[] = ['namespace' => $namespace, 'route' => $route, 'args' => $args];
+
+    return true;
+}
+
+function rest_url(string $path = ''): string
+{
+    return 'https://shop.example.com/wp-json/' . ltrim($path, '/');
+}
+
+function get_transient(string $key): mixed
+{
+    return WpStubs::$transients[$key] ?? false;
+}
+
+function set_transient(string $key, mixed $value, int $expires = 0): bool
+{
+    WpStubs::$transients[$key] = $value;
+
+    return true;
+}
+
+function current_time(string $type, bool $gmt = false): string
+{
+    return $type === 'mysql' ? '2026-09-12 09:00:00' : (string) time();
 }
 
 function is_wp_error(mixed $thing): bool
@@ -374,3 +481,7 @@ SchedulerStubs::reset();
 // The public API is plain functions rather than a class, so it is loaded the
 // way the plugin loads it - and therefore actually covered by these tests.
 require_once __DIR__ . '/../src/api.php';
+
+if (!defined('MINUTE_IN_SECONDS')) {
+    define('MINUTE_IN_SECONDS', 60);
+}
