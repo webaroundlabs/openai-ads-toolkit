@@ -115,7 +115,13 @@ jobs:
       fail-fast: false
       matrix:
         php: ['8.2', '8.3']
-        laravel: ['11.*', '12.*']
+        # Laravel 12 only. The adapter still declares ^11.0|^12.0 and works
+        # there, but every laravel/framework 11.x now carries an unfixed
+        # Packagist advisory, so Composer refuses to install one and the leg
+        # cannot be made green. Testing against a version nobody can install
+        # proves nothing; disabling the advisory check to get a tick would
+        # prove less.
+        laravel: ['12.*']
     steps:
       - uses: actions/checkout@v4
 

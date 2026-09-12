@@ -46,7 +46,7 @@ mkdir -p "$stage"
 # absent from the zip until somebody names it, which is the safe direction. The
 # opposite - shipping something nobody meant to - is how a .env or a test
 # fixture reaches a production site.
-for path in conversion-tracking-for-openai-ads.php uninstall.php readme.txt README.md src assets languages vendor; do
+for path in conversion-tracking-for-openai-ads.php uninstall.php readme.txt README.md LICENSE src assets languages vendor; do
 	if [ ! -e "$source_dir/$path" ]; then
 		echo "Expected $path in packages/wordpress, but it is missing." >&2
 		exit 1
@@ -55,7 +55,9 @@ for path in conversion-tracking-for-openai-ads.php uninstall.php readme.txt READ
 	cp -R "$source_dir/$path" "$stage/"
 done
 
-cp "$root/LICENSE" "$stage/LICENSE"
+# The plugin's own LICENSE is GPLv2-or-later, matching its header and readme.txt -
+# not the repository's MIT one. The MIT-licensed core it bundles keeps its own
+# licence under vendor/, which is what MIT asks for.
 
 # The core arrives through Composer's path repository, which on most systems is
 # a symlink into packages/php - and on the ones where it is not, a full copy

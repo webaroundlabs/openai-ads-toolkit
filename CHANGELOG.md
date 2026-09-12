@@ -139,6 +139,18 @@ accident.
   `openai_ads_identity_field_dropped` action. Form input is untrusted, and a
   customer typing an extension after their phone number should not cost the site
   a paid order.
+- **The npm package is `@webaround/openai-ads`.** The scope is the brand rather
+  than the GitHub account it is developed under, and it is settled now because
+  an npm name cannot be reclaimed after the first publish. Publishing itself no
+  longer follows from tagging: the release workflow's `npm` environment requires
+  a maintainer's approval, so a tag builds and verifies but waits before it
+  reaches a registry nobody can take it back from.
+- **Laravel 12 is the version CI proves.** The adapter still requires
+  `^11.0|^12.0` and installs on Laravel 11 for anyone already there, but
+  every `laravel/framework` 11.x now carries an unfixed Packagist security
+  advisory, so Composer refuses to resolve one and the 11.x CI legs cannot be
+  made green. They are removed rather than silenced: turning the advisory
+  check off to earn a tick would report a guarantee nobody has.
 
 ### Fixed
 

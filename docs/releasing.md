@@ -5,7 +5,7 @@ Four registries, four different ways to be stuck with a mistake:
 | Registry | What it publishes | If it is wrong |
 |---|---|---|
 | Packagist | `webaroundlabs/openai-ads`, `…-laravel` | A tag cannot be reused. Yanking it breaks anyone who pinned it. |
-| npm | `@webaroundlabs/openai-ads` | Unpublishing is allowed for 72 hours and then only by support. |
+| npm | `@webaround/openai-ads` | Unpublishing is allowed for 72 hours and then only by support. |
 | WordPress plugin directory | `conversion-tracking-for-openai-ads` | SVN trunk reaches every installed site on its next update check, usually within hours. |
 | GTM Community Gallery | the two templates | Reviewed by a human; a correction is another review. |
 
@@ -14,6 +14,18 @@ to `main`. `.github/workflows/release.yml` does the rest, and it re-runs every
 check against the tagged commit first: CI having been green on a commit is not
 the same as it being green on the artefact, and the artefact is what people
 install.
+
+A tag is still not the last word. The npm job runs in the `npm` environment,
+which requires a maintainer's approval, so a tag builds and verifies and then
+waits. The tag is the intent; the approval is the point of no return. It exists
+because the table above is one-directional: every other mistake in this
+repository can be fixed with another commit, and this one cannot.
+
+npm authentication is Trusted Publishing — the job exchanges its OIDC token for
+a short-lived credential — so there is no `NPM_TOKEN` to leak or rotate. It has
+to be configured once on npmjs.com, against this repository and this workflow,
+**before** the first tag. Until it is, the publish step fails, which is the safe
+direction to fail in.
 
 ## Cutting a release
 
@@ -55,10 +67,10 @@ install.
    git push origin v0.2.0
    ```
 
-6. **The workflow then:** verifies, publishes to npm with provenance, builds the
-   WordPress plugin zip, and opens a **draft** GitHub release with the zip
-   attached. Draft rather than published, so somebody reads the notes before the
-   world does.
+6. **The workflow then:** verifies, waits for the `npm` environment to be
+   approved, publishes to npm with provenance, builds the WordPress plugin zip,
+   and opens a **draft** GitHub release with the zip attached. Draft rather than
+   published, so somebody reads the notes before the world does.
 
 7. **Packagist needs nothing** — it watches the repository and picks the tag up
    itself, provided the GitHub service hook is configured once.
