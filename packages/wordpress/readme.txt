@@ -128,6 +128,20 @@ This plugin connects to OpenAI in order to measure advertising conversions.
 That is its entire purpose, and nothing here happens without you entering a
 Pixel ID or an API key first.
 
+= Which services, and only which =
+
+Three addresses, all of them OpenAI's:
+
+* https://bzrcdn.openai.com/sdk/oaiq.min.js - the browser SDK, when the Pixel is on
+* https://bzr.openai.com/v1/events - the Conversions API, from your server
+* https://bzr.openai.com/v1/sdk/events - the image tag, only if you call it
+
+There is no fourth. The plugin sends nothing to its author, to webaround.ro, or
+to any analytics, telemetry, licensing or update service. It counts no installs
+and phones home to nobody. The Conversions API address is a constant in the
+source, not something fetched at runtime, so it cannot be redirected elsewhere
+by a future update without that change being visible in the code.
+
 = 1. The OpenAI Ads Measurement Pixel =
 
 When the Pixel is switched on, the plugin loads a script from
@@ -143,6 +157,12 @@ and currency where the event carries one, and - only when your site supplies it 
 identity as irreversible SHA-256 hashes. It runs in the visitor's browser, so
 their IP address and browser user agent reach OpenAI as part of any web request.
 
+On a commerce event it also carries the basket: for each item its SKU (or the
+numeric product id when no SKU is set), its name, the quantity, the price of
+that line, and the variation attributes such as size or colour. Product names
+are sent as they appear in your catalogue, and are not hashed: hashing is for
+identifying a person, and a product name identifies a product.
+
 WHEN: on any page view, once you have enabled the Pixel.
 
 = 2. The OpenAI Ads Conversions API =
@@ -150,10 +170,12 @@ WHEN: on any page view, once you have enabled the Pixel.
 When server-side events are switched on, your server sends conversions to
 https://bzr.openai.com/v1/events using the API key you provide.
 
-WHAT IS SENT: the same event data as above, plus the visitor's IP address and
-user agent, plus the attribution values from the two cookies. Email addresses,
-phone numbers, names and customer ids are hashed with SHA-256 on your server
-before they leave it - the raw values are never transmitted.
+WHAT IS SENT: the same event data as above, including the basket detail, plus
+the visitor's IP address and user agent, plus the two attribution values read
+from the __oppref and __obref cookies, plus the page address the conversion
+happened on. Email addresses, phone numbers, names and customer ids are hashed
+with SHA-256 on your server before they leave it - the raw values are never
+transmitted.
 
 WHEN: after a conversion your site confirms - a paid order, an accepted form
 submission - and never on a page view.
