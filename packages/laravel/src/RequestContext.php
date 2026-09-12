@@ -52,11 +52,10 @@ final class RequestContext
     /**
      * The event-level attribution identifier, from the Pixel's `__oppref` cookie.
      *
-     * Read from the raw cookie jar rather than through Laravel's cookie
-     * decryption: this value is written by OpenAI's browser SDK, not by this
+     * Read raw: this value is written by OpenAI's browser SDK, not by this
      * application, so it is not encrypted and must not be run through the
-     * decrypter. Add `__oppref` and `__obref` to EncryptCookies::$except if your
-     * middleware would otherwise touch them.
+     * decrypter. Listing `__oppref` and `__obref` in EncryptCookies::$except is
+     * the tidy thing to do, but it is not required - see rawCookie().
      */
     public function oppref(): ?string
     {
@@ -200,10 +199,50 @@ final class RequestContext
         $cookies = $this->request->cookies->all();
         $value = $cookies[$name] ?? null;
 
-        if (!is_string($value) || trim($value) === '') {
+        if (is_string($value) && trim($value) !== '') {
+            return $value;
+        }
+
+        return $this->cookieFromHeader($name);
+    }
+
+    /**
+     * The same cookie, read from the request's `Cookie` header.
+     *
+     * `EncryptCookies` rewrites `$request->cookies` in place and replaces with
+     * null every value it cannot decrypt. These two are written by OpenAI's
+     * browser SDK and are never encrypted by this application, so in an app that
+     * has not listed them in `$except` - which is every app by default - the bag
+     * above holds null and attribution disappears without a word. The header is
+     * the one copy no middleware rewrites.
+     *
+     * Preferring the bag keeps an app that HAS configured `$except` on the
+     * framework's own path, and reading the header rather than `$_COOKIE` keeps
+     * this working under Octane, where the superglobal is not per-request.
+     */
+    private function cookieFromHeader(string $name): ?string
+    {
+        $header = $this->request->headers->get('cookie');
+
+        if (!is_string($header) || trim($header) === '') {
             return null;
         }
 
-        return $value;
+        foreach (explode(';', $header) as $pair) {
+            $parts = explode('=', trim($pair), 2);
+
+            if (count($parts) !== 2 || $parts[0] !== $name) {
+                continue;
+            }
+
+            // PHP decodes $_COOKIE and Symfony decodes its bag, so a value taken
+            // from the header has to be decoded the same way or the two paths
+            // would disagree on any cookie carrying a reserved character.
+            $value = trim(urldecode(trim($parts[1], '"')));
+
+            return $value === '' ? null : $value;
+        }
+
+        return null;
     }
 }
