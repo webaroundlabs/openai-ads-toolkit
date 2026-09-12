@@ -1,0 +1,58 @@
+{
+	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
+	"meta": {
+		"title": "Conversion Tracking for OpenAI Ads",
+		"description": "Opens on the plugin's own screen, with Contact Form 7 installed so the integrations list has something real in it.",
+		"categories": ["Analytics"]
+	},
+	"preferredVersions": {
+		"php": "8.2",
+		"wp": "latest"
+	},
+	"features": {
+		"networking": true
+	},
+	"landingPage": "/wp-admin/admin.php?page=conversion-tracking-for-openai-ads",
+	"steps": [
+		{
+			"step": "login",
+			"username": "admin",
+			"password": "password"
+		},
+		{
+			"step": "installPlugin",
+			"pluginData": {
+				"resource": "wordpress.org/plugins",
+				"slug": "contact-form-7"
+			},
+			"options": {
+				"activate": true
+			}
+		},
+		{
+			"step": "installPlugin",
+			"pluginData": {
+				"resource": "wordpress.org/plugins",
+				"slug": "wp-consent-api"
+			},
+			"options": {
+				"activate": true
+			}
+		},
+		{
+			"step": "setSiteOptions",
+			"options": {
+				"blogname": "Example Store",
+				"openai_ads_settings": {
+					"pixel_id": "px_7QK3F9ZM2T",
+					"pixel_enabled": true,
+					"capi_enabled": true,
+					"strip_query_string": true,
+					"use_scheduler": true,
+					"debug": true,
+					"consent_mode": "auto"
+				}
+			}
+		}
+	]
+}
