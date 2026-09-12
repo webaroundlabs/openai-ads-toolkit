@@ -183,9 +183,72 @@ final class RequestContextTest extends TestCase
         self::assertNull($this->context(server: ['HTTP_USER_AGENT' => '  '])->userAgent());
     }
 
+    #[Test]
+    public function attribution_survives_a_middleware_that_nulls_the_cookie_bag(): void
+    {
+        // EncryptCookies rewrites $request->cookies in place and replaces every
+        // value it cannot decrypt with null. __oppref and __obref are written by
+        // OpenAI's browser SDK, so it never can, and an app that has not listed
+        // them in $except - the default - would report no attribution at all
+        // while looking entirely healthy. Found against a real Laravel 12 app;
+        // building a Request directly, as every other test here does, runs no
+        // middleware and so cannot see it.
+        $context = $this->context(
+            cookies: [
+                RequestContext::OPPREF_COOKIE => null,
+                RequestContext::OBREF_COOKIE => null,
+            ],
+            server: ['HTTP_COOKIE' => '__oppref=opp-abc; __obref=obr-xyz'],
+        );
+
+        self::assertSame('opp-abc', $context->oppref());
+        self::assertSame('obr-xyz', $context->obref());
+    }
+
+    #[Test]
+    public function the_decrypted_bag_wins_over_the_header(): void
+    {
+        // An app that HAS configured $except stays on the framework's own path.
+        $context = $this->context(
+            cookies: [RequestContext::OPPREF_COOKIE => 'from-the-bag'],
+            server: ['HTTP_COOKIE' => '__oppref=from-the-header'],
+        );
+
+        self::assertSame('from-the-bag', $context->oppref());
+    }
+
+    #[Test]
+    public function a_header_cookie_is_decoded_like_the_bag_would_be(): void
+    {
+        // PHP decodes $_COOKIE and Symfony decodes its bag; the header path has
+        // to agree with them or the same visitor reports two different values.
+        $context = $this->context(
+            cookies: [],
+            server: ['HTTP_COOKIE' => '__oppref=a%20b%2Bc'],
+        );
+
+        self::assertSame('a b+c', $context->oppref());
+    }
+
+    #[Test]
+    public function a_blank_header_cookie_is_null_like_a_blank_one_in_the_bag(): void
+    {
+        $context = $this->context(
+            cookies: [],
+            server: ['HTTP_COOKIE' => '__oppref=   ; __obref=obr-1'],
+        );
+
+        self::assertNull($context->oppref());
+        self::assertSame('obr-1', $context->obref());
+    }
+
     /**
-     * @param array<string, string> $cookies
-     * @param array<string, string> $server
+     * `string|null` on the cookies, not `string`: a middleware that cannot
+     * decrypt a value leaves null in the bag, and that is the state worth
+     * being able to describe here.
+     *
+     * @param array<string, string|null> $cookies
+     * @param array<string, string>      $server
      */
     private function context(
         string $url = 'https://shop.example.com/contact/thank-you',

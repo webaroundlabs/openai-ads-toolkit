@@ -10,7 +10,20 @@ While the version is `0.x` the public API may change in any release. See
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+
+- **Laravel: attribution is no longer lost to Laravel's own cookie
+  encryption.** `EncryptCookies` rewrites `$request->cookies` in place and
+  replaces every value it cannot decrypt with `null`. `__oppref` and `__obref`
+  are written by OpenAI's browser SDK and are never encrypted by the
+  application, so in any app that has not listed them in `$except` - the default
+  - both came back null and every conversion was reported with no attribution at
+  all, while the integration looked entirely healthy. `RequestContext` now falls
+  back to the request's `Cookie` header, which no middleware rewrites, and still
+  prefers the bag when an app has configured `$except`. Found against a real
+  Laravel 12 application; the unit tests build a `Request` directly, which runs
+  no middleware and so could not see it. The WordPress adapter reads `$_COOKIE`
+  and was never affected.
 
 ## [0.1.0] - 2026-09-12
 
