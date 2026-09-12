@@ -17,3 +17,15 @@ updates:
     directory: /packages/php
     schedule:
       interval: monthly
+
+  # The adapters reach the core through a Composer path repository, so only
+  # their own dev tooling and host framework constraints are updated here.
+  - package-ecosystem: composer
+    directory: /packages/laravel
+    schedule:
+      interval: monthly
+
+  - package-ecosystem: composer
+    directory: /packages/wordpress
+    schedule:
+      interval: monthly
