@@ -10,8 +10,12 @@ While the version is `0.x` the public API may change in any release. See
 
 ## [Unreleased]
 
-Nothing has been released yet, so this section describes the whole toolkit. The
-**Changed** and **Fixed** entries below are still worth reading: they record
+Nothing yet.
+
+## [0.1.0] - 2026-09-12
+
+The first release. This section describes the whole toolkit rather than a delta.
+The **Changed** and **Fixed** entries below are still worth reading: they record
 behavioural decisions about deduplication that a future change must not undo by
 accident.
 
@@ -211,4 +215,5 @@ accident.
   Pixel documentation lists `postal_code`, which is what both runtimes already
   emitted. The `UNRESOLVED` note in `packages/spec/user.json` is closed.
 
-[Unreleased]: https://github.com/webaroundlabs/openai-ads-toolkit/commits/main
+[Unreleased]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.1.0...main
+[0.1.0]: https://github.com/webaroundlabs/openai-ads-toolkit/releases/tag/v0.1.0
