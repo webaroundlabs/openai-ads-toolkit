@@ -19,6 +19,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 // Several small host-plugin doubles share one file, which PSR-4 cannot autoload.
 require_once __DIR__ . '/Doubles.php';
 require_once __DIR__ . '/WooDoubles.php';
+require_once __DIR__ . '/ConsentDoubles.php';
 
 final class WpStubs
 {
@@ -60,6 +61,12 @@ final class WpStubs
         self::$isAdmin = false;
         self::$restRoutes = [];
         self::$transients = [];
+
+        // Part of restoring the simulated site: by default it has no consent
+        // plugin. See ConsentStubs::filterBanners() for why that needs saying
+        // out loud rather than being the natural state.
+        self::$filters['openai_ads_consent_providers'][] =
+            static fn (array $banners): array => ConsentStubs::filterBanners($banners);
         $_COOKIE = [];
         $_SERVER['REQUEST_URI'] = '/';
         $_SERVER['REMOTE_ADDR'] = '203.0.113.7';
@@ -212,6 +219,16 @@ function wp_parse_url(string $url, int $component = -1): mixed
     return parse_url($url, $component);
 }
 
+function sanitize_key(string $key): string
+{
+    return preg_replace('/[^a-z0-9_\-]/', '', strtolower($key)) ?? '';
+}
+
+function has_filter(string $hook): bool
+{
+    return isset(WpStubs::$filters[$hook]) && WpStubs::$filters[$hook] !== [];
+}
+
 function sanitize_text_field(string $value): string
 {
     $value = strip_tags($value);
@@ -225,6 +242,17 @@ function esc_url_raw(string $url): string
     $url = trim($url);
 
     return preg_match('#^https?://#i', $url) === 1 ? $url : '';
+}
+
+function selected(mixed $value, mixed $current = true, bool $echo = true): string
+{
+    $markup = (string) $value === (string) $current ? " selected='selected'" : '';
+
+    if ($echo) {
+        echo $markup;
+    }
+
+    return $markup;
 }
 
 function esc_url(string $url): string
@@ -294,6 +322,11 @@ function add_action(string $hook, callable $callback, int $priority = 10, int $a
 function do_action(string $hook, mixed ...$args): void
 {
     WpStubs::$actions[] = [$hook, $args];
+}
+
+function load_plugin_textdomain(string $domain, bool $deprecated = false, string $path = ''): bool
+{
+    return true;
 }
 
 function is_admin(): bool

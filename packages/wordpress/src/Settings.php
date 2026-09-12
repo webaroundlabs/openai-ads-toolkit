@@ -198,6 +198,19 @@ final class Settings
     }
 
     /**
+     * How consent is decided: automatically, by the site, or not at all.
+     *
+     * Defaults to automatic detection, which finds a consent plugin where one
+     * exists and answers yes where none does. See Consent for why "yes" is the
+     * uncomfortable but correct default, and why the settings screen warns about
+     * it rather than silently measuring nothing.
+     */
+    public function consentMode(): string
+    {
+        return $this->stringOrNull('consent_mode') ?? Consent::MODE_AUTO;
+    }
+
+    /**
      * Whether the REST collection endpoint accepts events.
      *
      * Off by default, and the only setting in this class where that is a
@@ -285,6 +298,7 @@ final class Settings
             'canonical_origin' => $canonical,
             'timeout' => max(1, min(30, (int) ($input['timeout'] ?? 5))),
             'integrations' => $this->sanitizeIntegrations($input),
+            'consent_mode' => $this->consentModeFrom($input),
             'ingest_enabled' => !empty($input['ingest_enabled']),
             'ingest_secret' => $this->ingestSecretFrom($input, $current),
         ];
@@ -361,6 +375,18 @@ final class Settings
         }
 
         return $existing;
+    }
+
+    /**
+     * @param array<string, mixed> $input
+     */
+    private function consentModeFrom(array $input): string
+    {
+        $mode = isset($input['consent_mode']) ? (string) $input['consent_mode'] : Consent::MODE_AUTO;
+
+        // Either one of the three modes, or the id of a provider the site has.
+        // Anything else came from a tampered form and falls back to automatic.
+        return $mode === '' ? Consent::MODE_AUTO : \sanitize_key($mode);
     }
 
     private function stringOrNull(string $key): ?string

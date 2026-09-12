@@ -55,6 +55,20 @@ cd packages/wordpress && composer install && composer check
 | Style | `composer style` / `composer style:fix` | `npm run lint` / `npm run lint:fix` |
 | Build | — | `npm run build` |
 
+Two repository-wide scripts:
+
+```bash
+python scripts/make-pot.py           # regenerate the WordPress translation catalogue
+python scripts/check-version.py 0.2.0  # a release tag agrees with every manifest
+bash   scripts/build-plugin.sh       # the installable WordPress plugin zip
+```
+
+The WordPress plugin's slug is **`conversion-tracking-for-openai-ads`**, not
+`openai-ads`. The plugin directory refuses a slug beginning with somebody else's
+trademark. The text domain matches the slug, because translations from
+translate.wordpress.org are keyed on it; the `openai_ads_*` function and hook
+prefixes are unrelated to the slug and stay as they are.
+
 PHPStan runs at **level 9 over `packages/php/src`** and level 8 over the adapters, with test suites one level lower; each `phpstan.neon.dist` records why. WordPress and WooCommerce arrive as stubs, so the analysis is of the integration rather than of WordPress's existence.
 
 The GTM templates are the one part with no runnable suite here — their tests live inside GTM's template editor. `verify.py` does check that their event dropdowns match the catalogue exactly, and that the web template contains no credential.
@@ -212,6 +226,19 @@ The published surface follows semantic versioning. Adding an optional parameter 
 
 Every user-visible change gets a changelog entry. README examples are copy-pasteable and must keep working — treat a broken README example as a broken build.
 
+### 16. Everything in the repository is written in English
+
+Code, comments, commit messages, documentation, test names, error messages, changelog entries, issue templates, settings labels — all of it, without exception. This is an open-source project whose contributors and users will not share a first language, and a comment somebody cannot read is a comment that gets deleted rather than heeded.
+
+This holds even when the conversation that produced the change happened in another language. Translate at the keyboard, not afterwards.
+
+Two things are **not** covered by this rule and must not be "corrected":
+
+- **Test fixtures containing non-English text.** `Ștefănescu`, `București` and `Île-de-France` are in `packages/spec/fixtures/` on purpose: they are the regression guard for the byte-wise-lowercase bug described in §14. Replacing them with ASCII would delete the test's reason to exist.
+- **Translation catalogues.** `packages/wordpress/languages/*.po` are translations of the English source and are supposed to be in other languages. The `.pot` template and every `msgid` in it stay English.
+
+User-facing strings in the WordPress plugin are English *in the source*, wrapped in `__()` with the plugin's text domain, and translated through `.po` files. Never hard-code a non-English string.
+
 ## Working approach
 
 When **refactoring existing code**:
@@ -273,6 +300,14 @@ implementation wrapping another interface — the anti-pattern §1 names.
 byte-wise and diverges from JavaScript's `toLowerCase()` on non-ASCII names, producing two
 different hashes for the same person. Per §13 this is a behavioural change to deduplication,
 pinned in `packages/spec/fixtures/normalization.cases.json`.
+
+**Consent is detected, not demanded.** `Consent` looks for the WP Consent API and reads
+Complianz directly; every other banner is detected by class, named on the settings screen with
+an instruction, and never read by guesswork. A consent check that answers confidently and
+wrongly is worse than one that admits it does not know. Finding nothing means measuring
+everybody, which is the uncomfortable default and is deliberate — the alternative is a plugin
+that silently measures nothing and an owner who hunts for the fault for days — so the settings
+screen warns instead.
 
 **`oppref` and `obref` are different fields.** `events[].oppref` (event level, `__oppref`
 cookie) and `events[].user.obref` (user level, `__obref` cookie). There is no coherent

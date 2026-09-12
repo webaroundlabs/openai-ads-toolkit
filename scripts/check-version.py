@@ -45,12 +45,12 @@ def main(expected):
         print('Not a semantic version: %r' % expected)
         return 1
 
-    wordpress = ROOT / 'packages/wordpress/openai-ads.php'
+    wordpress = ROOT / 'packages/wordpress/conversion-tracking-for-openai-ads.php'
 
     checks = [
         ('packages/js/package.json', js_version(ROOT / 'packages/js/package.json')),
-        ('packages/wordpress/openai-ads.php (Version header)', plugin_header(wordpress, 'Version')),
-        ('packages/wordpress/openai-ads.php (OPENAI_ADS_VERSION)',
+        ('the plugin header (Version)', plugin_header(wordpress, 'Version')),
+        ('the plugin header (OPENAI_ADS_VERSION)',
          php_constant(wordpress, 'OPENAI_ADS_VERSION')),
         ('packages/wordpress/readme.txt (Stable tag)',
          readme_field(ROOT / 'packages/wordpress/readme.txt', 'Stable tag')),

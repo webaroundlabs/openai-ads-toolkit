@@ -201,6 +201,19 @@ final class Plugin
 
     private function registerHooks(): void
     {
+        // On `init`, not earlier. WordPress 6.7 started warning about translations
+        // loaded before then, and a plugin that trips that notice looks broken to
+        // every developer with WP_DEBUG on. A site installing from the plugin
+        // directory gets its translations without this; it is here for the copies
+        // installed by hand, with the .mo files bundled.
+        \add_action('init', function (): void {
+            \load_plugin_textdomain(
+                'conversion-tracking-for-openai-ads',
+                false,
+                dirname(\plugin_basename($this->file)) . '/languages',
+            );
+        }, 1);
+
         \add_action('wp_head', [$this->pixel(), 'render'], 1);
 
         // Registers one hook, nothing more. The route itself is only declared if
@@ -232,7 +245,7 @@ final class Plugin
                 static function (array $links): array {
                     $url = \admin_url('options-general.php?page=' . SettingsPage::SLUG);
                     $settings = '<a href="' . \esc_url($url) . '">'
-                        . \esc_html__('Settings', 'openai-ads') . '</a>';
+                        . \esc_html__('Settings', 'conversion-tracking-for-openai-ads') . '</a>';
 
                     return array_merge([$settings], $links);
                 },

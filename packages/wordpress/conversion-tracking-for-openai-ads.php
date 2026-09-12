@@ -10,7 +10,8 @@
  * Author URI:        https://webaround.ro
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       openai-ads
+ * Text Domain:       conversion-tracking-for-openai-ads
+ * Domain Path:       /languages
  *
  * @package WebaroundLabs\OpenAIAds\WordPress
  */
@@ -30,7 +31,7 @@ if (!is_readable($openAiAdsAutoloader)) {
         echo '<div class="notice notice-error"><p>';
         echo esc_html__(
             'Conversion Tracking for OpenAI Ads is missing its dependencies. Run "composer install" in the plugin directory.',
-            'openai-ads',
+            'conversion-tracking-for-openai-ads',
         );
         echo '</p></div>';
     });
