@@ -75,13 +75,16 @@ REFERENCE_LINK = re.compile(r'^\[[^\]]+\]:\s*\.\.\/', re.M)
 
 VERSION_ENTRY = re.compile(r'^- sha: ([0-9a-f]{40})$')
 
-FOOTER = """
----
-
-This repository is generated from [`packages/{package}`]({monorepo}/tree/main/packages/{package})
-in the OpenAI Ads Toolkit, so the Community Template Gallery has the
-single-template repository it requires. Issues and pull requests belong in the
-monorepo; anything committed here is replaced on the next sync.
+# Goes directly under the title, not at the foot of the page. The gallery links
+# people straight here, and somebody who arrived with a problem needs to know
+# where it goes before they scroll - especially since a mirror has no issue
+# tracker of its own.
+HEADER = """
+> **Generated.** This repository is [`packages/{package}`]({monorepo}/tree/main/packages/{package})
+> of the OpenAI Ads Toolkit, published on its own because the Community Template
+> Gallery indexes one template per repository. **Bugs, questions and pull requests
+> belong in [the monorepo]({monorepo}/issues)** — anything committed here is
+> replaced on the next sync.
 """
 
 
@@ -201,7 +204,13 @@ def write_tree(package, into, versions):
     shutil.copyfile(source / 'LICENSE', into / 'LICENSE')
 
     readme = absolutize((source / 'README.md').read_text(encoding='utf-8'), package)
-    readme = readme.rstrip('\n') + '\n' + FOOTER.format(package=package, monorepo=MONOREPO)
+    title, _, body = readme.partition('\n')
+
+    if not title.startswith('# '):
+        raise Failure('packages/%s/README.md must open with its title, so the '
+                      'generated notice has somewhere to go' % package)
+
+    readme = title + '\n' + HEADER.format(package=package, monorepo=MONOREPO) + body
 
     (into / 'README.md').write_text(readme, encoding='utf-8', newline='\n')
     (into / 'metadata.yaml').write_text(render_metadata(versions), encoding='utf-8', newline='\n')
