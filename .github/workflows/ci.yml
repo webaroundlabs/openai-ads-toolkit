@@ -220,7 +220,7 @@ jobs:
 
       # The built bundle is what browsers receive, so it is scanned rather than
       # only the sources it came from.
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: js-dist
           path: packages/js/dist
