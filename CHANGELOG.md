@@ -10,6 +10,10 @@ While the version is `0.x` the public API may change in any release. See
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.1.1] - 2026-09-12
+
 ### Fixed
 
 - **Laravel: attribution is no longer lost to Laravel's own cookie
@@ -228,5 +232,6 @@ accident.
   Pixel documentation lists `postal_code`, which is what both runtimes already
   emitted. The `UNRESOLVED` note in `packages/spec/user.json` is closed.
 
-[Unreleased]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.1.0...main
+[Unreleased]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.1.1...main
+[0.1.1]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/webaroundlabs/openai-ads-toolkit/releases/tag/v0.1.0
