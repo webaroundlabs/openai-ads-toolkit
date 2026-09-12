@@ -1,5 +1,5 @@
 {
-    "name": "webaroundlabs/openai-ads-wordpress",
+    "name": "webaround/openai-ads-wordpress",
     "description": "Conversion Tracking for OpenAI Ads - WordPress plugin built on the shared toolkit.",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
@@ -14,7 +14,7 @@
     "homepage": "https://github.com/webaroundlabs/openai-ads-toolkit",
     "require": {
         "php": ">=8.2",
-        "webaroundlabs/openai-ads": "^0.1",
+        "webaround/openai-ads": "^0.1",
         "nyholm/psr7": "^1.8"
     },
     "require-dev": {
@@ -27,11 +27,11 @@
     "repositories": [
         {
             "type": "path",
-            "url": "../php",
+            "url": "../php*",
             "options": {
                 "symlink": true,
                 "versions": {
-                    "webaroundlabs/openai-ads": "0.1.0"
+                    "webaround/openai-ads": "0.1.0"
                 }
             }
         }

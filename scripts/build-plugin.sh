@@ -64,7 +64,7 @@ done
 # including that package's own dev dependencies. Either way what a site needs is
 # two things, so the directory is rebuilt from scratch rather than filtered. The
 # difference is a 200KB plugin instead of a 20MB one carrying an analyser.
-core="$stage/vendor/webaroundlabs/openai-ads"
+core="$stage/vendor/webaround/openai-ads"
 
 rm -rf "$core"
 mkdir -p "$core"

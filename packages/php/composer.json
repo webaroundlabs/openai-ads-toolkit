@@ -1,5 +1,5 @@
 {
-    "name": "webaroundlabs/openai-ads",
+    "name": "webaround/openai-ads",
     "description": "OpenAI Ads measurement for PHP: typed events, identity normalization and the Conversions API. Framework-independent.",
     "type": "library",
     "license": "MIT",

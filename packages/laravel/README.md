@@ -1,19 +1,25 @@
-# webaroundlabs/openai-ads-laravel
+# webaround/openai-ads-laravel
 
 Laravel adapter for the OpenAI Ads toolkit. Config, a facade, queued delivery,
 request attribution, and a Blade Pixel helper.
 
-> **Pre-alpha, `0.1.x`.** Not published to Packagist. The public API is unstable until `1.0`.
+> **Developed in [openai-ads-toolkit](https://github.com/webaroundlabs/openai-ads-toolkit).**
+> If you are reading this in `openai-ads-laravel`, that repository is a generated,
+> read-only mirror: it exists because Packagist reads the `composer.json` at a
+> repository root. Issues and pull requests belong in the monorepo, and the
+> test suite only runs from a monorepo checkout.
+
+> **Pre-alpha, `0.1.x`.** The public API is unstable until `1.0`.
 
 Deliberately thin. It decides three things — whether measurement is on, whether
 consent allows it, and whether to send now or on the queue — and hands everything
-else to [`webaroundlabs/openai-ads`](../php). It contains no knowledge of the
+else to [`webaround/openai-ads`](https://github.com/webaroundlabs/openai-ads-toolkit/tree/main/packages/php). It contains no knowledge of the
 OpenAI Ads wire format.
 
 ## Install
 
 ```bash
-composer require webaroundlabs/openai-ads-laravel
+composer require webaround/openai-ads-laravel
 php artisan vendor:publish --tag=openai-ads-config
 ```
 

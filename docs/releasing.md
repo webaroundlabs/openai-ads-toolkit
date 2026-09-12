@@ -4,7 +4,7 @@ Four registries, four different ways to be stuck with a mistake:
 
 | Registry | What it publishes | If it is wrong |
 |---|---|---|
-| Packagist | `webaroundlabs/openai-ads`, `…-laravel` | A tag cannot be reused. Yanking it breaks anyone who pinned it. |
+| Packagist | `webaround/openai-ads`, `…-laravel`, from the generated mirrors | A tag cannot be reused. Yanking it breaks anyone who pinned it. |
 | npm | `@webaround/openai-ads` | Unpublishing is allowed for 72 hours and then only by support. |
 | WordPress plugin directory | `conversion-tracking-for-openai-ads` | SVN trunk reaches every installed site on its next update check, usually within hours. |
 | GTM Community Gallery | the two templates | Reviewed by a human; a correction is another review. |
@@ -72,8 +72,47 @@ direction to fail in.
    and opens a **draft** GitHub release with the zip attached. Draft rather than
    published, so somebody reads the notes before the world does.
 
-7. **Packagist needs nothing** — it watches the repository and picks the tag up
-   itself, provided the GitHub service hook is configured once.
+7. **Packagist is fed by the mirrors, not by this repository.** Packagist reads
+   the `composer.json` at a repository root and has no concept of a package in a
+   subdirectory, so submitting this repository to it does not work. The `Split`
+   workflow mirrors `packages/php` and `packages/laravel` into
+   `openai-ads-php` and `openai-ads-laravel`, carries the tag over to each, and
+   Packagist watches those two.
+
+   The php mirror has to be indexed before the laravel one resolves, because
+   `openai-ads-laravel` requires `webaround/openai-ads` from Packagist rather
+   than from the path repository it uses here. Both are pushed by the same
+   workflow run, so the window is seconds — but if a `composer require` of the
+   Laravel package right after a release cannot find the core, that is what it
+   is, and it fixes itself.
+
+## The Packagist mirrors
+
+`.github/workflows/split.yml` runs `git subtree split` on every push to `main`
+and on every tag, and force-pushes the result. History is preserved and the
+split is deterministic, so each run republishes the same commits rather than
+inventing new ones. Nothing is ever developed in a mirror; anything committed
+there directly is lost on the next push.
+
+Two things are set up once and then never again:
+
+1. **`SPLIT_TOKEN`.** `GITHUB_TOKEN` is scoped to this repository and cannot
+   push to another one, so the workflow needs a token of its own: a fine-grained
+   personal access token, granted **Contents: read and write** on
+   `openai-ads-php` and `openai-ads-laravel` and nothing else, stored as the
+   repository secret `SPLIT_TOKEN`. Until it exists the workflow fails loudly,
+   which is preferable to mirrors that quietly drift.
+
+2. **Submit each mirror to Packagist** — `openai-ads-php` first, since the other
+   requires it. Packagist picks up later tags itself through the GitHub hook it
+   installs when you submit.
+
+`packages/laravel/composer.json` points its path repository at `../php*` rather
+than `../php`. The glob is deliberate and load-bearing: Composer **errors** on a
+non-glob path repository whose directory does not exist, and in the mirror it
+does not exist. A glob that matches nothing is skipped silently, so the same
+`composer.json` resolves the core from `../php` here and from Packagist there.
+Removing the asterisk makes the published Laravel package impossible to install.
 
 ## The WordPress plugin directory
 

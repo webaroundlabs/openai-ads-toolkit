@@ -1,7 +1,13 @@
-# webaroundlabs/openai-ads
+# webaround/openai-ads
 
 OpenAI Ads measurement for PHP: typed events, identity normalization, and the
 Conversions API. No framework dependency.
+
+> **Developed in [openai-ads-toolkit](https://github.com/webaroundlabs/openai-ads-toolkit).**
+> If you are reading this in `openai-ads-php`, that repository is a generated,
+> read-only mirror: it exists because Packagist reads the `composer.json` at a
+> repository root. Issues and pull requests belong in the monorepo, and the
+> test suite only runs from a monorepo checkout.
 
 > **Pre-alpha, `0.1.x`.** The event model, identity hashing and the Conversions API
 > client are implemented. The public API is unstable until `1.0`.
