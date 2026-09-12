@@ -114,7 +114,15 @@ jobs:
       # npm credential, so no long-lived NPM_TOKEN lives in repository secrets.
       # It needs a newer npm than the one bundled with Node 22.
       - name: Use an npm that can do Trusted Publishing
-        run: npm install -g npm@latest
+        run: |
+          npm install -g npm@latest
+          # Trusted Publishing needs npm >= 11.5.1 and the two ACTIONS_ID_TOKEN_*
+          # variables GitHub injects only under `id-token: write`. When a publish
+          # fails with ENEEDAUTH, the question is always which of those is
+          # missing - so say so here rather than guessing from the failure.
+          echo "npm $(npm --version), node $(node --version)"
+          echo "OIDC request url set: ${ACTIONS_ID_TOKEN_REQUEST_URL:+yes}${ACTIONS_ID_TOKEN_REQUEST_URL:-NO}"
+          echo "OIDC request token set: ${ACTIONS_ID_TOKEN_REQUEST_TOKEN:+yes}${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-NO}"
 
       # --provenance signs the package with this workflow run, so anyone can
       # verify the published tarball came from this commit.
