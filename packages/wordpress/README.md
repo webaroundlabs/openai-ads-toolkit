@@ -181,7 +181,7 @@ Browser → GTM web container → your site (/wp-json/openai-ads/v1/collect) →
 ```
 
 The API key stays on your server, and the request to OpenAI is not something an
-ad blocker can see. Switch it on under **Settings → OpenAI Ads → Tag manager
+ad blocker can see. Switch it on under **OpenAI Ads → Tag manager
 endpoint**, which also shows you the URL and generates a shared secret.
 
 ```bash
@@ -320,8 +320,8 @@ Action Scheduler runs jobs through WP‑Cron or loopback requests. On a site wit
 Batches older than six days are therefore dropped unsent, because the API refuses
 events older than seven and would fail the whole batch.
 
-If that describes the site, untick **Deferred delivery** under Settings → OpenAI
-Ads and events are sent in-request as before.
+If that describes the site, untick **Deferred delivery** under OpenAI
+Ads → General and events are sent in-request as before.
 
 ## Security and privacy
 

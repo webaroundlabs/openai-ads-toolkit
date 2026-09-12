@@ -24,6 +24,10 @@ final class SettingsPage
 {
     public const SLUG = 'conversion-tracking-for-openai-ads';
 
+    public const INTEGRATIONS_SLUG = self::SLUG . '-integrations';
+
+    public const TAG_MANAGER_SLUG = self::SLUG . '-tag-manager';
+
     public const CAPABILITY = 'manage_options';
 
     public const TEST_ACTION = 'openai_ads_test_connection';
@@ -47,12 +51,59 @@ final class SettingsPage
 
     public function addPage(): void
     {
-        \add_options_page(
+        /*
+         * A top-level menu rather than a child of Settings. The handbook
+         * recommends Settings for a plugin with a single option page, and this
+         * one has three screens plus a live log of what the endpoint received -
+         * things a site owner comes back to when the figures look wrong, not
+         * settings they fill in once. Measurement plugins are also looked for in
+         * the sidebar, and one filed under Settings is one nobody finds.
+         *
+         * The position is a float on purpose. WordPress keys the menu by
+         * position, so two plugins picking the same integer means one of them
+         * silently replaces the other; a fractional one has no such neighbour.
+         * 26.7 puts this just under Comments, in the group people actually look
+         * at, rather than below the fold with the rest of the plugins.
+         */
+        \add_menu_page(
             \__('Conversion Tracking for OpenAI Ads', 'conversion-tracking-for-openai-ads'),
             \__('OpenAI Ads', 'conversion-tracking-for-openai-ads'),
             self::CAPABILITY,
             self::SLUG,
-            [$this, 'render'],
+            [$this, 'renderGeneral'],
+            self::menuIcon(),
+            26.7,
+        );
+
+        /*
+         * Registering the parent again as its own first child is what stops
+         * WordPress repeating the plugin's full name as the first submenu item.
+         */
+        \add_submenu_page(
+            self::SLUG,
+            \__('Conversion Tracking for OpenAI Ads', 'conversion-tracking-for-openai-ads'),
+            \__('General', 'conversion-tracking-for-openai-ads'),
+            self::CAPABILITY,
+            self::SLUG,
+            [$this, 'renderGeneral'],
+        );
+
+        \add_submenu_page(
+            self::SLUG,
+            \__('Integrations and consent', 'conversion-tracking-for-openai-ads'),
+            \__('Integrations', 'conversion-tracking-for-openai-ads'),
+            self::CAPABILITY,
+            self::INTEGRATIONS_SLUG,
+            [$this, 'renderIntegrations'],
+        );
+
+        \add_submenu_page(
+            self::SLUG,
+            \__('Tag manager endpoint', 'conversion-tracking-for-openai-ads'),
+            \__('Tag manager', 'conversion-tracking-for-openai-ads'),
+            self::CAPABILITY,
+            self::TAG_MANAGER_SLUG,
+            [$this, 'renderTagManager'],
         );
     }
 
@@ -85,29 +136,45 @@ final class SettingsPage
         return $sanitized;
     }
 
-    public function render(): void
+    /** Credentials, what is measured, and what is trimmed before it is sent. */
+    public function renderGeneral(): void
     {
-        if (!\current_user_can(self::CAPABILITY)) {
-            \wp_die(\esc_html__('You do not have permission to manage these settings.', 'conversion-tracking-for-openai-ads'));
-        }
+        $this->guard();
 
         $s = $this->settings;
         $keyIsConstant = $s->capiKeyIsConstant();
         $hasKey = $s->capiKey() !== null;
 
+        // Declared so sanitize() knows this form covers them - see
+        // Settings::FIELDS_PRESENT. The two conditional ones are declared only
+        // where they are actually rendered.
+        $fields = [
+            'pixel_enabled', 'pixel_id', 'capi_enabled', 'validate_only',
+            'strip_query_string', 'canonical_origin', 'debug',
+        ];
+
+        if (!$keyIsConstant) {
+            $fields[] = 'capi_key';
+        }
+
+        if (function_exists('as_enqueue_async_action')) {
+            $fields[] = 'use_scheduler';
+        }
+
         ?>
         <div class="wrap">
-            <h1><?php echo \esc_html__('Conversion Tracking for OpenAI Ads', 'conversion-tracking-for-openai-ads'); ?></h1>
+            <?php
+            $this->pageIntro(\__('Conversion Tracking for OpenAI Ads', 'conversion-tracking-for-openai-ads'));
 
-            <p class="description">
-                <?php echo \esc_html__(
-                    'An independent community integration. Not created, certified, endorsed or supported by OpenAI.',
-                    'conversion-tracking-for-openai-ads',
-                ); ?>
-            </p>
+        // The one thing a site owner must not have to go looking for.
+        $this->renderUngatedNotice();
+        ?>
 
             <form method="post" action="options.php">
-                <?php \settings_fields(self::SLUG); ?>
+                <?php
+                \settings_fields(self::SLUG);
+        $this->declareFields($fields);
+        ?>
 
                 <h2><?php echo \esc_html__('Measurement Pixel', 'conversion-tracking-for-openai-ads'); ?></h2>
                 <table class="form-table" role="presentation">
@@ -186,9 +253,121 @@ final class SettingsPage
                     </tr>
                 </table>
 
-                <?php $available = $this->integrations?->available() ?? []; ?>
-                <?php if ($available !== []) { ?>
-                    <h2><?php echo \esc_html__('Integrations', 'conversion-tracking-for-openai-ads'); ?></h2>
+                <h2><?php echo \esc_html__('Privacy and diagnostics', 'conversion-tracking-for-openai-ads'); ?></h2>
+                <table class="form-table" role="presentation">
+                    <tr>
+                        <th scope="row"><?php echo \esc_html__('Strip query strings', 'conversion-tracking-for-openai-ads'); ?></th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="<?php echo \esc_attr(Settings::OPTION); ?>[strip_query_string]"
+                                       value="1" <?php \checked($s->stripQueryString()); ?>>
+                                <?php echo \esc_html__(
+                                    'Remove query strings from the page URL before sending it. Recommended: they often carry search terms, order keys and reset tokens.',
+                                    'conversion-tracking-for-openai-ads',
+                                ); ?>
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">
+                            <label for="openai-ads-origin"><?php echo \esc_html__('Canonical origin', 'conversion-tracking-for-openai-ads'); ?></label>
+                        </th>
+                        <td>
+                            <input id="openai-ads-origin" type="url" class="regular-text"
+                                   name="<?php echo \esc_attr(Settings::OPTION); ?>[canonical_origin]"
+                                   value="<?php echo \esc_attr((string) ($s->all()['canonical_origin'] ?? '')); ?>"
+                                   placeholder="<?php echo \esc_attr((string) $s->canonicalOrigin()); ?>">
+                        </td>
+                    </tr>
+                    <?php if (function_exists('as_enqueue_async_action')) { ?>
+                        <tr>
+                            <th scope="row"><?php echo \esc_html__('Deferred delivery', 'conversion-tracking-for-openai-ads'); ?></th>
+                            <td>
+                                <label>
+                                    <input type="checkbox" name="<?php echo \esc_attr(Settings::OPTION); ?>[use_scheduler]"
+                                           value="1" <?php \checked($s->useScheduler()); ?>>
+                                    <?php echo \esc_html__(
+                                        'Hand conversions to Action Scheduler so they survive the request that created them. Recommended. Turn off if this site has no working cron.',
+                                        'conversion-tracking-for-openai-ads',
+                                    ); ?>
+                                </label>
+                            </td>
+                        </tr>
+                    <?php } ?>
+                    <tr>
+                        <th scope="row"><?php echo \esc_html__('Debug logging', 'conversion-tracking-for-openai-ads'); ?></th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="<?php echo \esc_attr(Settings::OPTION); ?>[debug]"
+                                       value="1" <?php \checked($s->debug()); ?>>
+                                <?php echo \esc_html__('Write failures to the PHP error log. Payloads are never logged.', 'conversion-tracking-for-openai-ads'); ?>
+                            </label>
+                        </td>
+                    </tr>
+                </table>
+
+                <?php \submit_button(); ?>
+            </form>
+
+            <h2><?php echo \esc_html__('Test the connection', 'conversion-tracking-for-openai-ads'); ?></h2>
+            <p class="description">
+                <?php echo \esc_html__(
+                    'Sends one event in the API\'s validation mode. Nothing is recorded, so this cannot create a fake conversion.',
+                    'conversion-tracking-for-openai-ads',
+                ); ?>
+            </p>
+            <p>
+                <button type="button" class="button" id="openai-ads-test"><?php
+                    echo \esc_html__('Send a test event', 'conversion-tracking-for-openai-ads');
+        ?></button>
+                <span id="openai-ads-test-result"></span>
+            </p>
+            <script>
+            document.getElementById('openai-ads-test')?.addEventListener('click', function () {
+                var out = document.getElementById('openai-ads-test-result');
+                out.textContent = <?php echo \wp_json_encode(\__('Testing…', 'conversion-tracking-for-openai-ads')); ?>;
+                var body = new FormData();
+                body.append('action', <?php echo \wp_json_encode(self::TEST_ACTION); ?>);
+                body.append('_wpnonce', <?php echo \wp_json_encode(\wp_create_nonce(self::TEST_ACTION)); ?>);
+                fetch(<?php echo \wp_json_encode(\admin_url('admin-ajax.php')); ?>, {
+                    method: 'POST', body: body, credentials: 'same-origin'
+                })
+                    .then(function (r) { return r.json(); })
+                    .then(function (r) { out.textContent = r.data && r.data.message ? r.data.message : ''; })
+                    .catch(function () { out.textContent = <?php echo \wp_json_encode(\__('The request failed.', 'conversion-tracking-for-openai-ads')); ?>; });
+            });
+            </script>
+        </div>
+        <?php
+    }
+
+    /** Which host plugins are measured, and who decides whether to measure at all. */
+    public function renderIntegrations(): void
+    {
+        $this->guard();
+
+        $s = $this->settings;
+        $available = $this->integrations?->available() ?? [];
+
+        ?>
+        <div class="wrap">
+            <?php $this->pageIntro(\__('Integrations and consent', 'conversion-tracking-for-openai-ads')); ?>
+
+            <form method="post" action="options.php">
+                <?php
+                \settings_fields(self::SLUG);
+        $this->declareFields(['consent_mode']);
+        ?>
+
+                <h2><?php echo \esc_html__('Integrations', 'conversion-tracking-for-openai-ads'); ?></h2>
+                <?php if ($available === []) { ?>
+                    <p class="description">
+                        <?php echo \esc_html__(
+                            'None of the plugins this one integrates with are active here. Contact Form 7, Elementor Pro, Gravity Forms, WPForms, Fluent Forms, Ninja Forms, WooCommerce and Easy Digital Downloads are picked up automatically when they are.',
+                            'conversion-tracking-for-openai-ads',
+                        ); ?>
+                    </p>
+                <?php } else { ?>
                     <p class="description">
                         <?php echo \esc_html__(
                             'Detected on this site. Each one measures its own confirmed success boundary - a lead is recorded when the submission is accepted, not when the button is clicked.',
@@ -246,60 +425,29 @@ final class SettingsPage
                     </tr>
                 </table>
 
-                <h2><?php echo \esc_html__('Privacy and diagnostics', 'conversion-tracking-for-openai-ads'); ?></h2>
-                <table class="form-table" role="presentation">
-                    <tr>
-                        <th scope="row"><?php echo \esc_html__('Strip query strings', 'conversion-tracking-for-openai-ads'); ?></th>
-                        <td>
-                            <label>
-                                <input type="checkbox" name="<?php echo \esc_attr(Settings::OPTION); ?>[strip_query_string]"
-                                       value="1" <?php \checked($s->stripQueryString()); ?>>
-                                <?php echo \esc_html__(
-                                    'Remove query strings from the page URL before sending it. Recommended: they often carry search terms, order keys and reset tokens.',
-                                    'conversion-tracking-for-openai-ads',
-                                ); ?>
-                            </label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">
-                            <label for="openai-ads-origin"><?php echo \esc_html__('Canonical origin', 'conversion-tracking-for-openai-ads'); ?></label>
-                        </th>
-                        <td>
-                            <input id="openai-ads-origin" type="url" class="regular-text"
-                                   name="<?php echo \esc_attr(Settings::OPTION); ?>[canonical_origin]"
-                                   value="<?php echo \esc_attr((string) ($s->all()['canonical_origin'] ?? '')); ?>"
-                                   placeholder="<?php echo \esc_attr((string) $s->canonicalOrigin()); ?>">
-                        </td>
-                    </tr>
-                    <?php if (function_exists('as_enqueue_async_action')) { ?>
-                        <tr>
-                            <th scope="row"><?php echo \esc_html__('Deferred delivery', 'conversion-tracking-for-openai-ads'); ?></th>
-                            <td>
-                                <label>
-                                    <input type="checkbox" name="<?php echo \esc_attr(Settings::OPTION); ?>[use_scheduler]"
-                                           value="1" <?php \checked($s->useScheduler()); ?>>
-                                    <?php echo \esc_html__(
-                                        'Hand conversions to Action Scheduler so they survive the request that created them. Recommended. Turn off if this site has no working cron.',
-                                        'conversion-tracking-for-openai-ads',
-                                    ); ?>
-                                </label>
-                            </td>
-                        </tr>
-                    <?php } ?>
-                    <tr>
-                        <th scope="row"><?php echo \esc_html__('Debug logging', 'conversion-tracking-for-openai-ads'); ?></th>
-                        <td>
-                            <label>
-                                <input type="checkbox" name="<?php echo \esc_attr(Settings::OPTION); ?>[debug]"
-                                       value="1" <?php \checked($s->debug()); ?>>
-                                <?php echo \esc_html__('Write failures to the PHP error log. Payloads are never logged.', 'conversion-tracking-for-openai-ads'); ?>
-                            </label>
-                        </td>
-                    </tr>
-                </table>
+                <?php \submit_button(); ?>
+            </form>
+        </div>
+        <?php
+    }
 
-                <h2><?php echo \esc_html__('Tag manager endpoint', 'conversion-tracking-for-openai-ads'); ?></h2>
+    /** The endpoint a tag manager posts to, and what it has received lately. */
+    public function renderTagManager(): void
+    {
+        $this->guard();
+
+        $s = $this->settings;
+
+        ?>
+        <div class="wrap">
+            <?php $this->pageIntro(\__('Tag manager endpoint', 'conversion-tracking-for-openai-ads')); ?>
+
+            <form method="post" action="options.php">
+                <?php
+                \settings_fields(self::SLUG);
+        $this->declareFields(['ingest_enabled']);
+        ?>
+
                 <p class="description">
                     <?php echo \esc_html__(
                         'Lets Google Tag Manager, or anything else, hand a conversion to this site and have it forwarded to OpenAI from your server. Useful when you want server-side tagging without paying for a server container: the API key stays here, and no ad blocker sees the request to OpenAI.',
@@ -402,37 +550,105 @@ final class SettingsPage
             </form>
 
             <?php $this->renderIngestLog(); ?>
-
-            <h2><?php echo \esc_html__('Test the connection', 'conversion-tracking-for-openai-ads'); ?></h2>
-            <p class="description">
-                <?php echo \esc_html__(
-                    'Sends one event in the API\'s validation mode. Nothing is recorded, so this cannot create a fake conversion.',
-                    'conversion-tracking-for-openai-ads',
-                ); ?>
-            </p>
-            <p>
-                <button type="button" class="button" id="openai-ads-test"><?php
-                    echo \esc_html__('Send a test event', 'conversion-tracking-for-openai-ads');
-        ?></button>
-                <span id="openai-ads-test-result"></span>
-            </p>
-            <script>
-            document.getElementById('openai-ads-test')?.addEventListener('click', function () {
-                var out = document.getElementById('openai-ads-test-result');
-                out.textContent = <?php echo \wp_json_encode(\__('Testing…', 'conversion-tracking-for-openai-ads')); ?>;
-                var body = new FormData();
-                body.append('action', <?php echo \wp_json_encode(self::TEST_ACTION); ?>);
-                body.append('_wpnonce', <?php echo \wp_json_encode(\wp_create_nonce(self::TEST_ACTION)); ?>);
-                fetch(<?php echo \wp_json_encode(\admin_url('admin-ajax.php')); ?>, {
-                    method: 'POST', body: body, credentials: 'same-origin'
-                })
-                    .then(function (r) { return r.json(); })
-                    .then(function (r) { out.textContent = r.data && r.data.message ? r.data.message : ''; })
-                    .catch(function () { out.textContent = <?php echo \wp_json_encode(\__('The request failed.', 'conversion-tracking-for-openai-ads')); ?>; });
-            });
-            </script>
         </div>
         <?php
+    }
+
+    /**
+     * The plugin's mark, in the menu, in colour.
+     *
+     * The same drawing as `.wordpress-org/icon.svg` - the same curves, the same
+     * two channel gradients, the same glow under the strokes - with two changes
+     * the slot requires. The dark tile is dropped, because a 20px square of
+     * near-black in the sidebar reads as a broken image rather than an icon,
+     * and the glow is far better for landing on the sidebar's own ground. And
+     * the viewBox is tightened to the drawing, because the full one leaves the
+     * margins a 256px tile wants and a 20px slot cannot spare.
+     *
+     * Inline rather than read from a file: this runs on `admin_menu`, which is
+     * every admin page load. WordPress does not recolour a data-URI icon the
+     * way it does a Dashicon, so what is drawn here is what appears.
+     */
+    private static function menuIcon(): string
+    {
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="14 13 230 230">'
+            . '<defs>'
+            . '<linearGradient id="c" x1="34" y1="48" x2="150" y2="128" gradientUnits="userSpaceOnUse">'
+            . '<stop stop-color="#3bf0d8"/><stop offset="1" stop-color="#12a8ff"/></linearGradient>'
+            . '<linearGradient id="s" x1="34" y1="208" x2="150" y2="128" gradientUnits="userSpaceOnUse">'
+            . '<stop stop-color="#ffc94a"/><stop offset="1" stop-color="#ff7a45"/></linearGradient>'
+            . '<linearGradient id="m" x1="150" y1="128" x2="226" y2="128" gradientUnits="userSpaceOnUse">'
+            . '<stop stop-color="#ffffff"/><stop offset="1" stop-color="#b7e6ff"/></linearGradient>'
+            . '<radialGradient id="k" cx=".42" cy=".36" r=".85">'
+            . '<stop stop-color="#ffffff"/><stop offset=".7" stop-color="#f4fbff"/>'
+            . '<stop offset="1" stop-color="#d3ecfa"/></radialGradient>'
+            . '<filter id="g" x="-60%" y="-60%" width="220%" height="220%">'
+            . '<feGaussianBlur stdDeviation="7" result="b"/>'
+            . '<feMerge><feMergeNode in="b"/><feMergeNode in="b"/></feMerge></filter>'
+            . '</defs>'
+            . '<g filter="url(#g)" opacity=".55" fill="none" stroke-linecap="round">'
+            . '<path d="M34 48C80 48 114 86 150 128" stroke="url(#c)" stroke-width="15"/>'
+            . '<path d="M34 208C80 208 114 170 150 128" stroke="url(#s)" stroke-width="15"/>'
+            . '<path d="M150 128h76" stroke="url(#m)" stroke-width="17"/>'
+            . '</g>'
+            . '<g fill="none" stroke-linecap="round">'
+            . '<path d="M34 48C80 48 114 86 150 128" stroke="url(#c)" stroke-width="17"/>'
+            . '<path d="M34 208C80 208 114 170 150 128" stroke="url(#s)" stroke-width="17"/>'
+            . '<path d="M150 128h76" stroke="url(#m)" stroke-width="21"/>'
+            . '</g>'
+            . '<circle cx="34" cy="48" r="11.5" fill="#4ff0e0"/>'
+            . '<circle cx="34" cy="208" r="11.5" fill="#ffc247"/>'
+            . '<circle cx="150" cy="128" r="23" fill="url(#k)"/>'
+            . '</svg>';
+
+        return 'data:image/svg+xml;base64,' . base64_encode($svg);
+    }
+
+    /**
+     * Authorization, checked before anything is rendered. Separate from
+     * sanitization, which answers a different question.
+     */
+    private function guard(): void
+    {
+        if (!\current_user_can(self::CAPABILITY)) {
+            \wp_die(\esc_html__('You do not have permission to manage these settings.', 'conversion-tracking-for-openai-ads'));
+        }
+    }
+
+    /** The heading, the disclaimer, and whatever the last save had to say. */
+    private function pageIntro(string $title): void
+    {
+        ?>
+        <h1><?php echo \esc_html($title); ?></h1>
+        <p class="description">
+            <?php echo \esc_html__(
+                'An independent community integration. Not created, certified, endorsed or supported by OpenAI.',
+                'conversion-tracking-for-openai-ads',
+            ); ?>
+        </p>
+        <?php
+        /*
+         * WordPress prints "Settings saved." by itself only for screens under
+         * options-general.php. These are their own pages, so they ask.
+         */
+        \settings_errors();
+    }
+
+    /**
+     * State which settings this form rendered. See Settings::FIELDS_PRESENT.
+     *
+     * @param list<string> $fields
+     */
+    private function declareFields(array $fields): void
+    {
+        foreach ($fields as $field) {
+            printf(
+                '<input type="hidden" name="%s[%s][]" value="%s">',
+                \esc_attr(Settings::OPTION),
+                \esc_attr(Settings::FIELDS_PRESENT),
+                \esc_attr($field),
+            );
+        }
     }
 
     /**
@@ -590,16 +806,7 @@ final class SettingsPage
             );
         }
 
-        if ($consent->isUngated()) {
-            printf(
-                '<div class="notice notice-warning inline"><p><strong>%s</strong> %s</p></div>',
-                \esc_html__('No consent mechanism was found.', 'conversion-tracking-for-openai-ads'),
-                \esc_html__(
-                    'Every visitor is measured. That may be exactly what you want. If you have visitors in the EU or the UK, it probably is not - install a consent plugin that supports the WP Consent API, or choose one of the other options below.',
-                    'conversion-tracking-for-openai-ads',
-                ),
-            );
-        }
+        $this->renderUngatedNotice(true);
 
         $unreadable = $consent->unreadableBanners();
 
@@ -616,6 +823,52 @@ final class SettingsPage
                 )),
             );
         }
+    }
+
+    /**
+     * The warning that this site measures everybody without asking anyone.
+     *
+     * Shown on the General screen as well as the consent one. It is the most
+     * consequential thing on either, and splitting the settings across screens
+     * must not mean a site owner has to find the right page before the plugin
+     * will tell them. See Consent::isUngated() for why measuring is still the
+     * default when nothing is found.
+     *
+     * @param bool $onConsentScreen whether the control that fixes it is on this
+     *                              same page, or a link away
+     */
+    private function renderUngatedNotice(bool $onConsentScreen = false): void
+    {
+        if (!$this->consent()->isUngated()) {
+            return;
+        }
+
+        if ($onConsentScreen) {
+            $advice = \esc_html__(
+                'Every visitor is measured. That may be exactly what you want. If you have visitors in the EU or the UK, it probably is not - install a consent plugin that supports the WP Consent API, or choose one of the other options below.',
+                'conversion-tracking-for-openai-ads',
+            );
+        } else {
+            $advice = sprintf(
+                /* translators: %s: a link reading "Integrations and consent" */
+                \esc_html__(
+                    'Every visitor is measured. That may be exactly what you want. If you have visitors in the EU or the UK, it probably is not - install a consent plugin that supports the WP Consent API, or decide it yourself under %s.',
+                    'conversion-tracking-for-openai-ads',
+                ),
+                sprintf(
+                    '<a href="%s">%s</a>',
+                    \esc_url(\admin_url('admin.php?page=' . self::INTEGRATIONS_SLUG)),
+                    \esc_html__('Integrations and consent', 'conversion-tracking-for-openai-ads'),
+                ),
+            );
+        }
+
+        printf(
+            '<div class="notice notice-warning inline"><p><strong>%s</strong> %s</p></div>',
+            \esc_html__('No consent mechanism was found.', 'conversion-tracking-for-openai-ads'),
+            // Escaped above, field by field; the only markup is the link built here.
+            $advice,
+        );
     }
 
     private function consent(): Consent

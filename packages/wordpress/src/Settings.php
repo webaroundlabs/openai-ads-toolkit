@@ -37,6 +37,23 @@ final class Settings
     /** Lets the collection endpoint's secret live in wp-config.php. */
     public const INGEST_SECRET_CONSTANT = 'OPENAI_ADS_INGEST_SECRET';
 
+    /**
+     * The hidden field a form uses to state which settings it rendered.
+     *
+     * These settings live in one option row but are edited across several
+     * screens, and a field on another screen is absent from a POST body in
+     * exactly the same way an unchecked checkbox is. Without the form saying
+     * what it covered, saving the Integrations screen would read "no Pixel ID
+     * was submitted" as "the Pixel ID is now empty" - and the site would stop
+     * measuring, silently, because somebody ticked a box on another page.
+     *
+     * It also covers the fields a screen deliberately hides. Deferred delivery
+     * is only rendered where Action Scheduler exists, and `timeout` and
+     * `integration_source` have no field at all; before this, every save wrote
+     * a default over them.
+     */
+    public const FIELDS_PRESENT = 'fields_present';
+
     /** @var array<string, mixed>|null */
     private ?array $cache = null;
 
@@ -258,6 +275,9 @@ final class Settings
      * untrusted. An existing key is preserved when the field is submitted blank,
      * so saving the page without retyping the secret does not wipe it.
      *
+     * Only the settings the form declared it rendered are written back - see
+     * FIELDS_PRESENT for why that is not optional.
+     *
      * @param array<string, mixed> $input
      *
      * @return array<string, mixed>
@@ -265,6 +285,7 @@ final class Settings
     public function sanitize(array $input): array
     {
         $current = $this->all();
+        $declared = $this->declaredFields($input);
 
         $pixelId = isset($input['pixel_id']) ? \sanitize_text_field((string) $input['pixel_id']) : '';
         $submittedKey = isset($input['capi_key']) ? trim((string) $input['capi_key']) : '';
@@ -285,7 +306,7 @@ final class Settings
             ? \esc_url_raw(trim((string) $input['canonical_origin']))
             : '';
 
-        return [
+        $submitted = [
             'pixel_id' => $pixelId,
             'capi_key' => $key,
             'pixel_enabled' => !empty($input['pixel_enabled']),
@@ -297,11 +318,52 @@ final class Settings
             'integration_source' => $integrationSource,
             'canonical_origin' => $canonical,
             'timeout' => max(1, min(30, (int) ($input['timeout'] ?? 5))),
-            'integrations' => $this->sanitizeIntegrations($input),
             'consent_mode' => $this->consentModeFrom($input),
             'ingest_enabled' => !empty($input['ingest_enabled']),
-            'ingest_secret' => $this->ingestSecretFrom($input, $current),
         ];
+
+        $result = $current;
+
+        foreach ($submitted as $field => $value) {
+            if (in_array($field, $declared, true)) {
+                $result[$field] = $value;
+            }
+        }
+
+        // These two work out for themselves what to keep: the integrations form
+        // states which boxes it rendered, and the secret survives unless
+        // something actually asked for a new one.
+        $result['integrations'] = $this->sanitizeIntegrations($input);
+        $result['ingest_secret'] = $this->ingestSecretFrom($input, $current);
+
+        return $result;
+    }
+
+    /**
+     * The settings a submitted form says it rendered.
+     *
+     * @param array<string, mixed> $input
+     *
+     * @return list<string>
+     */
+    private function declaredFields(array $input): array
+    {
+        $declared = $input[self::FIELDS_PRESENT] ?? null;
+
+        if (!is_array($declared)) {
+            return [];
+        }
+
+        $fields = [];
+
+        foreach ($declared as $field) {
+            // Arrived from a form, so it is a name until proven otherwise.
+            if (is_string($field) && preg_match('/^[a-z_]{1,32}$/', $field) === 1) {
+                $fields[] = $field;
+            }
+        }
+
+        return $fields;
     }
 
     /**
