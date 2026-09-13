@@ -87,6 +87,6 @@ to the dropdown fails the check.
 
 ## License
 
-[Apache 2.0](LICENSE) © 2026 Webaround Labs — not the MIT the rest of the toolkit
+[Apache 2.0](LICENSE) © 2026 Webaround — not the MIT the rest of the toolkit
 uses. The Community Template Gallery requires a repository whose `LICENSE` is the
 Apache 2.0 text and nothing else, and this package is published there.
