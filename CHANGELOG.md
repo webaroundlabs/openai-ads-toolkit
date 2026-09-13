@@ -54,6 +54,18 @@ While the version is `0.x` the public API may change in any release. See
   will ask, and the answer should not require reading the source. Verified both
   ways: every address in the section appears in the code, and every address in
   the code appears in the section.
+- **The copyright holder is `Webaround`, everywhere.** It read `Webaround Labs`
+  in every licence file, both GTM READMEs, the root README and the translation
+  catalogue's header, while the WordPress plugin header, the npm scope, the
+  Composer vendor and the domain all already said `Webaround`. The two GTM
+  packages were the sharpest case: their `LICENSE` and their `README.md` ship to
+  the gallery together and disagreed with each other. The PHP namespace
+  `WebaroundLabs\` is deliberately untouched - it is a code identifier, and
+  moving it breaks every integrator's `use` statement - and so are the
+  `github.com/webaroundlabs` URLs, which name the account that actually holds
+  the repository, and the `webaroundlabs-*` integration_source values, which are
+  on the wire. Regenerating the catalogue changed source-line references and its
+  header only; no `msgid` moved, so no existing translation is invalidated.
 
 ### Fixed
 
