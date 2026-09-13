@@ -198,7 +198,7 @@ never a public issue — see [`SECURITY.md`](SECURITY.md).
 
 ## License
 
-[MIT](LICENSE) © 2026 Webaround Labs.
+[MIT](LICENSE) © 2026 Webaround.
 
 MIT rather than Apache-2.0 specifically so the WordPress plugin can bundle the PHP core:
 Apache-2.0 is incompatible with GPLv2, and the WordPress plugin directory requires

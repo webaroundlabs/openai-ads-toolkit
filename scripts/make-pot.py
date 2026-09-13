@@ -98,7 +98,7 @@ def main():
     today = datetime.date.today().isoformat()
 
     out = [
-        '# Copyright (C) %s Webaround Labs' % today[:4],
+        '# Copyright (C) %s Webaround' % today[:4],
         '# This file is distributed under the GPL-2.0-or-later license.',
         '#, fuzzy',
         'msgid ""',
