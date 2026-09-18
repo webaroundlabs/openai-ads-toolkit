@@ -123,7 +123,15 @@ final class SendConversionEventsTest extends TestCase
     #[Test]
     public function serializing_the_job_preserves_the_event_id_and_timestamp(): void
     {
-        $event = $this->lead(1789041600000);
+        // Relative to now, unlike the fixed 1789041600000 the other suites use.
+        // Those only serialize an event; this one delivers it, and delivery
+        // checks the API's seven-day freshness window at send time - so a fixed
+        // point in the past turns this test red on a date nobody chose. What is
+        // pinned here is that the value survives the round trip unchanged, not
+        // which value it is.
+        $timestampMs = (int) round(microtime(true) * 1000) - 60_000;
+
+        $event = $this->lead($timestampMs);
 
         $revived = unserialize(serialize(new SendConversionEvents([$event])));
         $http = $this->fakeHttp();
@@ -131,7 +139,7 @@ final class SendConversionEventsTest extends TestCase
 
         $sent = $http->body()['events'][0];
         self::assertSame('lead_88213', $sent['id']);
-        self::assertSame(1789041600000, $sent['timestamp_ms']);
+        self::assertSame($timestampMs, $sent['timestamp_ms']);
     }
 
     private function dispatchNow(SendConversionEvents $job, int $attempts = 1): void

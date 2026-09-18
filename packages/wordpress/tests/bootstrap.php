@@ -65,8 +65,28 @@ final class WpStubs
     /** @var array<string, mixed> */
     public static array $transients = [];
 
+    /**
+     * Every gettext call the code under test made, as [string, domain].
+     *
+     * A string translated against the wrong domain is invisible on a real site:
+     * it simply never picks up a translation. Recording the domain is how a test
+     * can see it.
+     *
+     * @var list<array{string, string}>
+     */
+    public static array $translated = [];
+
+    /**
+     * What wp_add_privacy_policy_content() was given, as [plugin name, content].
+     *
+     * @var list<array{string, string}>
+     */
+    public static array $privacyPolicy = [];
+
     public static function reset(): void
     {
+        self::$translated = [];
+        self::$privacyPolicy = [];
         self::$options = [];
         self::$filters = [];
         self::$actions = [];
@@ -373,6 +393,40 @@ function add_action(string $hook, callable $callback, int $priority = 10, int $a
 function do_action(string $hook, mixed ...$args): void
 {
     WpStubs::$actions[] = [$hook, $args];
+}
+
+/**
+ * The gettext calls, recording the domain rather than translating.
+ *
+ * WordPress returns the original string when a domain has no catalogue loaded,
+ * which is exactly what an English-language test run should see.
+ */
+function __(string $text, string $domain = 'default'): string
+{
+    WpStubs::$translated[] = [$text, $domain];
+
+    return $text;
+}
+
+function esc_html__(string $text, string $domain = 'default'): string
+{
+    return esc_html(__($text, $domain));
+}
+
+function esc_attr__(string $text, string $domain = 'default'): string
+{
+    return esc_attr(__($text, $domain));
+}
+
+/** Enough of wp_kses_post for markup this plugin actually produces. */
+function wp_kses_post(string $html): string
+{
+    return $html;
+}
+
+function wp_add_privacy_policy_content(string $pluginName, string $content): void
+{
+    WpStubs::$privacyPolicy[] = [$pluginName, $content];
 }
 
 function load_plugin_textdomain(string $domain, bool $deprecated = false, string $path = ''): bool

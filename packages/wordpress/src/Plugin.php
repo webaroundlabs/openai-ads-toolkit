@@ -13,6 +13,7 @@ use WebaroundLabs\OpenAIAds\Event;
 use WebaroundLabs\OpenAIAds\ImageTag;
 use WebaroundLabs\OpenAIAds\InvalidArgument;
 use WebaroundLabs\OpenAIAds\SystemClock;
+use WebaroundLabs\OpenAIAds\WordPress\Admin\PrivacyPolicy;
 use WebaroundLabs\OpenAIAds\WordPress\Admin\SettingsPage;
 use WebaroundLabs\OpenAIAds\WordPress\Delivery\ScheduledDelivery;
 use WebaroundLabs\OpenAIAds\WordPress\Http\Ingest;
@@ -258,6 +259,10 @@ final class Plugin
                 $this->integrations(),
             );
             $page->register();
+
+            // Wording for Tools -> Privacy. Registering it is one add_action;
+            // the text itself is only built on admin_init.
+            PrivacyPolicy::register();
 
             \add_filter(
                 'plugin_action_links_' . \plugin_basename($this->file),

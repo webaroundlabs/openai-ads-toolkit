@@ -38,6 +38,14 @@ jobs:
       - name: Build the GTM gallery mirrors
         run: python scripts/mirror-gtm.py --into "${RUNNER_TEMP}/gtm-mirrors"
 
+      # A translation is only shipped once it is compiled, so a .po edited
+      # without rebuilding its .mo is a screen that silently stays English.
+      # This also catches a msgid that drifted away from the .pot and a printf
+      # placeholder lost in translation - which is not cosmetic: a dropped %s
+      # renders the sentence without the value it exists to carry.
+      - name: Check the translation catalogues
+        run: python scripts/make-mo.py --check
+
   php:
     name: PHP core (${{ matrix.php }})
     runs-on: ubuntu-latest

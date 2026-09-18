@@ -10,7 +10,58 @@ While the version is `0.x` the public API may change in any release. See
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-18
+
 ### Added
+
+- **Both GTM templates are gallery-ready.** Each has been round-tripped through
+  Tag Manager's template editor: the `___TERMS_OF_SERVICE___` section is present,
+  a human having ticked the box that writes it, and `___INFO___` now carries the
+  brand thumbnail. The sandboxed JavaScript came back byte-identical in both, and
+  the parameter and permission blocks are semantically unchanged — the editor
+  reformatted their JSON and dropped the blank lines between test cases, nothing
+  more. The names carry a `by Webaround` suffix because `OpenAI Ads Measurement
+  Pixel` was already taken in the gallery; the server template is
+  `OpenAI Ads Conversions API by Webaround`, since it posts to the Conversions
+  API and loads no Pixel, and a name contradicting its own description is a name
+  that sends people to the wrong tag.
+
+- **The WordPress plugin suggests privacy policy text**, through
+  `wp_add_privacy_policy_content()`, so the wording appears under Tools → Privacy
+  alongside every other plugin's. WordPress asks this of any plugin that
+  discloses data to a third party, and measuring a conversion is nothing else.
+  The draft says which OpenAI service receives what, that identifiers are hashed
+  before they leave the server, that commerce events carry product names
+  unhashed, and that query strings are removed - the same facts as the
+  `External services` section of `readme.txt`, addressed to a visitor rather
+  than to a site owner. It is a draft of facts, never a claim of compliance: the
+  site owner is the data controller.
+- **The WordPress plugin is translated into ten languages** — Bulgarian, Dutch,
+  French, German, Greek, Hungarian, Polish, Portuguese, Romanian and Spanish —
+  all 83 strings each, compiled to `.mo` and bundled. Product names are left
+  alone: `Measurement Pixel`, `Conversions API` and `Pixel ID` are what OpenAI's
+  documentation calls them, and a developer comparing the screen against those
+  docs has to recognize them. The privacy policy draft addresses a site's
+  visitors rather than its owner, so it takes each language's formal register
+  where the two differ.
+- **`scripts/make-mo.py` compiles and checks the catalogues**, and CI runs
+  `--check` on every pull request. WordPress reads `.mo`, so a `.po` edited
+  without a rebuild is a screen that silently stays English; the check refuses
+  that, a msgid that drifted from the `.pot`, an empty translation, and a
+  `printf` placeholder lost in translation — a dropped `%s` renders the sentence
+  without the value it exists to carry, and a `%d` turned into `%s` throws on a
+  settings screen. It packs the `.mo` itself rather than shelling out to
+  `msgfmt`: needing a toolchain to rebuild a translation is how translations
+  stop being rebuilt.
+- **`tests/bootstrap.php` stubs the gettext functions**, recording the text
+  domain each string was translated against rather than translating it. A string
+  passed the wrong domain simply never picks up a translation, and nothing about
+  the page looks broken when it happens — so a test now sees it.
+- **Install instructions where the registries send people.** `packages/js` said
+  "Not published to npm" while `@webaround/openai-ads` was on npm, and
+  `packages/php` documented no `composer require` at all although
+  `webaround/openai-ads` is on Packagist. Both now open with the command that
+  installs them, and the root README carries all three near the top.
 
 - **The two GTM templates are mirrored into single-template repositories** —
   `openai-ads-gtm-web` and `openai-ads-gtm-server` — which is the shape the
@@ -33,6 +84,26 @@ While the version is `0.x` the public API may change in any release. See
 
 ### Changed
 
+- **The WordPress `readme.txt` said the opposite of what the plugin does about
+  consent.** Under `Your responsibilities` it claimed that finding no consent
+  mechanism made the plugin say so "rather than assuming you meant to measure
+  everybody", while the FAQ six sections later said "Everything is measured" -
+  which is the behaviour. The settings screen warns; it does not stop. The
+  recorded decision is that measuring everybody is the deliberate, uncomfortable
+  default, because a plugin that silently measures nothing sends its owner
+  hunting for a fault for days. The section now states it, once.
+- **`readme.txt` is 9.8 KB, down from 14.4 KB.** The plugin handbook's File Size
+  note is explicit: "having a file larger than 10k may result in errors". Every
+  disclosure survives intact - the three addresses, what each sends, when, and
+  what is not sent - and the prose around them is shorter.
+- **A package's own `LICENSE` is linked from its own README.** All four read
+  `[MIT](../../LICENSE)`, which points above the package root: correct in a
+  monorepo checkout, a 404 on Packagist and npm, where the package root is the
+  repository root - and pointless either way, because each package already ships
+  the same MIT text beside its README. The WordPress plugin is the exception and
+  keeps both links: its own `LICENSE` is GPLv2-or-later, and the sentence about
+  the rest of the toolkit being MIT now names the root file by absolute URL,
+  because that README ships inside the plugin zip.
 - **`packages/gtm-web` and `packages/gtm-server` are Apache-2.0**, where the rest
   of the toolkit is MIT. The gallery requires a repository whose `LICENSE` is the
   Apache 2.0 text and nothing else, so a template published there cannot carry
@@ -69,6 +140,15 @@ While the version is `0.x` the public API may change in any release. See
 
 ### Fixed
 
+- **A Laravel test had a date in it, and that date arrived.**
+  `serializing_the_job_preserves_the_event_id_and_timestamp` pinned
+  `1789041600000` — 2026-09-10 — and went red on 2026-09-17, exactly seven days
+  later. Nothing was wrong with the code: the job correctly refuses an event
+  that has aged out of the API's seven-day window, and that window is checked at
+  send time. The other suites pin the same constant safely because they only
+  serialize an event; this one delivers it. It now takes its timestamp relative
+  to now, and still asserts the exact value survives the round trip, which was
+  always the point.
 - **WordPress: values read from `$_COOKIE` and `$_SERVER` are unslashed before
   they are sent.** WordPress runs `add_magic_quotes()` over both on every
   request, so a user agent, a page address or an `__oppref` value containing a
@@ -354,7 +434,8 @@ accident.
   Pixel documentation lists `postal_code`, which is what both runtimes already
   emitted. The `UNRESOLVED` note in `packages/spec/user.json` is closed.
 
-[Unreleased]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.1.2...main
+[Unreleased]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.2.0...main
+[0.2.0]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/webaroundlabs/openai-ads-toolkit/releases/tag/v0.1.0

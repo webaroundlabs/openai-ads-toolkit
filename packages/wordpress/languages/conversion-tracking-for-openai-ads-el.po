@@ -1,0 +1,272 @@
+# Greek translation of Conversion Tracking for OpenAI Ads.
+# Copyright (C) 2026 Webaround
+# This file is distributed under the GPL-2.0-or-later license.
+msgid ""
+msgstr ""
+"Project-Id-Version: Conversion Tracking for OpenAI Ads\n"
+"Report-Msgid-Bugs-To: https://github.com/webaroundlabs/openai-ads-toolkit/issues\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-09-18T00:00:00+00:00\n"
+"PO-Revision-Date: 2026-09-18T00:00:00+00:00\n"
+"Language: el\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: scripts/make-mo.py\n"
+"X-Domain: conversion-tracking-for-openai-ads\n"
+
+
+msgid "API key"
+msgstr "Κλειδί API"
+
+msgid "Accept events"
+msgstr "Αποδοχή συμβάντων"
+
+msgid "Add a Pixel ID and an API key first."
+msgstr "Προσθέστε πρώτα ένα Pixel ID και ένα κλειδί API."
+
+#. translators: %s: the name of a consent plugin, such as Complianz
+msgid "Always ask %s"
+msgstr "Να ρωτάει πάντα το %s"
+
+msgid "An independent community integration. Not created, certified, endorsed or supported by OpenAI."
+msgstr "Ανεξάρτητη ενσωμάτωση της κοινότητας. Δεν έχει δημιουργηθεί, πιστοποιηθεί, εγκριθεί ή υποστηριχθεί από την OpenAI."
+
+msgid "Anyone who can reach the endpoint and knows the secret can record conversions in your account. That does not cost you money directly, but it corrupts the figures your campaigns are optimized against."
+msgstr "Όποιος φτάσει στο endpoint και γνωρίζει το μυστικό μπορεί να καταγράψει μετατροπές στον λογαριασμό σας. Αυτό δεν σας κοστίζει άμεσα χρήματα, αλλά αλλοιώνει τα νούμερα βάσει των οποίων βελτιστοποιούνται οι καμπάνιες σας."
+
+#. translators: %s: the name of a consent plugin
+msgid "Asking %s for marketing consent. Nothing is measured without it."
+msgstr "Η συγκατάθεση για μάρκετινγκ ζητείται μέσω %s. Χωρίς αυτήν δεν μετριέται τίποτα."
+
+msgid "Both halves of this measurement carry the same event identifier, so a conversion seen in the browser and on our server is counted once rather than twice."
+msgstr "Και τα δύο μισά αυτής της μέτρησης φέρουν το ίδιο αναγνωριστικό συμβάντος, ώστε μια μετατροπή που καταγράφεται στο πρόγραμμα περιήγησης και στον διακομιστή μας να μετριέται μία φορά και όχι δύο."
+
+msgid "Canonical origin"
+msgstr "Κανονική προέλευση (origin)"
+
+msgid "Check events against the API without recording them. Use on staging."
+msgstr "Ελέγχει τα συμβάντα στο API χωρίς να τα καταγράφει. Χρησιμοποιήστε το σε staging."
+
+msgid "Consent"
+msgstr "Συγκατάθεση"
+
+msgid "Conversion Tracking for OpenAI Ads"
+msgstr "Conversion Tracking for OpenAI Ads"
+
+msgid "Conversion Tracking for OpenAI Ads is missing its dependencies. Run \"composer install\" in the plugin directory."
+msgstr "Λείπουν οι εξαρτήσεις του Conversion Tracking for OpenAI Ads. Εκτελέστε «composer install» στον κατάλογο του πρόσθετου."
+
+msgid "Conversions API"
+msgstr "Conversions API"
+
+msgid "Debug logging"
+msgstr "Καταγραφή αποσφαλμάτωσης"
+
+msgid "Deferred delivery"
+msgstr "Αναβαλλόμενη αποστολή"
+
+msgid "Detected on this site. Each one measures its own confirmed success boundary - a lead is recorded when the submission is accepted, not when the button is clicked."
+msgstr "Εντοπίστηκαν σε αυτόν τον ιστότοπο. Κάθε μία μετρά το δικό της επιβεβαιωμένο όριο επιτυχίας - ένα lead καταγράφεται όταν η υποβολή γίνει δεκτή, όχι όταν πατηθεί το κουμπί."
+
+msgid "Enable server-side events"
+msgstr "Ενεργοποίηση συμβάντων από τον διακομιστή"
+
+msgid "Enable the Pixel"
+msgstr "Ενεργοποίηση του Pixel"
+
+msgid "Endpoint URL"
+msgstr "URL του endpoint"
+
+msgid "Event"
+msgstr "Συμβάν"
+
+msgid "Every visitor is measured. That may be exactly what you want. If you have visitors in the EU or the UK, it probably is not - install a consent plugin that supports the WP Consent API, or choose one of the other options below."
+msgstr "Κάθε επισκέπτης μετριέται. Ίσως αυτό ακριβώς να θέλετε. Αν έχετε επισκέπτες στην ΕΕ ή το Ηνωμένο Βασίλειο, μάλλον δεν είναι - εγκαταστήστε ένα πρόσθετο συγκατάθεσης που υποστηρίζει το WP Consent API ή επιλέξτε μία από τις άλλες επιλογές παρακάτω."
+
+#. translators: %s: a link reading "Integrations and consent"
+msgid "Every visitor is measured. That may be exactly what you want. If you have visitors in the EU or the UK, it probably is not - install a consent plugin that supports the WP Consent API, or decide it yourself under %s."
+msgstr "Κάθε επισκέπτης μετριέται. Ίσως αυτό ακριβώς να θέλετε. Αν έχετε επισκέπτες στην ΕΕ ή το Ηνωμένο Βασίλειο, μάλλον δεν είναι - εγκαταστήστε ένα πρόσθετο συγκατάθεσης που υποστηρίζει το WP Consent API ή αποφασίστε μόνοι σας στο %s."
+
+#. translators: %s: a comma-separated list of consent plugin names
+msgid "Found %s, but this plugin cannot read it directly. Enable its WP Consent API support and it will be used automatically. Guessing at its internals instead would produce a consent check that answers confidently and wrongly."
+msgstr "Βρέθηκε το %s, αλλά αυτό το πρόσθετο δεν μπορεί να το διαβάσει απευθείας. Ενεργοποιήστε την υποστήριξή του για το WP Consent API και θα χρησιμοποιηθεί αυτόματα. Το να μαντέψει κανείς πώς λειτουργεί εσωτερικά θα έδινε έναν έλεγχο συγκατάθεσης που απαντά με βεβαιότητα και λάθος."
+
+msgid "General"
+msgstr "Γενικά"
+
+msgid "Hand conversions to Action Scheduler so they survive the request that created them. Recommended. Turn off if this site has no working cron."
+msgstr "Παραδίδει τις μετατροπές στο Action Scheduler ώστε να επιβιώσουν από το αίτημα που τις δημιούργησε. Συνιστάται. Απενεργοποιήστε το αν ο ιστότοπος δεν έχει λειτουργικό cron."
+
+msgid "How consent is decided"
+msgstr "Πώς αποφασίζεται η συγκατάθεση"
+
+msgid "Integrations"
+msgstr "Ενσωματώσεις"
+
+msgid "Integrations and consent"
+msgstr "Ενσωματώσεις και συγκατάθεση"
+
+msgid "Leave this off unless you are using it."
+msgstr "Αφήστε το απενεργοποιημένο αν δεν το χρησιμοποιείτε."
+
+msgid "Lets Google Tag Manager, or anything else, hand a conversion to this site and have it forwarded to OpenAI from your server. Useful when you want server-side tagging without paying for a server container: the API key stays here, and no ad blocker sees the request to OpenAI."
+msgstr "Επιτρέπει στο Google Tag Manager, ή σε οτιδήποτε άλλο, να παραδώσει μια μετατροπή σε αυτόν τον ιστότοπο, ο οποίος την προωθεί στην OpenAI από τον διακομιστή σας. Χρήσιμο όταν θέλετε tagging από τον διακομιστή χωρίς να πληρώνετε για server container: το κλειδί API μένει εδώ και κανένας ad blocker δεν βλέπει το αίτημα προς την OpenAI."
+
+msgid "Load the Pixel in the site head."
+msgstr "Φορτώνει το Pixel στο head του ιστότοπου."
+
+msgid "Measure conversions from this plugin."
+msgstr "Μέτρηση των μετατροπών αυτού του πρόσθετου."
+
+msgid "Measurement Pixel"
+msgstr "Measurement Pixel"
+
+msgid "No consent mechanism was found."
+msgstr "Δεν βρέθηκε κανένας μηχανισμός συγκατάθεσης."
+
+msgid "None of the plugins this one integrates with are active here. Contact Form 7, Elementor Pro, Gravity Forms, WPForms, Fluent Forms, Ninja Forms, WooCommerce and Easy Digital Downloads are picked up automatically when they are."
+msgstr "Κανένα από τα πρόσθετα με τα οποία συνεργάζεται αυτό δεν είναι ενεργό εδώ. Τα Contact Form 7, Elementor Pro, Gravity Forms, WPForms, Fluent Forms, Ninja Forms, WooCommerce και Easy Digital Downloads εντοπίζονται αυτόματα όταν είναι."
+
+msgid "Nothing yet. Send one and reload this page."
+msgstr "Τίποτα ακόμη. Στείλτε ένα και ανανεώστε αυτή τη σελίδα."
+
+msgid "One is generated when you switch the endpoint on and save."
+msgstr "Δημιουργείται ένα όταν ενεργοποιήσετε το endpoint και αποθηκεύσετε."
+
+msgid "Open the collection endpoint."
+msgstr "Άνοιγμα του endpoint συλλογής."
+
+msgid "OpenAI Ads"
+msgstr "OpenAI Ads"
+
+msgid "Outcome"
+msgstr "Έκβαση"
+
+msgid "POST JSON here. Public information; the secret below is not."
+msgstr "Στείλτε JSON με POST εδώ. Δημόσια πληροφορία· το μυστικό παρακάτω δεν είναι."
+
+msgid "Paste your key"
+msgstr "Επικολλήστε το κλειδί σας"
+
+msgid "Pixel ID"
+msgstr "Pixel ID"
+
+msgid "Privacy and diagnostics"
+msgstr "Απόρρητο και διαγνωστικά"
+
+msgid "Public. It appears in your pages, which is expected."
+msgstr "Δημόσιο. Εμφανίζεται στις σελίδες σας, όπως αναμένεται."
+
+msgid "Reason"
+msgstr "Αιτία"
+
+msgid "Recent events received"
+msgstr "Πρόσφατα συμβάντα που ελήφθησαν"
+
+msgid "Remove query strings from the page URL before sending it. Recommended: they often carry search terms, order keys and reset tokens."
+msgstr "Αφαιρεί τα query strings από το URL της σελίδας πριν την αποστολή. Συνιστάται: συχνά μεταφέρουν όρους αναζήτησης, κλειδιά παραγγελιών και tokens επαναφοράς."
+
+msgid "Replace it when I save. Anything still using the old one stops working."
+msgstr "Αντικατάστασή του κατά την αποθήκευση. Ό,τι χρησιμοποιεί ακόμη το παλιό σταματά να λειτουργεί."
+
+msgid "Saved. Leave blank to keep it."
+msgstr "Αποθηκεύτηκε. Αφήστε το κενό για να το διατηρήσετε."
+
+msgid "Send a test event"
+msgstr "Αποστολή δοκιμαστικού συμβάντος"
+
+msgid "Send conversions from the server as well as the browser."
+msgstr "Στέλνει τις μετατροπές από τον διακομιστή, όχι μόνο από το πρόγραμμα περιήγησης."
+
+msgid "Send it as the X-OpenAI-Ads-Key header on every request. Treat it like a password."
+msgstr "Στείλτε το ως κεφαλίδα X-OpenAI-Ads-Key σε κάθε αίτημα. Αντιμετωπίστε το σαν κωδικό πρόσβασης."
+
+msgid "Sending from a server rather than a browser? Include source_url, oppref, obref, ip_address and user_agent in the payload. Without them the conversion is attributed to the machine that called this endpoint, not to the visitor."
+msgstr "Στέλνετε από διακομιστή και όχι από πρόγραμμα περιήγησης; Συμπεριλάβετε source_url, oppref, obref, ip_address και user_agent στο payload. Χωρίς αυτά, η μετατροπή αποδίδεται στο μηχάνημα που κάλεσε αυτό το endpoint και όχι στον επισκέπτη."
+
+msgid "Sends one event in the API's validation mode. Nothing is recorded, so this cannot create a fake conversion."
+msgstr "Στέλνει ένα συμβάν στη λειτουργία επικύρωσης του API. Δεν καταγράφεται τίποτα, επομένως δεν μπορεί να δημιουργηθεί ψεύτικη μετατροπή."
+
+msgid "Server-side only. Never rendered into a page, never written to a log."
+msgstr "Μόνο από την πλευρά του διακομιστή. Δεν εμφανίζεται ποτέ σε σελίδα ούτε γράφεται σε αρχείο καταγραφής."
+
+msgid "Set in wp-config.php."
+msgstr "Ορίστηκε στο wp-config.php."
+
+msgid "Settings"
+msgstr "Ρυθμίσεις"
+
+msgid "Shared secret"
+msgstr "Κοινό μυστικό"
+
+msgid "Strip query strings"
+msgstr "Αφαίρεση των query strings"
+
+msgid "Success. The credentials work and the event validated."
+msgstr "Επιτυχία. Τα διαπιστευτήρια λειτουργούν και το συμβάν επικυρώθηκε."
+
+msgid "Suggested text:"
+msgstr "Προτεινόμενο κείμενο:"
+
+msgid "Tag manager"
+msgstr "Tag manager"
+
+msgid "Tag manager endpoint"
+msgstr "Endpoint για tag manager"
+
+msgid "Test the connection"
+msgstr "Δοκιμή της σύνδεσης"
+
+msgid "Testing…"
+msgstr "Γίνεται δοκιμή…"
+
+msgid "That is the safer place for it."
+msgstr "Εκεί είναι πιο ασφαλές."
+
+msgid "The API could not be reached. Check the site can make outbound requests."
+msgstr "Δεν ήταν δυνατή η επικοινωνία με το API. Ελέγξτε ότι ο ιστότοπος μπορεί να κάνει εξερχόμενα αιτήματα."
+
+#. translators: %d: HTTP status code
+msgid "The API returned HTTP %d. Check the Pixel ID and API key."
+msgstr "Το API επέστρεψε HTTP %d. Ελέγξτε το Pixel ID και το κλειδί API."
+
+msgid "The request failed."
+msgstr "Το αίτημα απέτυχε."
+
+msgid "This is the safer place for it, and it cannot be edited here."
+msgstr "Εκεί είναι πιο ασφαλές και δεν μπορεί να επεξεργαστεί εδώ."
+
+msgid "This plugin sends advertising conversion data to OpenAI, and only once you have entered a Pixel ID or a Conversions API key. Adapt the wording below to the events your site actually measures, and to the consent mechanism you use."
+msgstr "Αυτό το πρόσθετο στέλνει δεδομένα διαφημιστικών μετατροπών στην OpenAI, και μόνο αφού έχετε εισαγάγει ένα Pixel ID ή ένα κλειδί του Conversions API. Προσαρμόστε το παρακάτω κείμενο στα συμβάντα που πραγματικά μετρά ο ιστότοπός σας και στον μηχανισμό συγκατάθεσης που χρησιμοποιείτε."
+
+msgid "This plugin ships no cookie banner and makes no privacy decision for you. It asks yours. Nothing is collected and no Pixel is loaded when the answer is no."
+msgstr "Αυτό το πρόσθετο δεν περιλαμβάνει banner cookies και δεν παίρνει καμία απόφαση απορρήτου για εσάς. Ρωτά τη δική σας. Δεν συλλέγεται τίποτα και δεν φορτώνεται κανένα Pixel όταν η απάντηση είναι όχι."
+
+msgid "Validation mode"
+msgstr "Λειτουργία επικύρωσης"
+
+msgid "We also send the same conversions from our own server through the OpenAI Conversions API. Where you have given us your email address, telephone number, name or address - for example by placing an order - these are converted into irreversible SHA-256 hashes before they leave our server, so OpenAI can recognise a returning customer without receiving the values themselves. Commerce events also carry the items concerned: product name, identifier, quantity, price and any variation such as size or colour."
+msgstr "Στέλνουμε επίσης τις ίδιες μετατροπές από τον δικό μας διακομιστή μέσω του OpenAI Conversions API. Όπου μας έχετε δώσει τη διεύθυνση email, τον αριθμό τηλεφώνου, το όνομα ή τη διεύθυνσή σας - για παράδειγμα κάνοντας μια παραγγελία - αυτά μετατρέπονται σε μη αναστρέψιμα hashes SHA-256 πριν φύγουν από τον διακομιστή μας, ώστε η OpenAI να μπορεί να αναγνωρίσει έναν πελάτη που επιστρέφει χωρίς να λάβει τις ίδιες τις τιμές. Τα συμβάντα εμπορίου μεταφέρουν επίσης τα σχετικά προϊόντα: όνομα προϊόντος, αναγνωριστικό, ποσότητα, τιμή και κάθε παραλλαγή όπως μέγεθος ή χρώμα."
+
+msgid "We do not send OpenAI your raw email address, telephone number or name, and we remove query strings from page addresses before they are reported."
+msgstr "Δεν στέλνουμε στην OpenAI τη διεύθυνση email, τον αριθμό τηλεφώνου ή το όνομά σας σε ακατέργαστη μορφή, και αφαιρούμε τα query strings από τις διευθύνσεις των σελίδων πριν αναφερθούν."
+
+msgid "We use OpenAI Ads to measure the effectiveness of our advertising. When you visit this site, the OpenAI Ads Measurement Pixel may load in your browser and report the pages you view and the actions you complete - such as placing an order or submitting a form - to OpenAI. Your IP address and browser user agent reach OpenAI as part of those requests. The Pixel stores two first-party cookies, __oppref and __obref, which record which advertisement you arrived from."
+msgstr "Χρησιμοποιούμε το OpenAI Ads για να μετρήσουμε την αποτελεσματικότητα της διαφήμισής μας. Όταν επισκέπτεστε αυτόν τον ιστότοπο, το OpenAI Ads Measurement Pixel μπορεί να φορτωθεί στο πρόγραμμα περιήγησής σας και να αναφέρει στην OpenAI τις σελίδες που βλέπετε και τις ενέργειες που ολοκληρώνετε - όπως μια παραγγελία ή η υποβολή μιας φόρμας. Η διεύθυνση IP σας και ο user agent του προγράμματος περιήγησης φτάνουν στην OpenAI ως μέρος αυτών των αιτημάτων. Το Pixel αποθηκεύει δύο first-party cookies, τα __oppref και __obref, που καταγράφουν από ποια διαφήμιση ήρθατε."
+
+#. translators: %s: link to OpenAI's privacy policy.
+msgid "What OpenAI does with this data is described in its privacy policy: %s"
+msgstr "Το τι κάνει η OpenAI με αυτά τα δεδομένα περιγράφεται στην πολιτική απορρήτου της: %s"
+
+msgid "When (UTC)"
+msgstr "Πότε (UTC)"
+
+msgid "Write failures to the PHP error log. Payloads are never logged."
+msgstr "Γράφει τις αποτυχίες στο αρχείο καταγραφής σφαλμάτων της PHP. Τα payloads δεν καταγράφονται ποτέ."
+
+msgid "You are not allowed to do this."
+msgstr "Δεν σας επιτρέπεται να το κάνετε αυτό."
+
+msgid "You do not have permission to manage these settings."
+msgstr "Δεν έχετε δικαίωμα να διαχειριστείτε αυτές τις ρυθμίσεις."

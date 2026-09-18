@@ -370,8 +370,33 @@ on a real site instead.
 `vendor/` is gitignored but **must be present in the distributed plugin** — users
 cannot run Composer. Build the zip with `composer install --no-dev` first.
 
+## Translations
+
+The plugin ships catalogues for Bulgarian, Dutch, French, German, Greek,
+Hungarian, Polish, Portuguese, Romanian and Spanish, alongside the English
+source. A site installing from the plugin directory takes its translations from
+translate.wordpress.org; these are what the bundled copies and the zip carry
+until GlotPress has them.
+
+```bash
+python ../../scripts/make-pot.py        # after any string changes
+python ../../scripts/make-mo.py         # compile every .po next to it
+python ../../scripts/make-mo.py --check # what CI runs
+```
+
+WordPress reads `.mo`, so a `.po` edited without a rebuild is a screen that
+silently stays English. `--check` refuses that, along with a msgid that has
+drifted from the `.pot`, an empty translation, and a `printf` placeholder lost in
+translation — the last one being the one that breaks a page rather than merely
+reading oddly.
+
+Product names stay untranslated on purpose: `Measurement Pixel`, `Conversions
+API` and `Pixel ID` are what OpenAI's own documentation calls them, and a
+developer comparing this screen with those docs has to recognize them.
+
 ## License
 
-GPL-2.0-or-later, as the WordPress plugin directory requires. The rest of the
-toolkit is [MIT](../../LICENSE), which is compatible — that compatibility is why
-MIT was chosen for the core.
+GPL-2.0-or-later, as the WordPress plugin directory requires — see
+[`LICENSE`](LICENSE). The rest of the toolkit is
+[MIT](https://github.com/webaroundlabs/openai-ads-toolkit/blob/main/LICENSE),
+which is compatible — that compatibility is why MIT was chosen for the core.

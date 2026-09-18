@@ -12,6 +12,16 @@ Conversions API. No framework dependency.
 > **Pre-alpha, `0.1.x`.** The event model, identity hashing and the Conversions API
 > client are implemented. The public API is unstable until `1.0`.
 
+## Install
+
+```bash
+composer require webaround/openai-ads
+```
+
+It depends on the PSR-18 and PSR-17 **interfaces**, never on a client, so it
+forces no transport on you — add whichever one you already use. See
+[Sending](#sending).
+
 ## Requirements
 
 PHP 8.2+, `ext-json`, `ext-mbstring`. A 64-bit build (amounts are integers in the
@@ -176,4 +186,4 @@ There is no `TransportInterface`: PSR-18's `ClientInterface` already is one.
 
 ## License
 
-[MIT](../../LICENSE). Independent community project, not affiliated with OpenAI.
+[MIT](LICENSE). Independent community project, not affiliated with OpenAI.

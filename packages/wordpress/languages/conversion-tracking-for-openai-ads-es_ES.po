@@ -1,0 +1,272 @@
+# Spanish translation of Conversion Tracking for OpenAI Ads.
+# Copyright (C) 2026 Webaround
+# This file is distributed under the GPL-2.0-or-later license.
+msgid ""
+msgstr ""
+"Project-Id-Version: Conversion Tracking for OpenAI Ads\n"
+"Report-Msgid-Bugs-To: https://github.com/webaroundlabs/openai-ads-toolkit/issues\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-09-18T00:00:00+00:00\n"
+"PO-Revision-Date: 2026-09-18T00:00:00+00:00\n"
+"Language: es\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: scripts/make-mo.py\n"
+"X-Domain: conversion-tracking-for-openai-ads\n"
+
+
+msgid "API key"
+msgstr "Clave de API"
+
+msgid "Accept events"
+msgstr "Aceptar eventos"
+
+msgid "Add a Pixel ID and an API key first."
+msgstr "Añade primero un Pixel ID y una clave de API."
+
+#. translators: %s: the name of a consent plugin, such as Complianz
+msgid "Always ask %s"
+msgstr "Preguntar siempre a %s"
+
+msgid "An independent community integration. Not created, certified, endorsed or supported by OpenAI."
+msgstr "Integración comunitaria independiente. No ha sido creada, certificada, respaldada ni mantenida por OpenAI."
+
+msgid "Anyone who can reach the endpoint and knows the secret can record conversions in your account. That does not cost you money directly, but it corrupts the figures your campaigns are optimized against."
+msgstr "Cualquiera que llegue al endpoint y conozca el secreto puede registrar conversiones en tu cuenta. Eso no te cuesta dinero directamente, pero corrompe las cifras con las que se optimizan tus campañas."
+
+#. translators: %s: the name of a consent plugin
+msgid "Asking %s for marketing consent. Nothing is measured without it."
+msgstr "Se pide el consentimiento de marketing a %s. Sin él no se mide nada."
+
+msgid "Both halves of this measurement carry the same event identifier, so a conversion seen in the browser and on our server is counted once rather than twice."
+msgstr "Ambas mitades de esta medición llevan el mismo identificador de evento, de modo que una conversión vista en el navegador y en nuestro servidor se cuenta una vez y no dos."
+
+msgid "Canonical origin"
+msgstr "Origen canónico"
+
+msgid "Check events against the API without recording them. Use on staging."
+msgstr "Comprueba los eventos contra la API sin registrarlos. Úsalo en staging."
+
+msgid "Consent"
+msgstr "Consentimiento"
+
+msgid "Conversion Tracking for OpenAI Ads"
+msgstr "Conversion Tracking for OpenAI Ads"
+
+msgid "Conversion Tracking for OpenAI Ads is missing its dependencies. Run \"composer install\" in the plugin directory."
+msgstr "A Conversion Tracking for OpenAI Ads le faltan sus dependencias. Ejecuta «composer install» en el directorio del plugin."
+
+msgid "Conversions API"
+msgstr "Conversions API"
+
+msgid "Debug logging"
+msgstr "Registro de depuración"
+
+msgid "Deferred delivery"
+msgstr "Entrega diferida"
+
+msgid "Detected on this site. Each one measures its own confirmed success boundary - a lead is recorded when the submission is accepted, not when the button is clicked."
+msgstr "Detectados en este sitio. Cada uno mide su propio límite confirmado de éxito: un lead se registra cuando se acepta el envío, no cuando se pulsa el botón."
+
+msgid "Enable server-side events"
+msgstr "Activar los eventos desde el servidor"
+
+msgid "Enable the Pixel"
+msgstr "Activar el Pixel"
+
+msgid "Endpoint URL"
+msgstr "URL del endpoint"
+
+msgid "Event"
+msgstr "Evento"
+
+msgid "Every visitor is measured. That may be exactly what you want. If you have visitors in the EU or the UK, it probably is not - install a consent plugin that supports the WP Consent API, or choose one of the other options below."
+msgstr "Se mide a todos los visitantes. Puede que sea justo lo que quieres. Si tienes visitantes en la UE o el Reino Unido, probablemente no lo sea: instala un plugin de consentimiento compatible con la WP Consent API o elige una de las demás opciones de abajo."
+
+#. translators: %s: a link reading "Integrations and consent"
+msgid "Every visitor is measured. That may be exactly what you want. If you have visitors in the EU or the UK, it probably is not - install a consent plugin that supports the WP Consent API, or decide it yourself under %s."
+msgstr "Se mide a todos los visitantes. Puede que sea justo lo que quieres. Si tienes visitantes en la UE o el Reino Unido, probablemente no lo sea: instala un plugin de consentimiento compatible con la WP Consent API o decídelo tú mismo en %s."
+
+#. translators: %s: a comma-separated list of consent plugin names
+msgid "Found %s, but this plugin cannot read it directly. Enable its WP Consent API support and it will be used automatically. Guessing at its internals instead would produce a consent check that answers confidently and wrongly."
+msgstr "Se ha encontrado %s, pero este plugin no puede leerlo directamente. Activa su compatibilidad con la WP Consent API y se usará automáticamente. Adivinar su funcionamiento interno produciría una comprobación de consentimiento que responde con seguridad y se equivoca."
+
+msgid "General"
+msgstr "General"
+
+msgid "Hand conversions to Action Scheduler so they survive the request that created them. Recommended. Turn off if this site has no working cron."
+msgstr "Entrega las conversiones a Action Scheduler para que sobrevivan a la petición que las creó. Recomendado. Desactívalo si este sitio no tiene un cron que funcione."
+
+msgid "How consent is decided"
+msgstr "Cómo se decide el consentimiento"
+
+msgid "Integrations"
+msgstr "Integraciones"
+
+msgid "Integrations and consent"
+msgstr "Integraciones y consentimiento"
+
+msgid "Leave this off unless you are using it."
+msgstr "Déjalo desactivado si no lo estás usando."
+
+msgid "Lets Google Tag Manager, or anything else, hand a conversion to this site and have it forwarded to OpenAI from your server. Useful when you want server-side tagging without paying for a server container: the API key stays here, and no ad blocker sees the request to OpenAI."
+msgstr "Permite que Google Tag Manager, o cualquier otra cosa, entregue una conversión a este sitio y que se reenvíe a OpenAI desde tu servidor. Útil cuando quieres etiquetado del lado del servidor sin pagar un contenedor de servidor: la clave de API se queda aquí y ningún bloqueador de anuncios ve la petición a OpenAI."
+
+msgid "Load the Pixel in the site head."
+msgstr "Carga el Pixel en el head del sitio."
+
+msgid "Measure conversions from this plugin."
+msgstr "Medir las conversiones de este plugin."
+
+msgid "Measurement Pixel"
+msgstr "Measurement Pixel"
+
+msgid "No consent mechanism was found."
+msgstr "No se ha encontrado ningún mecanismo de consentimiento."
+
+msgid "None of the plugins this one integrates with are active here. Contact Form 7, Elementor Pro, Gravity Forms, WPForms, Fluent Forms, Ninja Forms, WooCommerce and Easy Digital Downloads are picked up automatically when they are."
+msgstr "Ninguno de los plugins con los que este se integra está activo aquí. Contact Form 7, Elementor Pro, Gravity Forms, WPForms, Fluent Forms, Ninja Forms, WooCommerce y Easy Digital Downloads se detectan automáticamente cuando lo están."
+
+msgid "Nothing yet. Send one and reload this page."
+msgstr "Nada todavía. Envía uno y recarga esta página."
+
+msgid "One is generated when you switch the endpoint on and save."
+msgstr "Se genera uno cuando activas el endpoint y guardas."
+
+msgid "Open the collection endpoint."
+msgstr "Abrir el endpoint de recogida."
+
+msgid "OpenAI Ads"
+msgstr "OpenAI Ads"
+
+msgid "Outcome"
+msgstr "Resultado"
+
+msgid "POST JSON here. Public information; the secret below is not."
+msgstr "Envía JSON por POST aquí. Información pública; el secreto de abajo no lo es."
+
+msgid "Paste your key"
+msgstr "Pega tu clave"
+
+msgid "Pixel ID"
+msgstr "Pixel ID"
+
+msgid "Privacy and diagnostics"
+msgstr "Privacidad y diagnóstico"
+
+msgid "Public. It appears in your pages, which is expected."
+msgstr "Público. Aparece en tus páginas, como es de esperar."
+
+msgid "Reason"
+msgstr "Motivo"
+
+msgid "Recent events received"
+msgstr "Eventos recibidos recientemente"
+
+msgid "Remove query strings from the page URL before sending it. Recommended: they often carry search terms, order keys and reset tokens."
+msgstr "Elimina las cadenas de consulta de la URL de la página antes de enviarla. Recomendado: suelen llevar términos de búsqueda, claves de pedido y tokens de restablecimiento."
+
+msgid "Replace it when I save. Anything still using the old one stops working."
+msgstr "Sustitúyelo al guardar. Todo lo que siga usando el anterior dejará de funcionar."
+
+msgid "Saved. Leave blank to keep it."
+msgstr "Guardada. Déjalo en blanco para conservarla."
+
+msgid "Send a test event"
+msgstr "Enviar un evento de prueba"
+
+msgid "Send conversions from the server as well as the browser."
+msgstr "Envía las conversiones desde el servidor además de desde el navegador."
+
+msgid "Send it as the X-OpenAI-Ads-Key header on every request. Treat it like a password."
+msgstr "Envíalo como cabecera X-OpenAI-Ads-Key en cada petición. Trátalo como una contraseña."
+
+msgid "Sending from a server rather than a browser? Include source_url, oppref, obref, ip_address and user_agent in the payload. Without them the conversion is attributed to the machine that called this endpoint, not to the visitor."
+msgstr "¿Envías desde un servidor y no desde un navegador? Incluye source_url, oppref, obref, ip_address y user_agent en el payload. Sin ellos, la conversión se atribuye a la máquina que llamó a este endpoint, no al visitante."
+
+msgid "Sends one event in the API's validation mode. Nothing is recorded, so this cannot create a fake conversion."
+msgstr "Envía un evento en el modo de validación de la API. No se registra nada, así que no puede crear una conversión falsa."
+
+msgid "Server-side only. Never rendered into a page, never written to a log."
+msgstr "Solo en el servidor. Nunca se imprime en una página ni se escribe en un registro."
+
+msgid "Set in wp-config.php."
+msgstr "Definida en wp-config.php."
+
+msgid "Settings"
+msgstr "Ajustes"
+
+msgid "Shared secret"
+msgstr "Secreto compartido"
+
+msgid "Strip query strings"
+msgstr "Eliminar las cadenas de consulta"
+
+msgid "Success. The credentials work and the event validated."
+msgstr "Correcto. Las credenciales funcionan y el evento se ha validado."
+
+msgid "Suggested text:"
+msgstr "Texto sugerido:"
+
+msgid "Tag manager"
+msgstr "Tag manager"
+
+msgid "Tag manager endpoint"
+msgstr "Endpoint para el tag manager"
+
+msgid "Test the connection"
+msgstr "Probar la conexión"
+
+msgid "Testing…"
+msgstr "Probando…"
+
+msgid "That is the safer place for it."
+msgstr "Ese es el lugar más seguro para ella."
+
+msgid "The API could not be reached. Check the site can make outbound requests."
+msgstr "No se ha podido contactar con la API. Comprueba que el sitio puede hacer peticiones salientes."
+
+#. translators: %d: HTTP status code
+msgid "The API returned HTTP %d. Check the Pixel ID and API key."
+msgstr "La API ha devuelto HTTP %d. Comprueba el Pixel ID y la clave de API."
+
+msgid "The request failed."
+msgstr "La petición ha fallado."
+
+msgid "This is the safer place for it, and it cannot be edited here."
+msgstr "Este es el lugar más seguro para ella, y no se puede editar aquí."
+
+msgid "This plugin sends advertising conversion data to OpenAI, and only once you have entered a Pixel ID or a Conversions API key. Adapt the wording below to the events your site actually measures, and to the consent mechanism you use."
+msgstr "Este plugin envía datos de conversión publicitaria a OpenAI, y solo una vez que has introducido un Pixel ID o una clave de la Conversions API. Adapta el texto de abajo a los eventos que tu sitio mide realmente y al mecanismo de consentimiento que utilizas."
+
+msgid "This plugin ships no cookie banner and makes no privacy decision for you. It asks yours. Nothing is collected and no Pixel is loaded when the answer is no."
+msgstr "Este plugin no incluye ningún banner de cookies ni toma ninguna decisión de privacidad por ti. Consulta la tuya. No se recoge nada y no se carga ningún Pixel cuando la respuesta es no."
+
+msgid "Validation mode"
+msgstr "Modo de validación"
+
+msgid "We also send the same conversions from our own server through the OpenAI Conversions API. Where you have given us your email address, telephone number, name or address - for example by placing an order - these are converted into irreversible SHA-256 hashes before they leave our server, so OpenAI can recognise a returning customer without receiving the values themselves. Commerce events also carry the items concerned: product name, identifier, quantity, price and any variation such as size or colour."
+msgstr "También enviamos las mismas conversiones desde nuestro propio servidor a través de la OpenAI Conversions API. Cuando nos has facilitado tu dirección de correo electrónico, tu número de teléfono, tu nombre o tu dirección -por ejemplo, al realizar un pedido-, estos se convierten en hashes SHA-256 irreversibles antes de salir de nuestro servidor, de modo que OpenAI pueda reconocer a un cliente que vuelve sin recibir los valores en sí. Los eventos de comercio también llevan los artículos en cuestión: nombre del producto, identificador, cantidad, precio y cualquier variación como la talla o el color."
+
+msgid "We do not send OpenAI your raw email address, telephone number or name, and we remove query strings from page addresses before they are reported."
+msgstr "No enviamos a OpenAI tu dirección de correo electrónico, tu número de teléfono ni tu nombre en bruto, y eliminamos las cadenas de consulta de las direcciones de página antes de informar de ellas."
+
+msgid "We use OpenAI Ads to measure the effectiveness of our advertising. When you visit this site, the OpenAI Ads Measurement Pixel may load in your browser and report the pages you view and the actions you complete - such as placing an order or submitting a form - to OpenAI. Your IP address and browser user agent reach OpenAI as part of those requests. The Pixel stores two first-party cookies, __oppref and __obref, which record which advertisement you arrived from."
+msgstr "Usamos OpenAI Ads para medir la eficacia de nuestra publicidad. Cuando visitas este sitio, el OpenAI Ads Measurement Pixel puede cargarse en tu navegador e informar a OpenAI de las páginas que ves y de las acciones que completas, como realizar un pedido o enviar un formulario. Tu dirección IP y el user agent de tu navegador llegan a OpenAI como parte de esas peticiones. El Pixel almacena dos cookies propias, __oppref y __obref, que registran de qué anuncio llegaste."
+
+#. translators: %s: link to OpenAI's privacy policy.
+msgid "What OpenAI does with this data is described in its privacy policy: %s"
+msgstr "Lo que OpenAI hace con estos datos se describe en su política de privacidad: %s"
+
+msgid "When (UTC)"
+msgstr "Cuándo (UTC)"
+
+msgid "Write failures to the PHP error log. Payloads are never logged."
+msgstr "Escribe los fallos en el registro de errores de PHP. Los payloads nunca se registran."
+
+msgid "You are not allowed to do this."
+msgstr "No tienes permiso para hacer esto."
+
+msgid "You do not have permission to manage these settings."
+msgstr "No tienes permiso para gestionar estos ajustes."

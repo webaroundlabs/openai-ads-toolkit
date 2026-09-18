@@ -31,6 +31,21 @@ All three documented channels are covered: the browser Pixel, the server-side Co
 and the image tag for the places JavaScript cannot go — an email body, an AMP page, a
 `<noscript>` fallback. All three deduplicate on the same event id.
 
+## Install
+
+```bash
+composer require webaround/openai-ads           # PHP core
+composer require webaround/openai-ads-laravel   # Laravel adapter
+npm install @webaround/openai-ads               # browser Pixel
+```
+
+[Packagist: `webaround/openai-ads`](https://packagist.org/packages/webaround/openai-ads) ·
+[`webaround/openai-ads-laravel`](https://packagist.org/packages/webaround/openai-ads-laravel) ·
+[npm: `@webaround/openai-ads`](https://www.npmjs.com/package/@webaround/openai-ads)
+
+The WordPress plugin is installed from its zip — `bash scripts/build-plugin.sh` — and the GTM
+templates are imported into a container. Neither is fetched with a package manager.
+
 ## The surface
 
 ```js

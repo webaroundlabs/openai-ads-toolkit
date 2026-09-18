@@ -1,0 +1,272 @@
+# Hungarian translation of Conversion Tracking for OpenAI Ads.
+# Copyright (C) 2026 Webaround
+# This file is distributed under the GPL-2.0-or-later license.
+msgid ""
+msgstr ""
+"Project-Id-Version: Conversion Tracking for OpenAI Ads\n"
+"Report-Msgid-Bugs-To: https://github.com/webaroundlabs/openai-ads-toolkit/issues\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-09-18T00:00:00+00:00\n"
+"PO-Revision-Date: 2026-09-18T00:00:00+00:00\n"
+"Language: hu\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: scripts/make-mo.py\n"
+"X-Domain: conversion-tracking-for-openai-ads\n"
+
+
+msgid "API key"
+msgstr "API-kulcs"
+
+msgid "Accept events"
+msgstr "Események fogadása"
+
+msgid "Add a Pixel ID and an API key first."
+msgstr "Előbb add meg a Pixel ID-t és az API-kulcsot."
+
+#. translators: %s: the name of a consent plugin, such as Complianz
+msgid "Always ask %s"
+msgstr "Mindig kérdezze meg: %s"
+
+msgid "An independent community integration. Not created, certified, endorsed or supported by OpenAI."
+msgstr "Független közösségi integráció. Nem az OpenAI készítette, tanúsította, hagyta jóvá vagy támogatja."
+
+msgid "Anyone who can reach the endpoint and knows the secret can record conversions in your account. That does not cost you money directly, but it corrupts the figures your campaigns are optimized against."
+msgstr "Bárki, aki eléri a végpontot és ismeri a titkot, konverziókat rögzíthet a fiókodban. Ez közvetlenül nem kerül pénzbe, de megrontja azokat a számokat, amelyekre a kampányaid optimalizálnak."
+
+#. translators: %s: the name of a consent plugin
+msgid "Asking %s for marketing consent. Nothing is measured without it."
+msgstr "A marketinghozzájárulást a(z) %s kéri be. Enélkül semmi sem kerül mérésre."
+
+msgid "Both halves of this measurement carry the same event identifier, so a conversion seen in the browser and on our server is counted once rather than twice."
+msgstr "A mérés mindkét fele ugyanazt az eseményazonosítót viseli, így a böngészőben és a szerverünkön is látott konverzió egyszer számít, nem kétszer."
+
+msgid "Canonical origin"
+msgstr "Kanonikus origin"
+
+msgid "Check events against the API without recording them. Use on staging."
+msgstr "Ellenőrzi az eseményeket az API-nál anélkül, hogy rögzítené őket. Tesztkörnyezetben használd."
+
+msgid "Consent"
+msgstr "Hozzájárulás"
+
+msgid "Conversion Tracking for OpenAI Ads"
+msgstr "Conversion Tracking for OpenAI Ads"
+
+msgid "Conversion Tracking for OpenAI Ads is missing its dependencies. Run \"composer install\" in the plugin directory."
+msgstr "A Conversion Tracking for OpenAI Ads függőségei hiányoznak. Futtasd a „composer install” parancsot a bővítmény könyvtárában."
+
+msgid "Conversions API"
+msgstr "Conversions API"
+
+msgid "Debug logging"
+msgstr "Hibakeresési naplózás"
+
+msgid "Deferred delivery"
+msgstr "Késleltetett küldés"
+
+msgid "Detected on this site. Each one measures its own confirmed success boundary - a lead is recorded when the submission is accepted, not when the button is clicked."
+msgstr "Ezen az oldalon észlelve. Mindegyik a saját megerősített sikerhatárát méri - egy lead akkor kerül rögzítésre, amikor a beküldést elfogadták, nem amikor a gombra kattintottak."
+
+msgid "Enable server-side events"
+msgstr "Szerveroldali események engedélyezése"
+
+msgid "Enable the Pixel"
+msgstr "A Pixel engedélyezése"
+
+msgid "Endpoint URL"
+msgstr "A végpont URL-je"
+
+msgid "Event"
+msgstr "Esemény"
+
+msgid "Every visitor is measured. That may be exactly what you want. If you have visitors in the EU or the UK, it probably is not - install a consent plugin that supports the WP Consent API, or choose one of the other options below."
+msgstr "Minden látogatót mérünk. Lehet, hogy pontosan ezt akarod. Ha vannak látogatóid az EU-ban vagy az Egyesült Királyságban, valószínűleg nem - telepíts egy hozzájárulás-kezelő bővítményt, amely támogatja a WP Consent API-t, vagy válaszd az alábbi lehetőségek egyikét."
+
+#. translators: %s: a link reading "Integrations and consent"
+msgid "Every visitor is measured. That may be exactly what you want. If you have visitors in the EU or the UK, it probably is not - install a consent plugin that supports the WP Consent API, or decide it yourself under %s."
+msgstr "Minden látogatót mérünk. Lehet, hogy pontosan ezt akarod. Ha vannak látogatóid az EU-ban vagy az Egyesült Királyságban, valószínűleg nem - telepíts egy hozzájárulás-kezelő bővítményt, amely támogatja a WP Consent API-t, vagy döntsd el magad itt: %s."
+
+#. translators: %s: a comma-separated list of consent plugin names
+msgid "Found %s, but this plugin cannot read it directly. Enable its WP Consent API support and it will be used automatically. Guessing at its internals instead would produce a consent check that answers confidently and wrongly."
+msgstr "A(z) %s megtalálva, de ez a bővítmény nem tudja közvetlenül kiolvasni. Kapcsold be benne a WP Consent API támogatását, és automatikusan használni fogja. A belső működésére tippelni olyan hozzájárulás-ellenőrzést adna, amely magabiztosan és tévesen válaszol."
+
+msgid "General"
+msgstr "Általános"
+
+msgid "Hand conversions to Action Scheduler so they survive the request that created them. Recommended. Turn off if this site has no working cron."
+msgstr "Átadja a konverziókat az Action Schedulernek, hogy túléljék az őket létrehozó kérést. Ajánlott. Kapcsold ki, ha ezen az oldalon nincs működő cron."
+
+msgid "How consent is decided"
+msgstr "Hogyan dől el a hozzájárulás"
+
+msgid "Integrations"
+msgstr "Integrációk"
+
+msgid "Integrations and consent"
+msgstr "Integrációk és hozzájárulás"
+
+msgid "Leave this off unless you are using it."
+msgstr "Hagyd kikapcsolva, hacsak nem használod."
+
+msgid "Lets Google Tag Manager, or anything else, hand a conversion to this site and have it forwarded to OpenAI from your server. Useful when you want server-side tagging without paying for a server container: the API key stays here, and no ad blocker sees the request to OpenAI."
+msgstr "Lehetővé teszi, hogy a Google Tag Manager - vagy bármi más - átadjon egy konverziót ennek az oldalnak, amely továbbítja az OpenAI felé a te szerveredről. Hasznos, ha szerveroldali címkézést szeretnél anélkül, hogy szerverkonténerért fizetnél: az API-kulcs itt marad, és egyetlen hirdetésblokkoló sem látja az OpenAI felé menő kérést."
+
+msgid "Load the Pixel in the site head."
+msgstr "Betölti a Pixelt az oldal head szakaszába."
+
+msgid "Measure conversions from this plugin."
+msgstr "A bővítmény konverzióinak mérése."
+
+msgid "Measurement Pixel"
+msgstr "Measurement Pixel"
+
+msgid "No consent mechanism was found."
+msgstr "Nem található hozzájárulási mechanizmus."
+
+msgid "None of the plugins this one integrates with are active here. Contact Form 7, Elementor Pro, Gravity Forms, WPForms, Fluent Forms, Ninja Forms, WooCommerce and Easy Digital Downloads are picked up automatically when they are."
+msgstr "Egyik olyan bővítmény sem aktív itt, amellyel ez együttműködik. A Contact Form 7, Elementor Pro, Gravity Forms, WPForms, Fluent Forms, Ninja Forms, WooCommerce és Easy Digital Downloads automatikusan felismerésre kerül, amint aktívak."
+
+msgid "Nothing yet. Send one and reload this page."
+msgstr "Még semmi. Küldj egyet, és töltsd újra ezt az oldalt."
+
+msgid "One is generated when you switch the endpoint on and save."
+msgstr "Akkor jön létre, amikor bekapcsolod a végpontot és mentesz."
+
+msgid "Open the collection endpoint."
+msgstr "A gyűjtő végpont megnyitása."
+
+msgid "OpenAI Ads"
+msgstr "OpenAI Ads"
+
+msgid "Outcome"
+msgstr "Eredmény"
+
+msgid "POST JSON here. Public information; the secret below is not."
+msgstr "Ide küldj JSON-t POST-tal. Nyilvános információ; az alábbi titok nem az."
+
+msgid "Paste your key"
+msgstr "Illeszd be a kulcsodat"
+
+msgid "Pixel ID"
+msgstr "Pixel ID"
+
+msgid "Privacy and diagnostics"
+msgstr "Adatvédelem és diagnosztika"
+
+msgid "Public. It appears in your pages, which is expected."
+msgstr "Nyilvános. Megjelenik az oldalaidon, ez így van rendjén."
+
+msgid "Reason"
+msgstr "Ok"
+
+msgid "Recent events received"
+msgstr "Nemrég fogadott események"
+
+msgid "Remove query strings from the page URL before sending it. Recommended: they often carry search terms, order keys and reset tokens."
+msgstr "Eltávolítja a query stringeket az oldal URL-jéből küldés előtt. Ajánlott: gyakran hordoznak keresési kifejezéseket, rendelési kulcsokat és visszaállítási tokeneket."
+
+msgid "Replace it when I save. Anything still using the old one stops working."
+msgstr "Cseréld le mentéskor. Minden, ami még a régit használja, leáll."
+
+msgid "Saved. Leave blank to keep it."
+msgstr "Mentve. Hagyd üresen a megtartásához."
+
+msgid "Send a test event"
+msgstr "Teszt esemény küldése"
+
+msgid "Send conversions from the server as well as the browser."
+msgstr "A konverziókat a szerverről is elküldi, nem csak a böngészőből."
+
+msgid "Send it as the X-OpenAI-Ads-Key header on every request. Treat it like a password."
+msgstr "Küldd X-OpenAI-Ads-Key fejlécként minden kérésnél. Kezeld jelszóként."
+
+msgid "Sending from a server rather than a browser? Include source_url, oppref, obref, ip_address and user_agent in the payload. Without them the conversion is attributed to the machine that called this endpoint, not to the visitor."
+msgstr "Szerverről küldöd, nem böngészőből? Vedd bele a source_url, oppref, obref, ip_address és user_agent mezőket a payloadba. Ezek nélkül a konverzió ahhoz a géphez kerül, amely ezt a végpontot hívta, nem a látogatóhoz."
+
+msgid "Sends one event in the API's validation mode. Nothing is recorded, so this cannot create a fake conversion."
+msgstr "Egy eseményt küld az API validációs módjában. Semmi sem kerül rögzítésre, így nem hozhat létre hamis konverziót."
+
+msgid "Server-side only. Never rendered into a page, never written to a log."
+msgstr "Csak szerveroldalon. Soha nem jelenik meg oldalon, és soha nem kerül naplóba."
+
+msgid "Set in wp-config.php."
+msgstr "A wp-config.php fájlban beállítva."
+
+msgid "Settings"
+msgstr "Beállítások"
+
+msgid "Shared secret"
+msgstr "Megosztott titok"
+
+msgid "Strip query strings"
+msgstr "Query stringek eltávolítása"
+
+msgid "Success. The credentials work and the event validated."
+msgstr "Sikerült. A hitelesítő adatok működnek, és az esemény átment a validáción."
+
+msgid "Suggested text:"
+msgstr "Javasolt szöveg:"
+
+msgid "Tag manager"
+msgstr "Tag manager"
+
+msgid "Tag manager endpoint"
+msgstr "Tag manager végpont"
+
+msgid "Test the connection"
+msgstr "A kapcsolat tesztelése"
+
+msgid "Testing…"
+msgstr "Tesztelés…"
+
+msgid "That is the safer place for it."
+msgstr "Ott biztonságosabb helyen van."
+
+msgid "The API could not be reached. Check the site can make outbound requests."
+msgstr "Az API nem volt elérhető. Ellenőrizd, hogy az oldal tud-e kimenő kéréseket indítani."
+
+#. translators: %d: HTTP status code
+msgid "The API returned HTTP %d. Check the Pixel ID and API key."
+msgstr "Az API HTTP %d választ adott. Ellenőrizd a Pixel ID-t és az API-kulcsot."
+
+msgid "The request failed."
+msgstr "A kérés nem sikerült."
+
+msgid "This is the safer place for it, and it cannot be edited here."
+msgstr "Ott biztonságosabb helyen van, és itt nem szerkeszthető."
+
+msgid "This plugin sends advertising conversion data to OpenAI, and only once you have entered a Pixel ID or a Conversions API key. Adapt the wording below to the events your site actually measures, and to the consent mechanism you use."
+msgstr "Ez a bővítmény hirdetési konverziós adatokat küld az OpenAI-nak, és csak azután, hogy megadtál egy Pixel ID-t vagy egy Conversions API kulcsot. Igazítsd az alábbi szöveget azokhoz az eseményekhez, amelyeket az oldalad valóban mér, és a használt hozzájárulási mechanizmushoz."
+
+msgid "This plugin ships no cookie banner and makes no privacy decision for you. It asks yours. Nothing is collected and no Pixel is loaded when the answer is no."
+msgstr "Ez a bővítmény nem hoz magával cookie-sávot, és semmilyen adatvédelmi döntést nem hoz meg helyetted. A tiédet kérdezi meg. Semmit sem gyűjt, és nem tölt be Pixelt, ha a válasz nem."
+
+msgid "Validation mode"
+msgstr "Validációs mód"
+
+msgid "We also send the same conversions from our own server through the OpenAI Conversions API. Where you have given us your email address, telephone number, name or address - for example by placing an order - these are converted into irreversible SHA-256 hashes before they leave our server, so OpenAI can recognise a returning customer without receiving the values themselves. Commerce events also carry the items concerned: product name, identifier, quantity, price and any variation such as size or colour."
+msgstr "Ugyanezeket a konverziókat a saját szerverünkről is elküldjük az OpenAI Conversions API-n keresztül. Ahol megadta nekünk az e-mail-címét, telefonszámát, nevét vagy címét - például rendelés leadásakor -, ezek visszafordíthatatlan SHA-256 hash értékké alakulnak, mielőtt elhagynák a szerverünket, így az OpenAI felismerheti a visszatérő vásárlót anélkül, hogy megkapná magukat az értékeket. A kereskedelmi események az érintett tételeket is hordozzák: terméknév, azonosító, mennyiség, ár és minden változat, például méret vagy szín."
+
+msgid "We do not send OpenAI your raw email address, telephone number or name, and we remove query strings from page addresses before they are reported."
+msgstr "Nem küldjük el az OpenAI-nak az e-mail-címét, telefonszámát vagy nevét nyers formában, és az oldalcímekből eltávolítjuk a query stringeket, mielőtt jelentésre kerülnének."
+
+msgid "We use OpenAI Ads to measure the effectiveness of our advertising. When you visit this site, the OpenAI Ads Measurement Pixel may load in your browser and report the pages you view and the actions you complete - such as placing an order or submitting a form - to OpenAI. Your IP address and browser user agent reach OpenAI as part of those requests. The Pixel stores two first-party cookies, __oppref and __obref, which record which advertisement you arrived from."
+msgstr "Az OpenAI Ads szolgáltatást a hirdetéseink hatékonyságának mérésére használjuk. Amikor meglátogatja ezt az oldalt, az OpenAI Ads Measurement Pixel betöltődhet a böngészőjében, és jelentheti az OpenAI-nak a megtekintett oldalakat és az elvégzett műveleteket - például egy rendelés leadását vagy egy űrlap elküldését. Az IP-címe és a böngészője user agentje ezeknek a kéréseknek a részeként eljut az OpenAI-hoz. A Pixel két first-party sütit tárol, a __oppref és __obref nevűeket, amelyek rögzítik, melyik hirdetésből érkezett."
+
+#. translators: %s: link to OpenAI's privacy policy.
+msgid "What OpenAI does with this data is described in its privacy policy: %s"
+msgstr "Hogy az OpenAI mit tesz ezekkel az adatokkal, azt az adatvédelmi szabályzata írja le: %s"
+
+msgid "When (UTC)"
+msgstr "Mikor (UTC)"
+
+msgid "Write failures to the PHP error log. Payloads are never logged."
+msgstr "A hibákat a PHP hibanaplójába írja. A payloadok soha nem kerülnek naplóba."
+
+msgid "You are not allowed to do this."
+msgstr "Ehhez nincs jogosultságod."
+
+msgid "You do not have permission to manage these settings."
+msgstr "Nincs jogosultságod ezeknek a beállításoknak a kezelésére."

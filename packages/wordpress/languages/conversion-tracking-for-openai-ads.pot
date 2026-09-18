@@ -8,7 +8,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-13T00:00:00+00:00\n"
+"POT-Creation-Date: 2026-09-18T00:00:00+00:00\n"
 "X-Generator: scripts/make-pot.py\n"
 "X-Domain: conversion-tracking-for-openai-ads\n"
 
@@ -42,6 +42,10 @@ msgstr ""
 msgid "Asking %s for marketing consent. Nothing is measured without it."
 msgstr ""
 
+#: packages/wordpress/src/Admin/PrivacyPolicy.php:66
+msgid "Both halves of this measurement carry the same event identifier, so a conversion seen in the browser and on our server is counted once rather than twice."
+msgstr ""
+
 #: packages/wordpress/src/Admin/SettingsPage.php:278
 msgid "Canonical origin"
 msgstr ""
@@ -54,6 +58,7 @@ msgstr ""
 msgid "Consent"
 msgstr ""
 
+#: packages/wordpress/src/Admin/PrivacyPolicy.php:91
 #: packages/wordpress/src/Admin/SettingsPage.php:74
 #: packages/wordpress/src/Admin/SettingsPage.php:89
 #: packages/wordpress/src/Admin/SettingsPage.php:172
@@ -250,7 +255,7 @@ msgstr ""
 msgid "Set in wp-config.php."
 msgstr ""
 
-#: packages/wordpress/src/Plugin.php:267
+#: packages/wordpress/src/Plugin.php:272
 msgid "Settings"
 msgstr ""
 
@@ -264,6 +269,10 @@ msgstr ""
 
 #: packages/wordpress/src/Admin/SettingsPage.php:702
 msgid "Success. The credentials work and the event validated."
+msgstr ""
+
+#: packages/wordpress/src/Admin/PrivacyPolicy.php:48
+msgid "Suggested text:"
 msgstr ""
 
 #: packages/wordpress/src/Admin/SettingsPage.php:108
@@ -304,12 +313,33 @@ msgstr ""
 msgid "This is the safer place for it, and it cannot be edited here."
 msgstr ""
 
+#: packages/wordpress/src/Admin/PrivacyPolicy.php:41
+msgid "This plugin sends advertising conversion data to OpenAI, and only once you have entered a Pixel ID or a Conversions API key. Adapt the wording below to the events your site actually measures, and to the consent mechanism you use."
+msgstr ""
+
 #: packages/wordpress/src/Admin/SettingsPage.php:424
 msgid "This plugin ships no cookie banner and makes no privacy decision for you. It asks yours. Nothing is collected and no Pixel is loaded when the answer is no."
 msgstr ""
 
 #: packages/wordpress/src/Admin/SettingsPage.php:250
 msgid "Validation mode"
+msgstr ""
+
+#: packages/wordpress/src/Admin/PrivacyPolicy.php:59
+msgid "We also send the same conversions from our own server through the OpenAI Conversions API. Where you have given us your email address, telephone number, name or address - for example by placing an order - these are converted into irreversible SHA-256 hashes before they leave our server, so OpenAI can recognise a returning customer without receiving the values themselves. Commerce events also carry the items concerned: product name, identifier, quantity, price and any variation such as size or colour."
+msgstr ""
+
+#: packages/wordpress/src/Admin/PrivacyPolicy.php:73
+msgid "We do not send OpenAI your raw email address, telephone number or name, and we remove query strings from page addresses before they are reported."
+msgstr ""
+
+#: packages/wordpress/src/Admin/PrivacyPolicy.php:52
+msgid "We use OpenAI Ads to measure the effectiveness of our advertising. When you visit this site, the OpenAI Ads Measurement Pixel may load in your browser and report the pages you view and the actions you complete - such as placing an order or submitting a form - to OpenAI. Your IP address and browser user agent reach OpenAI as part of those requests. The Pixel stores two first-party cookies, __oppref and __obref, which record which advertisement you arrived from."
+msgstr ""
+
+#. translators: %s: link to OpenAI's privacy policy.
+#: packages/wordpress/src/Admin/PrivacyPolicy.php:82
+msgid "What OpenAI does with this data is described in its privacy policy: %s"
 msgstr ""
 
 #: packages/wordpress/src/Admin/SettingsPage.php:744

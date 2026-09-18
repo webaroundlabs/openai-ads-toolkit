@@ -4,14 +4,20 @@ The OpenAI Ads Measurement Pixel for the browser: a typed, consent-aware wrapper
 over the official `oaiq` SDK, built to deduplicate cleanly against the
 Conversions API.
 
-> **Pre-alpha, `0.1.x`.** Not published to npm. The public API is unstable until `1.0`.
+> **Pre-alpha, `0.1.x`.** The public API is unstable until `1.0`.
+
+## Install
+
+```bash
+npm install @webaround/openai-ads
+```
 
 ## What this is, and is not
 
-It **wraps** OpenAI's official browser SDK. It does not reimplement it. There is
-no npm package to depend on — the official SDK is a script on OpenAI's CDN plus a
-global command queue — so this package injects the documented loader and speaks
-to that queue.
+It **wraps** OpenAI's official browser SDK. It does not reimplement it. OpenAI
+publishes no npm package to depend on — their SDK is a script on OpenAI's CDN
+plus a global command queue — so this package injects the documented loader and
+speaks to that queue.
 
 Everything the SDK owns stays with the SDK: batching, event timestamps,
 `source_url`, and capturing `oppref` into the `__oppref` cookie. Passing any of
@@ -146,4 +152,4 @@ only.
 
 ## License
 
-[MIT](../../LICENSE). Independent community project, not affiliated with OpenAI.
+[MIT](LICENSE). Independent community project, not affiliated with OpenAI.

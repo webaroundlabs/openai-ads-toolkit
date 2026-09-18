@@ -190,4 +190,4 @@ the Conversions API key never appears in the rendered output.
 
 ## License
 
-[MIT](../../LICENSE). Independent community project, not affiliated with OpenAI.
+[MIT](LICENSE). Independent community project, not affiliated with OpenAI.
