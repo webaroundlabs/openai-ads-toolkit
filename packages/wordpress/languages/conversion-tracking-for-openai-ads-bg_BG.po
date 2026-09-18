@@ -66,8 +66,14 @@ msgstr "Дебъг журнал"
 msgid "Deferred delivery"
 msgstr "Отложено изпращане"
 
+msgid "Detect a consent plugin automatically"
+msgstr "Автоматично откриване на приставка за съгласие"
+
 msgid "Detected on this site. Each one measures its own confirmed success boundary - a lead is recorded when the submission is accepted, not when the button is clicked."
 msgstr "Открити на този сайт. Всяка измерва собствената си потвърдена граница на успех - лийд се записва, когато изпращането е прието, а не когато бутонът е натиснат."
+
+msgid "Do not gate on consent here"
+msgstr "Тук измерването да не зависи от съгласие"
 
 msgid "Enable server-side events"
 msgstr "Включване на събитията от сървъра"
@@ -100,6 +106,9 @@ msgstr "Предава реализациите на Action Scheduler, за да
 
 msgid "How consent is decided"
 msgstr "Как се решава съгласието"
+
+msgid "I answer through the openai_ads_consent filter"
+msgstr "Отговарям чрез филтъра openai_ads_consent"
 
 msgid "Integrations"
 msgstr "Интеграции"

@@ -123,6 +123,7 @@ final class Plugin
             $event = $this->builder()->build($eventName, $data, $options);
         } catch (InvalidArgument $e) {
             if ($this->settings()->debug()) {
+                // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- the plugin's own debug logging, off by default and gated on the setting above. A measurement failure that leaves no trace is a plugin nobody can support.
                 \error_log('[openai-ads] ' . $e->getMessage());
             }
 
@@ -175,6 +176,7 @@ final class Plugin
             return ImageTag::url($pixelId, $event->withoutIdentity());
         } catch (InvalidArgument $e) {
             if ($this->settings()->debug()) {
+                // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- the plugin's own debug logging, off by default and gated on the setting above. A measurement failure that leaves no trace is a plugin nobody can support.
                 \error_log('[openai-ads] ' . $e->getMessage());
             }
 
@@ -210,10 +212,18 @@ final class Plugin
     {
         // On `init`, not earlier. WordPress 6.7 started warning about translations
         // loaded before then, and a plugin that trips that notice looks broken to
-        // every developer with WP_DEBUG on. A site installing from the plugin
-        // directory gets its translations without this; it is here for the copies
-        // installed by hand, with the .mo files bundled.
+        // every developer with WP_DEBUG on.
+        //
+        // Plugin Check discourages this call for plugins hosted on
+        // WordPress.org, and for translations served by GlotPress it is indeed
+        // redundant. It is not redundant for the catalogues this plugin bundles.
+        // Tested on WordPress 7.1: clear the domain out of WP_Textdomain_Registry,
+        // ask for ro_RO, and the registry reports a path of false and the string
+        // comes back in English. Without this call every bundled language is
+        // dead - which means every hand-installed copy, and every locale
+        // GlotPress has not been given yet.
         \add_action('init', function (): void {
+            // phpcs:ignore PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound -- see above: WordPress does not find a plugin's own languages directory without it.
             \load_plugin_textdomain(
                 'conversion-tracking-for-openai-ads',
                 false,

@@ -4,7 +4,7 @@ Tags: openai, conversion tracking, analytics, pixel, conversions api
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 0.2.0
+Stable tag: 0.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -66,7 +66,7 @@ Record a conversion at a confirmed boundary:
 Also `openai_ads_event_id()`, `openai_ads_pixel_event()`, `openai_ads_hash_user()`,
 `openai_ads_image_tag()` and `openai_ads_is_configured()`, plus filters and actions
 for consent, event data, identity and integrations. Every event OpenAI documents
-for the web is supported, from page_viewed to order_created, plus custom.
+for the web is supported, plus custom.
 
 Full documentation: https://github.com/webaroundlabs/openai-ads-toolkit
 
@@ -212,6 +212,11 @@ suite asserts this.
 
 == Changelog ==
 
+= 0.2.1 =
+* Fixed: the three consent-mode labels on the settings screen were never
+  translatable, so they stayed English in every language.
+* Clean pass of the official Plugin Check tool.
+
 = 0.2.0 =
 * Translated into Bulgarian, Dutch, French, German, Greek, Hungarian, Polish,
   Portuguese, Romanian and Spanish.
@@ -221,13 +226,11 @@ suite asserts this.
 
 = 0.1.2 =
 * The settings moved into their own menu: General, Integrations, Tag manager.
-* Fixed: saving one settings screen could blank the settings on another, including
-  the Pixel ID and the API key.
-* The plugin's mark now appears in the admin menu.
+* Fixed: saving one settings screen could blank the settings on another.
 
 = 0.1.1 =
 * No change to this plugin.
 
 = 0.1.0 =
-* First release: Pixel, Conversions API, deduplication, settings screen, a
-  connection test, and the first three integrations.
+* First release: Pixel, Conversions API, deduplication and the first three
+  integrations.

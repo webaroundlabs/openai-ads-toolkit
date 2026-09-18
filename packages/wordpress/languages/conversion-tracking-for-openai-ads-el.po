@@ -66,8 +66,14 @@ msgstr "Καταγραφή αποσφαλμάτωσης"
 msgid "Deferred delivery"
 msgstr "Αναβαλλόμενη αποστολή"
 
+msgid "Detect a consent plugin automatically"
+msgstr "Αυτόματος εντοπισμός πρόσθετου συγκατάθεσης"
+
 msgid "Detected on this site. Each one measures its own confirmed success boundary - a lead is recorded when the submission is accepted, not when the button is clicked."
 msgstr "Εντοπίστηκαν σε αυτόν τον ιστότοπο. Κάθε μία μετρά το δικό της επιβεβαιωμένο όριο επιτυχίας - ένα lead καταγράφεται όταν η υποβολή γίνει δεκτή, όχι όταν πατηθεί το κουμπί."
+
+msgid "Do not gate on consent here"
+msgstr "Να μην εξαρτάται η μέτρηση από τη συγκατάθεση εδώ"
 
 msgid "Enable server-side events"
 msgstr "Ενεργοποίηση συμβάντων από τον διακομιστή"
@@ -100,6 +106,9 @@ msgstr "Παραδίδει τις μετατροπές στο Action Scheduler �
 
 msgid "How consent is decided"
 msgstr "Πώς αποφασίζεται η συγκατάθεση"
+
+msgid "I answer through the openai_ads_consent filter"
+msgstr "Απαντώ μέσω του φίλτρου openai_ads_consent"
 
 msgid "Integrations"
 msgstr "Ενσωματώσεις"

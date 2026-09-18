@@ -260,6 +260,7 @@ final class Measurement
         }
 
         // Never logs a payload: it carries identity hashes and attribution.
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- the plugin's own debug logging, off by default and gated on the setting above.
         \error_log('[openai-ads] ' . $message);
     }
 }

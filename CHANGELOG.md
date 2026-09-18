@@ -10,6 +10,39 @@ While the version is `0.x` the public API may change in any release. See
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-09-18
+
+### Fixed
+
+- **Three settings-screen labels were never translatable.** `Consent::modes()`
+  returned them as plain strings and `SettingsPage` translated the *variable* —
+  `__($label, ...)` — which the extractor cannot follow, so none of the three
+  reached the `.pot` and all three stayed English in all ten catalogues while
+  looking perfectly translatable in the source. They are now literals inside
+  `modes()`. Found by the official Plugin Check tool, which this release is a
+  clean pass of; a spot the parity tests and `make-pot.py` were both structurally
+  blind to, because the string simply was not there to compare.
+
+### Changed
+
+- **The plugin passes WordPress's own Plugin Check with no errors and no
+  warnings**, run against the built zip rather than the working tree - the zip is
+  what a reviewer receives, and the tree carries tests and dev dependencies that
+  never ship. What was genuinely wrong is fixed: the untranslatable labels above,
+  unprefixed file-scope variables in `uninstall.php` and the bootstrap, and a
+  `$advice` string now passed through `wp_kses_post()` rather than printed raw.
+  What is not wrong carries a `phpcs:ignore` naming the reason - `wp_json_encode()`
+  output in a `<script>`, an exception message that is never printed, superglobals
+  that must reach the API byte for byte, and the plugin's own gated debug log.
+- **`load_plugin_textdomain()` stays, against Plugin Check's advice, and now says
+  why in the code.** The advice is right for translations served by GlotPress and
+  wrong for the ones this plugin bundles: on WordPress 7.1, clearing the domain
+  from `WP_Textdomain_Registry` and asking for `ro_RO` returns the English string
+  and a path of `false`. Without the call every bundled language is dead.
+- **The plugin zip carries `composer.json`.** Nobody installing it runs Composer,
+  but a `vendor/` directory arriving without the manifest that explains it is
+  something Plugin Check flags and a reviewer is entitled to ask about.
+
 ## [0.2.0] - 2026-09-18
 
 ### Added
@@ -434,7 +467,8 @@ accident.
   Pixel documentation lists `postal_code`, which is what both runtimes already
   emitted. The `UNRESOLVED` note in `packages/spec/user.json` is closed.
 
-[Unreleased]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.2.0...main
+[Unreleased]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.2.1...main
+[0.2.1]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.1.0...v0.1.1

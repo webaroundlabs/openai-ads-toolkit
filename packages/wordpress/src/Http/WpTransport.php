@@ -62,12 +62,14 @@ final class WpTransport implements ClientInterface
         ]);
 
         if (\is_wp_error($result)) {
+            // phpcs:disable WordPress.Security.EscapeOutput.ExceptionNotEscaped -- an exception is thrown to the caller, never printed; escaping it would put HTML entities into a log line.
             throw new NetworkFailure(
                 $request,
                 // The WP_Error message can name the host but never carries the
                 // request body or the API key.
                 sprintf('The Conversions API could not be reached: %s', $result->get_error_message()),
             );
+            // phpcs:enable WordPress.Security.EscapeOutput.ExceptionNotEscaped
         }
 
         /** @var array{response: array{code: int}, headers: mixed, body: string} $result */

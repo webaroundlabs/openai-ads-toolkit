@@ -197,13 +197,31 @@ final class Consent
         return $this->activeProvider() === null && !\has_filter('openai_ads_consent');
     }
 
-    /** @return array<string, string> */
+    /**
+     * The three modes, labelled for the settings screen.
+     *
+     * Translated here rather than by the caller: a label handed on as a variable
+     * and translated at the far end is a string the extractor never sees, so it
+     * stays English in every catalogue while looking perfectly translatable in
+     * the source.
+     *
+     * @return array<string, string>
+     */
     public static function modes(): array
     {
         return [
-            self::MODE_AUTO => 'Detect a consent plugin automatically',
-            self::MODE_FILTER => 'I answer through the openai_ads_consent filter',
-            self::MODE_OFF => 'Do not gate on consent here',
+            self::MODE_AUTO => \__(
+                'Detect a consent plugin automatically',
+                'conversion-tracking-for-openai-ads',
+            ),
+            self::MODE_FILTER => \__(
+                'I answer through the openai_ads_consent filter',
+                'conversion-tracking-for-openai-ads',
+            ),
+            self::MODE_OFF => \__(
+                'Do not gate on consent here',
+                'conversion-tracking-for-openai-ads',
+            ),
         ];
     }
 

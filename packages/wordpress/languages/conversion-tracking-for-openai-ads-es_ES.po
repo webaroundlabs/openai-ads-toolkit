@@ -66,8 +66,14 @@ msgstr "Registro de depuración"
 msgid "Deferred delivery"
 msgstr "Entrega diferida"
 
+msgid "Detect a consent plugin automatically"
+msgstr "Detectar un plugin de consentimiento automáticamente"
+
 msgid "Detected on this site. Each one measures its own confirmed success boundary - a lead is recorded when the submission is accepted, not when the button is clicked."
 msgstr "Detectados en este sitio. Cada uno mide su propio límite confirmado de éxito: un lead se registra cuando se acepta el envío, no cuando se pulsa el botón."
+
+msgid "Do not gate on consent here"
+msgstr "No condicionar aquí la medición al consentimiento"
 
 msgid "Enable server-side events"
 msgstr "Activar los eventos desde el servidor"
@@ -100,6 +106,9 @@ msgstr "Entrega las conversiones a Action Scheduler para que sobrevivan a la pet
 
 msgid "How consent is decided"
 msgstr "Cómo se decide el consentimiento"
+
+msgid "I answer through the openai_ads_consent filter"
+msgstr "Respondo mediante el filtro openai_ads_consent"
 
 msgid "Integrations"
 msgstr "Integraciones"

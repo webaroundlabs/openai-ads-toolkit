@@ -74,9 +74,11 @@ final class RequestContext
      */
     public function ipAddress(): ?string
     {
+        // phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- validated as an IP address below, which is stricter than sanitizing it as text.
         $remote = isset($_SERVER['REMOTE_ADDR'])
             ? (string) \wp_unslash($_SERVER['REMOTE_ADDR'])
             : '';
+        // phpcs:enable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
         /** @var string $ip */
         $ip = \apply_filters('openai_ads_client_ip', $remote);
@@ -90,6 +92,7 @@ final class RequestContext
             return null;
         }
 
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- the Conversions API matches on the user agent the browser actually sent; sanitize_text_field() would strip characters out of a real one and stop it matching. It is never rendered and never interpolated into a query.
         $agent = trim((string) \wp_unslash($_SERVER['HTTP_USER_AGENT']));
 
         return $agent !== '' ? $agent : null;
@@ -107,10 +110,13 @@ final class RequestContext
     public function sourceUrl(): ?string
     {
         $canonical = $this->settings->canonicalOrigin();
+
+        // phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- parsed by wp_parse_url() below and rebuilt from its parts against the canonical origin, so nothing from here reaches output intact.
         $path = $this->referringPage()
             ?? (isset($_SERVER['REQUEST_URI'])
                 ? (string) \wp_unslash($_SERVER['REQUEST_URI'])
                 : '/');
+        // phpcs:enable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
         $parts = \wp_parse_url($path);
         $pathOnly = is_array($parts) && isset($parts['path']) ? (string) $parts['path'] : '/';
@@ -189,6 +195,7 @@ final class RequestContext
         // would be wrong: the value is opaque and has to reach the API exactly as
         // OpenAI's own SDK wrote it. It is never rendered, never interpolated
         // into a query, and never logged next to identity data.
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- see above: an opaque attribution value that has to reach the API byte for byte.
         $value = (string) \wp_unslash($_COOKIE[$name]);
 
         return trim($value) !== '' ? $value : null;

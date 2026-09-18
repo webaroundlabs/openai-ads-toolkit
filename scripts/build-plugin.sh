@@ -81,7 +81,11 @@ mkdir -p "$stage"
 # absent from the zip until somebody names it, which is the safe direction. The
 # opposite - shipping something nobody meant to - is how a .env or a test
 # fixture reaches a production site.
-for path in conversion-tracking-for-openai-ads.php uninstall.php readme.txt README.md LICENSE src assets languages vendor; do
+# composer.json ships with vendor/ deliberately. Nobody installing the plugin
+# runs Composer, but Plugin Check flags a vendor/ directory arriving without the
+# manifest that explains it - and a reviewer looking at bundled third-party code
+# is entitled to the file that says what it is and under which licence.
+for path in conversion-tracking-for-openai-ads.php uninstall.php readme.txt README.md LICENSE composer.json src assets languages vendor; do
 	if [ ! -e "$source_dir/$path" ]; then
 		echo "Expected $path in packages/wordpress, but it is missing." >&2
 		exit 1

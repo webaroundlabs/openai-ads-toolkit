@@ -777,7 +777,7 @@ final class SettingsPage
         $choices = [];
 
         foreach (Consent::modes() as $value => $label) {
-            $choices[$value] = \__($label, 'conversion-tracking-for-openai-ads');
+            $choices[$value] = $label;
         }
 
         foreach ($this->consent()->availableProviders() as $id => $label) {
@@ -871,8 +871,11 @@ final class SettingsPage
         printf(
             '<div class="notice notice-warning inline"><p><strong>%s</strong> %s</p></div>',
             \esc_html__('No consent mechanism was found.', 'conversion-tracking-for-openai-ads'),
-            // Escaped above, field by field; the only markup is the link built here.
-            $advice,
+            // Every part of $advice is escaped above, field by field, and the
+            // only markup in it is the link built here. wp_kses_post() keeps
+            // that link and would strip anything else, which is what a static
+            // analyser cannot see by following the variable.
+            \wp_kses_post($advice),
         );
     }
 

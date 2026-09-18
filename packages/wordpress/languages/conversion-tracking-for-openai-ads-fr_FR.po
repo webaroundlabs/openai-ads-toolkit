@@ -66,8 +66,14 @@ msgstr "Journalisation de débogage"
 msgid "Deferred delivery"
 msgstr "Envoi différé"
 
+msgid "Detect a consent plugin automatically"
+msgstr "Détecter automatiquement une extension de consentement"
+
 msgid "Detected on this site. Each one measures its own confirmed success boundary - a lead is recorded when the submission is accepted, not when the button is clicked."
 msgstr "Détectées sur ce site. Chacune mesure sa propre limite de succès confirmée : un lead est enregistré lorsque l'envoi est accepté, pas lorsque le bouton est cliqué."
+
+msgid "Do not gate on consent here"
+msgstr "Ne pas conditionner la mesure au consentement ici"
 
 msgid "Enable server-side events"
 msgstr "Activer les événements côté serveur"
@@ -100,6 +106,9 @@ msgstr "Confie les conversions à Action Scheduler pour qu'elles survivent à la
 
 msgid "How consent is decided"
 msgstr "Comment le consentement est décidé"
+
+msgid "I answer through the openai_ads_consent filter"
+msgstr "Je réponds via le filtre openai_ads_consent"
 
 msgid "Integrations"
 msgstr "Intégrations"

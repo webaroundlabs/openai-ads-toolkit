@@ -310,9 +310,11 @@ final class Ingest
             return true;
         }
 
+        // phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- hashed into a rate-limit key and never stored, rendered or queried with.
         $address = isset($_SERVER['REMOTE_ADDR'])
             ? (string) \wp_unslash($_SERVER['REMOTE_ADDR'])
             : 'unknown';
+        // phpcs:enable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
         $key = 'openai_ads_rate_' . md5($address);
 
         /** @var mixed $count */

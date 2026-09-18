@@ -20,10 +20,10 @@ openai_ads_delete_pending_batches();
 
 // Multisite: each site keeps its own settings.
 if (is_multisite()) {
-    $sites = get_sites(['fields' => 'ids', 'number' => 0]);
+    $openai_ads_sites = get_sites(['fields' => 'ids', 'number' => 0]);
 
-    foreach ($sites as $site_id) {
-        switch_to_blog((int) $site_id);
+    foreach ($openai_ads_sites as $openai_ads_site_id) {
+        switch_to_blog((int) $openai_ads_site_id);
         delete_option('openai_ads_settings');
         openai_ads_delete_pending_batches();
         restore_current_blog();
@@ -40,6 +40,7 @@ function openai_ads_delete_pending_batches(): void
 {
     global $wpdb;
 
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- there is no API for "every option whose name starts with", the query is prepared, and caching a list read once while the plugin is being deleted would be worse than useless.
     $keys = $wpdb->get_col(
         $wpdb->prepare(
             "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s",

@@ -81,8 +81,16 @@ msgstr ""
 msgid "Deferred delivery"
 msgstr ""
 
+#: packages/wordpress/src/Consent.php:213
+msgid "Detect a consent plugin automatically"
+msgstr ""
+
 #: packages/wordpress/src/Admin/SettingsPage.php:377
 msgid "Detected on this site. Each one measures its own confirmed success boundary - a lead is recorded when the submission is accepted, not when the button is clicked."
+msgstr ""
+
+#: packages/wordpress/src/Consent.php:221
+msgid "Do not gate on consent here"
 msgstr ""
 
 #: packages/wordpress/src/Admin/SettingsPage.php:214
@@ -125,6 +133,10 @@ msgstr ""
 
 #: packages/wordpress/src/Admin/SettingsPage.php:411
 msgid "How consent is decided"
+msgstr ""
+
+#: packages/wordpress/src/Consent.php:217
+msgid "I answer through the openai_ads_consent filter"
 msgstr ""
 
 #: packages/wordpress/src/Admin/SettingsPage.php:99
@@ -255,7 +267,7 @@ msgstr ""
 msgid "Set in wp-config.php."
 msgstr ""
 
-#: packages/wordpress/src/Plugin.php:272
+#: packages/wordpress/src/Plugin.php:282
 msgid "Settings"
 msgstr ""
 

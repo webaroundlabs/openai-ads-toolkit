@@ -66,8 +66,14 @@ msgstr "Hibakeresési naplózás"
 msgid "Deferred delivery"
 msgstr "Késleltetett küldés"
 
+msgid "Detect a consent plugin automatically"
+msgstr "Hozzájárulás-kezelő bővítmény automatikus felismerése"
+
 msgid "Detected on this site. Each one measures its own confirmed success boundary - a lead is recorded when the submission is accepted, not when the button is clicked."
 msgstr "Ezen az oldalon észlelve. Mindegyik a saját megerősített sikerhatárát méri - egy lead akkor kerül rögzítésre, amikor a beküldést elfogadták, nem amikor a gombra kattintottak."
+
+msgid "Do not gate on consent here"
+msgstr "Itt ne függjön a mérés a hozzájárulástól"
 
 msgid "Enable server-side events"
 msgstr "Szerveroldali események engedélyezése"
@@ -100,6 +106,9 @@ msgstr "Átadja a konverziókat az Action Schedulernek, hogy túléljék az őke
 
 msgid "How consent is decided"
 msgstr "Hogyan dől el a hozzájárulás"
+
+msgid "I answer through the openai_ads_consent filter"
+msgstr "Az openai_ads_consent szűrőn keresztül válaszolok"
 
 msgid "Integrations"
 msgstr "Integrációk"

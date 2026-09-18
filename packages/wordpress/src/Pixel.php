@@ -90,6 +90,8 @@ final class Pixel
         echo "  var f = d.getElementsByTagName(s)[0];\n";
         echo "  f.parentNode.insertBefore(js, f);\n";
         echo "})(window, document, \"script\", \"https://bzrcdn.openai.com/sdk/oaiq.min.js\");\n";
+
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode() above is the escaping for a <script> context; esc_html() here would emit entities into JavaScript and break the call.
         echo 'oaiq("init", ' . $encoded . ");\n";
         echo "</script>\n";
     }
@@ -124,6 +126,8 @@ final class Pixel
         }
 
         echo "<script>\n";
+
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- all three are wp_json_encode() output, which is the escaping a <script> context takes; HTML escaping them would corrupt the payload.
         echo 'window.oaiq && oaiq("measure", ' . $encodedName . ', ' . $encodedData . ', ' . $encodedOptions . ");\n";
         echo "</script>\n";
     }
