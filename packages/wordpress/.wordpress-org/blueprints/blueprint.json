@@ -1,7 +1,7 @@
 {
 	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
 	"meta": {
-		"title": "Conversion Tracking for OpenAI Ads",
+		"title": "Webaround Pixel and Conversions API for OpenAI Ads",
 		"description": "Opens on the plugin's own screen, with Contact Form 7 installed so the integrations list has something real in it.",
 		"categories": ["Analytics"]
 	},
@@ -12,7 +12,7 @@
 	"features": {
 		"networking": true
 	},
-	"landingPage": "/wp-admin/admin.php?page=conversion-tracking-for-openai-ads",
+	"landingPage": "/wp-admin/admin.php?page=webaround-pixel-conversions-api-for-openai-ads",
 	"steps": [
 		{
 			"step": "login",

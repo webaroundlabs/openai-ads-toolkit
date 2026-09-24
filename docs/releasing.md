@@ -6,7 +6,7 @@ Four registries, four different ways to be stuck with a mistake:
 |---|---|---|
 | Packagist | `webaround/openai-ads`, `…-laravel`, from the generated mirrors | A tag cannot be reused. Yanking it breaks anyone who pinned it. |
 | npm | `@webaround/openai-ads` | Unpublishing is allowed for 72 hours and then only by support. |
-| WordPress plugin directory | `conversion-tracking-for-openai-ads` | SVN trunk reaches every installed site on its next update check, usually within hours. |
+| WordPress plugin directory | `webaround-pixel-conversions-api-for-openai-ads` | SVN trunk reaches every installed site on its next update check, usually within hours. |
 | GTM Community Gallery | the two templates | Reviewed by a human; a correction is another review. |
 
 So publishing is started by pushing a tag — a deliberate act — never by merging
@@ -68,7 +68,7 @@ Two failures mean two different things, and neither is "add a token":
 3. **Set the version everywhere it is written down:**
 
    - `packages/js/package.json`
-   - `packages/wordpress/conversion-tracking-for-openai-ads.php` — both the
+   - `packages/wordpress/webaround-pixel-conversions-api-for-openai-ads.php` — both the
      `Version:` header and `OPENAI_ADS_VERSION`
    - `packages/wordpress/readme.txt` — `Stable tag`
 
@@ -212,8 +212,8 @@ and a deploy step pointing at an SVN repository that does not exist is worse
 than no step at all.
 
 Once it is approved, add a job using `10up/action-wordpress-plugin-deploy` with
-`SVN_USERNAME` / `SVN_PASSWORD` secrets, `BUILD_DIR: build/conversion-tracking-for-openai-ads`, and
-`.distignore` honoured. Until then, upload `build/conversion-tracking-for-openai-ads.zip` by hand.
+`SVN_USERNAME` / `SVN_PASSWORD` secrets, `BUILD_DIR: build/webaround-pixel-conversions-api-for-openai-ads`, and
+`.distignore` honoured. Until then, upload `build/webaround-pixel-conversions-api-for-openai-ads.zip` by hand.
 
 Build it locally with:
 
@@ -223,10 +223,19 @@ python scripts/make-pot.py                        # refresh the translation cata
 bash scripts/build-plugin.sh
 ```
 
-The slug is **`conversion-tracking-for-openai-ads`**, and it matters: the plugin
-directory refuses a slug that begins with somebody else's trademark, and the slug
-is permanent once published. The text domain matches it, because translations
+The slug is **`webaround-pixel-conversions-api-for-openai-ads`**, and it matters,
+because it is permanent once published. It satisfies three separate rules the
+directory applies to a name at once: it does not begin with somebody else's
+trademark, it does not begin with a generic description of what the plugin does,
+and it is distinguishable from the several plugins already listed for OpenAI Ads
+measurement. A distinctive term first and the trademark last, after "for", is the
+shape that answers all three. The text domain matches it, because translations
 from translate.wordpress.org are keyed on the slug.
+
+Nothing under `languages/` but the `.pot` ships, and the plugin does not call
+`load_plugin_textdomain()`. Translations come from translate.wordpress.org; the
+hand-made catalogues wait in `packages/wordpress/translations-source/` to be
+imported there.
 
 The script uses an **allowlist**, not an exclude list: a file added later is
 absent from the zip until somebody names it. That is the safe direction — the

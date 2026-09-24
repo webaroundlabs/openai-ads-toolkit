@@ -10,6 +10,67 @@ While the version is `0.x` the public API may change in any release. See
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-23
+
+Everything here answers the WordPress plugin directory's review of the first
+submission. Nothing in the measurement itself changed: same events, same
+normalization, same hashing, same deduplication key.
+
+### Changed
+
+- **The WordPress plugin is renamed to "Webaround Pixel and Conversions API for
+  OpenAI Ads", slug `webaround-pixel-conversions-api-for-openai-ads`.** The
+  directory refused the old name on two counts beyond the trademark rule the
+  earlier slug already answered: it began with a generic description of what the
+  plugin does, and it was not distinguishable from the plugins already listed
+  doing this job for OpenAI Ads. The shape that satisfies all three rules is a
+  distinctive term first and the trademark last, after "for". The text domain
+  moves with the slug, because GlotPress keys translations on it. The
+  `openai_ads_*` functions, hooks, options, post meta and REST routes are
+  unrelated to the slug and are unchanged, so no stored setting is orphaned and
+  no public API moves. The admin menu URL does move.
+- **Every script now goes through WordPress's queue.** The Pixel is
+  `wp_enqueue_script()` on `wp_enqueue_scripts` with the SDK as its `src` and the
+  loader stub and `oaiq("init", …)` attached with `wp_add_inline_script(…,
+  'before')`; the settings screen's test-connection handler is a real file
+  enqueued on `admin_enqueue_scripts` for that screen only. Nothing echoes a
+  `<script>` tag any more. Two consequences worth knowing: the SDK is now
+  addressable as the handle `openai-ads-pixel`, so a site can dequeue it or an
+  optimisation plugin can see it, and the browser half of a confirmed conversion
+  now prints in the footer rather than where it was recorded. The event id is
+  untouched, so deduplication is unaffected.
+  - `'before'` is load-bearing, not cosmetic: a handle carrying an `'after'`
+    inline script is ineligible for a delayed strategy, and WordPress answers
+    that by moving the script to the footer. `'after'` would have cost the
+    `async` attribute and taken OpenAI's SDK out of the head. A test pins it.
+  - `Pixel::render()` and `Pixel::renderEvent()` are now `enqueue()` and
+    `enqueueEvent()`. The public `openai_ads_pixel_event()` is unchanged.
+  - `assets/js/forms.js` is now deferred rather than merely last. It only ever
+    reacts to a form's own AJAX response, so nothing it does needs to happen
+    while the page is being parsed.
+
+### Verified
+
+- Run against WordPress 7.1 with WooCommerce, Contact Form 7, Elementor Pro,
+  Fluent Forms, Ninja Forms, WPForms, Easy Digital Downloads, Complianz and the
+  WP Consent API installed: **Plugin Check reports no errors**, the SDK loads
+  `async` in `<head>`, a paid WooCommerce order and a Contact Form 7 submission
+  each put the same event id on the browser event and on the Conversions API
+  event, and the captured request body carries only hashed identifiers.
+
+### Removed
+
+- **The ten bundled `.po`/`.mo` catalogues, and `load_plugin_textdomain()`.** The
+  0.2.1 entry below argued the call should stay *because* the plugin bundled
+  catalogues; the directory asks a hosted plugin to serve translations from
+  translate.wordpress.org instead, and once the catalogues go the call is
+  genuinely redundant. The translations are not lost: the ten `.po` files moved
+  to `packages/wordpress/translations-source/`, outside the plugin, to be
+  imported into GlotPress. `scripts/make-mo.py` is replaced by
+  `scripts/check-translations.py`, which keeps them honest against the `.pot`
+  without compiling anything — and fails loudly where the old script silently
+  passed on finding no catalogues at all.
+
 ## [0.2.1] - 2026-09-18
 
 ### Fixed

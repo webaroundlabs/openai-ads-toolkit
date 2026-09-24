@@ -46,7 +46,7 @@ final class PrivacyPolicyTest extends TestCase
         PrivacyPolicy::add();
 
         self::assertCount(1, WpStubs::$privacyPolicy);
-        self::assertSame('Conversion Tracking for OpenAI Ads', WpStubs::$privacyPolicy[0][0]);
+        self::assertSame('Webaround Pixel and Conversions API for OpenAI Ads', WpStubs::$privacyPolicy[0][0]);
         self::assertNotSame('', WpStubs::$privacyPolicy[0][1]);
     }
 
@@ -63,7 +63,7 @@ final class PrivacyPolicyTest extends TestCase
 
         foreach (WpStubs::$translated as [$string, $domain]) {
             self::assertSame(
-                'conversion-tracking-for-openai-ads',
+                'webaround-pixel-conversions-api-for-openai-ads',
                 $domain,
                 sprintf('"%s" is translated against the wrong domain.', $string),
             );

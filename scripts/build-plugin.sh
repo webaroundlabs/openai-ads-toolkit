@@ -13,17 +13,23 @@
 #
 #     bash scripts/build-plugin.sh
 #
-# Produces build/conversion-tracking-for-openai-ads.zip, everything under a
-# single directory named for the plugin slug - which is what WordPress expects of
-# an uploaded plugin, and what the plugin directory uses as its permanent
-# identity. The slug does NOT begin with "openai", deliberately: the WordPress
-# plugin directory refuses a slug that starts with somebody else's trademark.
+# Produces build/webaround-pixel-conversions-api-for-openai-ads.zip, everything
+# under a single directory named for the plugin slug - which is what WordPress
+# expects of an uploaded plugin, and what the plugin directory uses as its
+# permanent identity.
+#
+# The shape of that slug is deliberate and was arrived at the hard way: a
+# distinctive term first, the trademark last after "for". The directory refuses a
+# slug that starts with somebody else's trademark, refuses one that starts with a
+# generic description of the job, and refuses one that is hard to tell apart from
+# a plugin already listed. That is three rules, and this shape is what satisfies
+# all three.
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source_dir="$root/packages/wordpress"
-stage="$root/build/conversion-tracking-for-openai-ads"
-archive="$root/build/conversion-tracking-for-openai-ads.zip"
+stage="$root/build/webaround-pixel-conversions-api-for-openai-ads"
+archive="$root/build/webaround-pixel-conversions-api-for-openai-ads.zip"
 
 if [ ! -d "$source_dir/vendor" ]; then
 	echo "packages/wordpress/vendor is missing. Run:" >&2
@@ -85,10 +91,24 @@ mkdir -p "$stage"
 # runs Composer, but Plugin Check flags a vendor/ directory arriving without the
 # manifest that explains it - and a reviewer looking at bundled third-party code
 # is entitled to the file that says what it is and under which licence.
-for path in conversion-tracking-for-openai-ads.php uninstall.php readme.txt README.md LICENSE composer.json src assets languages vendor; do
+for path in webaround-pixel-conversions-api-for-openai-ads.php uninstall.php readme.txt README.md LICENSE composer.json src assets languages vendor; do
 	if [ ! -e "$source_dir/$path" ]; then
 		echo "Expected $path in packages/wordpress, but it is missing." >&2
 		exit 1
+	fi
+
+	# vendor/webaround is the core, and Composer's path repository leaves it
+	# there as a symlink into packages/php. It is deleted and rebuilt from
+	# source a few lines below, so copying it achieves nothing - and it is not
+	# harmless: recreating a symlink is a privilege Windows does not hand out by
+	# default, and `cp` fails outright rather than skipping it. Dereferencing it
+	# instead would drag in that package's own dev dependencies, which is the
+	# 20MB plugin the rebuild exists to avoid.
+	if [ "$path" = vendor ]; then
+		mkdir -p "$stage/vendor"
+		find "$source_dir/vendor" -mindepth 1 -maxdepth 1 ! -name webaround \
+			-exec cp -R {} "$stage/vendor/" ';'
+		continue
 	fi
 
 	cp -R "$source_dir/$path" "$stage/"
@@ -116,9 +136,9 @@ find "$stage" -type f \( -name 'phpunit*' -o -name 'phpstan*' -o -name '.php-cs-
 # `zip` is not installed everywhere a maintainer might run this; Python is,
 # because the specification checks already need it.
 if command -v zip > /dev/null 2>&1; then
-	( cd "$root/build" && zip -qr conversion-tracking-for-openai-ads.zip conversion-tracking-for-openai-ads )
+	( cd "$root/build" && zip -qr webaround-pixel-conversions-api-for-openai-ads.zip webaround-pixel-conversions-api-for-openai-ads )
 else
-	python -c "import shutil, sys; shutil.make_archive(sys.argv[1], 'zip', sys.argv[2], 'conversion-tracking-for-openai-ads')" 		"${archive%.zip}" "$root/build"
+	python -c "import shutil, sys; shutil.make_archive(sys.argv[1], 'zip', sys.argv[2], 'webaround-pixel-conversions-api-for-openai-ads')" 		"${archive%.zip}" "$root/build"
 fi
 
 size="$(du -sh "$stage" | cut -f1)"

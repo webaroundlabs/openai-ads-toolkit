@@ -45,7 +45,7 @@ def main(expected):
         print('Not a semantic version: %r' % expected)
         return 1
 
-    wordpress = ROOT / 'packages/wordpress/conversion-tracking-for-openai-ads.php'
+    wordpress = ROOT / 'packages/wordpress/webaround-pixel-conversions-api-for-openai-ads.php'
 
     checks = [
         ('packages/js/package.json', js_version(ROOT / 'packages/js/package.json')),

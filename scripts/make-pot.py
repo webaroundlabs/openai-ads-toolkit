@@ -17,7 +17,7 @@ import os
 import re
 import sys
 
-DOMAIN = 'conversion-tracking-for-openai-ads'
+DOMAIN = 'webaround-pixel-conversions-api-for-openai-ads'
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 PLUGIN = os.path.join(ROOT, 'packages', 'wordpress')
 
@@ -103,7 +103,7 @@ def main():
         '#, fuzzy',
         'msgid ""',
         'msgstr ""',
-        '"Project-Id-Version: Conversion Tracking for OpenAI Ads\\n"',
+        '"Project-Id-Version: Webaround Pixel and Conversions API for OpenAI Ads\\n"',
         '"Report-Msgid-Bugs-To: '
         'https://github.com/webaroundlabs/openai-ads-toolkit/issues\\n"',
         '"MIME-Version: 1.0\\n"',

@@ -237,7 +237,7 @@ final class WooCommerce implements Integration
 
         $currency = (string) $order->get_currency();
 
-        $this->plugin->pixel()->renderEvent('order_created', $eventId, [
+        $this->plugin->pixel()->enqueueEvent('order_created', $eventId, [
             'type' => 'contents',
             'amount' => Amount::toMinorUnits((string) $order->get_total(), $currency),
             'currency' => strtoupper($currency),

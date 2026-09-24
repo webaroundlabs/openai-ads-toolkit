@@ -199,39 +199,32 @@ final class Plugin
             return;
         }
 
+        // Deferred rather than merely last: it only ever reacts to a form's own
+        // AJAX response, so nothing it does needs to happen during parsing, and
+        // a measurement script has no business competing with the page.
         \wp_enqueue_script(
             'openai-ads-forms',
             \plugins_url('assets/js/forms.js', $this->file),
             [],
             $this->version,
-            true,
+            ['in_footer' => true, 'strategy' => 'defer'],
         );
     }
 
     private function registerHooks(): void
     {
-        // On `init`, not earlier. WordPress 6.7 started warning about translations
-        // loaded before then, and a plugin that trips that notice looks broken to
-        // every developer with WP_DEBUG on.
-        //
-        // Plugin Check discourages this call for plugins hosted on
-        // WordPress.org, and for translations served by GlotPress it is indeed
-        // redundant. It is not redundant for the catalogues this plugin bundles.
-        // Tested on WordPress 7.1: clear the domain out of WP_Textdomain_Registry,
-        // ask for ro_RO, and the registry reports a path of false and the string
-        // comes back in English. Without this call every bundled language is
-        // dead - which means every hand-installed copy, and every locale
-        // GlotPress has not been given yet.
-        \add_action('init', function (): void {
-            // phpcs:ignore PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound -- see above: WordPress does not find a plugin's own languages directory without it.
-            \load_plugin_textdomain(
-                'conversion-tracking-for-openai-ads',
-                false,
-                dirname(\plugin_basename($this->file)) . '/languages',
-            );
-        }, 1);
+        // Nothing loads a text domain here, deliberately. The call that used to
+        // sit here existed because the plugin shipped its own catalogues, and
+        // WordPress does not find a plugin's languages directory without being
+        // told. It ships none now: translations come from
+        // translate.wordpress.org, which WordPress has served on demand since
+        // 4.6. See the 0.3.0 entry in the changelog.
 
-        \add_action('wp_head', [$this->pixel(), 'render'], 1);
+        // wp_enqueue_scripts, not wp_head: WordPress fires it from wp_head
+        // priority 1 and prints the head queue at priority 9, so this is the
+        // hook that exists for putting something in the head the right way. The
+        // coverage is the same - neither runs on the login screen or in a feed.
+        \add_action('wp_enqueue_scripts', [$this->pixel(), 'enqueue']);
 
         // The other half of the deferred delivery in ScheduledDelivery. Without
         // this, a site with Action Scheduler - which is every WooCommerce site -
@@ -266,6 +259,8 @@ final class Plugin
                 $this->settings(),
                 $this->measurement(),
                 $this->builder(),
+                $this->file,
+                $this->version,
                 $this->integrations(),
             );
             $page->register();
@@ -279,7 +274,7 @@ final class Plugin
                 static function (array $links): array {
                     $url = \admin_url('admin.php?page=' . SettingsPage::SLUG);
                     $settings = '<a href="' . \esc_url($url) . '">'
-                        . \esc_html__('Settings', 'conversion-tracking-for-openai-ads') . '</a>';
+                        . \esc_html__('Settings', 'webaround-pixel-conversions-api-for-openai-ads') . '</a>';
 
                     return array_merge([$settings], $links);
                 },

@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use WebaroundLabs\OpenAIAds\WordPress\Integrations\Amount;
 use WebaroundLabs\OpenAIAds\WordPress\Integrations\WooCommerce;
+use WebaroundLabs\OpenAIAds\WordPress\Pixel;
 use WebaroundLabs\OpenAIAds\WordPress\Plugin;
 use WebaroundLabs\OpenAIAds\WordPress\Settings;
 use WooStubs;
@@ -257,14 +258,16 @@ final class WooCommerceTest extends TestCase
         $order = $this->order();
         $woo->onOrderPaid($order->get_id());
 
-        ob_start();
         $woo->onThankYou($order->get_id());
-        $html = (string) ob_get_clean();
 
-        self::assertStringContainsString('oaiq("measure"', $html);
-        self::assertStringContainsString('order_created', $html);
-        self::assertStringContainsString('wc_77', $html);
-        self::assertStringContainsString('2598', $html);
+        // The thank-you page runs mid-template, so the browser half rides the
+        // footer queue rather than printing where it was asked for.
+        $inline = implode("\n", WpStubs::$scripts[Pixel::EVENTS_HANDLE]['after'] ?? []);
+
+        self::assertStringContainsString('oaiq("measure"', $inline);
+        self::assertStringContainsString('order_created', $inline);
+        self::assertStringContainsString('wc_77', $inline);
+        self::assertStringContainsString('2598', $inline);
     }
 
     #[Test]
@@ -273,10 +276,10 @@ final class WooCommerceTest extends TestCase
         $woo = $this->woo();
         $order = $this->order(paid: false);
 
-        ob_start();
         $woo->onThankYou($order->get_id());
 
-        self::assertSame('', (string) ob_get_clean());
+        self::assertArrayNotHasKey(Pixel::EVENTS_HANDLE, WpStubs::$scripts);
+        self::assertSame([], WpStubs::$printedScripts);
     }
 
     /**

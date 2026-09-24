@@ -66,6 +66,34 @@ final class WpStubs
     public static array $transients = [];
 
     /**
+     * Everything the script queue was told, by handle.
+     *
+     * Mirrors what WP_Scripts stores rather than what it would render: the
+     * plugin's job is to hand WordPress the right registration and the right
+     * inline blocks, and WordPress's job is to turn that into markup.
+     *
+     * @var array<string, array{src: string|false, deps: list<string>, ver: mixed, args: mixed, enqueued: bool, before: list<string>, after: list<string>}>
+     */
+    public static array $scripts = [];
+
+    /**
+     * Inline scripts printed past the queue, by wp_print_inline_script_tag().
+     *
+     * @var list<string>
+     */
+    public static array $printedScripts = [];
+
+    /**
+     * How many times each action has fired, for did_action().
+     *
+     * A test simulating a page whose footer has already been printed sets
+     * ['wp_print_footer_scripts' => 1] directly.
+     *
+     * @var array<string, int>
+     */
+    public static array $didAction = [];
+
+    /**
      * Every gettext call the code under test made, as [string, domain].
      *
      * A string translated against the wrong domain is invisible on a real site:
@@ -99,6 +127,9 @@ final class WpStubs
         self::$referer = false;
         self::$restRoutes = [];
         self::$transients = [];
+        self::$scripts = [];
+        self::$printedScripts = [];
+        self::$didAction = [];
 
         // Part of restoring the simulated site: by default it has no consent
         // plugin. See ConsentStubs::filterBanners() for why that needs saying
@@ -393,6 +424,7 @@ function add_action(string $hook, callable $callback, int $priority = 10, int $a
 function do_action(string $hook, mixed ...$args): void
 {
     WpStubs::$actions[] = [$hook, $args];
+    WpStubs::$didAction[$hook] = (WpStubs::$didAction[$hook] ?? 0) + 1;
 }
 
 /**
@@ -502,8 +534,85 @@ function plugins_url(string $path = '', string $plugin = ''): string
     return 'https://shop.example.com/wp-content/plugins/openai-ads/' . ltrim($path, '/');
 }
 
+/**
+ * The script queue, recording what WP_Scripts would have stored.
+ *
+ * Only what the plugin relies on: that a handle is registered once, that
+ * enqueueing an unregistered handle does nothing, and that inline scripts land
+ * on the side of it they were given. Turning that into markup is WordPress's
+ * job, and asserting on markup here would only test this file.
+ *
+ * @param list<string> $deps
+ */
+function wp_register_script(string $handle, string|false $src = '', array $deps = [], mixed $ver = false, mixed $args = []): bool
+{
+    // WP_Dependencies::add() refuses to overwrite a registered handle, and that
+    // refusal is what lets Pixel::enqueueEvent() register on every call without
+    // clearing the events already queued.
+    if (isset(WpStubs::$scripts[$handle])) {
+        return false;
+    }
+
+    WpStubs::$scripts[$handle] = [
+        'src' => $src,
+        'deps' => $deps,
+        'ver' => $ver,
+        'args' => $args,
+        'enqueued' => false,
+        'before' => [],
+        'after' => [],
+    ];
+
+    return true;
+}
+
+/** @param list<string> $deps */
 function wp_enqueue_script(string $handle, string $src = '', array $deps = [], mixed $ver = false, mixed $args = false): void
 {
+    if ($src !== '') {
+        wp_register_script($handle, $src, $deps, $ver, $args);
+    }
+
+    // WordPress drops a handle nobody registered rather than inventing one.
+    if (!isset(WpStubs::$scripts[$handle])) {
+        return;
+    }
+
+    WpStubs::$scripts[$handle]['enqueued'] = true;
+}
+
+function wp_add_inline_script(string $handle, string $data, string $position = 'after'): bool
+{
+    if ($data === '' || !isset(WpStubs::$scripts[$handle])) {
+        return false;
+    }
+
+    // Written out rather than indexed by $position, which PHPStan cannot read
+    // as a key of the shape above.
+    if ($position === 'before') {
+        WpStubs::$scripts[$handle]['before'][] = $data;
+    } else {
+        WpStubs::$scripts[$handle]['after'][] = $data;
+    }
+
+    return true;
+}
+
+/**
+ * Records and prints, so a test can assert on whichever is clearer.
+ *
+ * @param array<string, mixed> $attributes
+ */
+function wp_print_inline_script_tag(string $data, array $attributes = []): void
+{
+    WpStubs::$printedScripts[] = $data;
+
+    echo '<script>' . $data . '</script>';
+}
+
+function did_action(string $hook): int
+{
+    return WpStubs::$didAction[$hook] ?? 0;
 }
 
 /**

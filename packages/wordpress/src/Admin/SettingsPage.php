@@ -27,7 +27,7 @@ use WebaroundLabs\OpenAIAds\WordPress\Settings;
  */
 final class SettingsPage
 {
-    public const SLUG = 'conversion-tracking-for-openai-ads';
+    public const SLUG = 'webaround-pixel-conversions-api-for-openai-ads';
 
     public const INTEGRATIONS_SLUG = self::SLUG . '-integrations';
 
@@ -39,10 +39,15 @@ final class SettingsPage
 
     private ?Consent $consentService = null;
 
+    /** What add_menu_page() called the General screen, so assets load only there. */
+    private string $generalHook = '';
+
     public function __construct(
         private readonly Settings $settings,
         private readonly Measurement $measurement,
         private readonly EventBuilder $builder,
+        private readonly string $file,
+        private readonly string $version,
         private readonly ?Registry $integrations = null,
     ) {
     }
@@ -51,7 +56,46 @@ final class SettingsPage
     {
         \add_action('admin_menu', [$this, 'addPage']);
         \add_action('admin_init', [$this, 'registerSettings']);
+        \add_action('admin_enqueue_scripts', [$this, 'enqueueAssets']);
         \add_action('wp_ajax_' . self::TEST_ACTION, [$this, 'testConnection']);
+    }
+
+    /**
+     * The test-connection script, on the one screen that has the button.
+     *
+     * The hook suffix is whatever add_menu_page() returned rather than a
+     * hand-written `toplevel_page_…`, which stops being true the moment the
+     * slug moves.
+     */
+    public function enqueueAssets(string $hook): void
+    {
+        if ($this->generalHook === '' || $hook !== $this->generalHook) {
+            return;
+        }
+
+        \wp_enqueue_script(
+            'openai-ads-admin',
+            \plugins_url('assets/js/admin.js', $this->file),
+            [],
+            $this->version,
+            ['in_footer' => true],
+        );
+
+        $config = \wp_json_encode([
+            'action' => self::TEST_ACTION,
+            'nonce' => \wp_create_nonce(self::TEST_ACTION),
+            'url' => \admin_url('admin-ajax.php'),
+            'testing' => \__('Testing…', 'webaround-pixel-conversions-api-for-openai-ads'),
+            'failed' => \__('The request failed.', 'webaround-pixel-conversions-api-for-openai-ads'),
+        ]);
+
+        if (!is_string($config)) {
+            return;
+        }
+
+        // The nonce is minted in the same request that renders the screen, so it
+        // validates exactly as it did when it was printed into the page.
+        \wp_add_inline_script('openai-ads-admin', 'window.openaiAdsTest = ' . $config . ';', 'before');
     }
 
     public function addPage(): void
@@ -70,9 +114,9 @@ final class SettingsPage
          * 26.7 puts this just under Comments, in the group people actually look
          * at, rather than below the fold with the rest of the plugins.
          */
-        \add_menu_page(
-            \__('Conversion Tracking for OpenAI Ads', 'conversion-tracking-for-openai-ads'),
-            \__('OpenAI Ads', 'conversion-tracking-for-openai-ads'),
+        $this->generalHook = \add_menu_page(
+            \__('Webaround Pixel and Conversions API for OpenAI Ads', 'webaround-pixel-conversions-api-for-openai-ads'),
+            \__('OpenAI Ads', 'webaround-pixel-conversions-api-for-openai-ads'),
             self::CAPABILITY,
             self::SLUG,
             [$this, 'renderGeneral'],
@@ -86,8 +130,8 @@ final class SettingsPage
          */
         \add_submenu_page(
             self::SLUG,
-            \__('Conversion Tracking for OpenAI Ads', 'conversion-tracking-for-openai-ads'),
-            \__('General', 'conversion-tracking-for-openai-ads'),
+            \__('Webaround Pixel and Conversions API for OpenAI Ads', 'webaround-pixel-conversions-api-for-openai-ads'),
+            \__('General', 'webaround-pixel-conversions-api-for-openai-ads'),
             self::CAPABILITY,
             self::SLUG,
             [$this, 'renderGeneral'],
@@ -95,8 +139,8 @@ final class SettingsPage
 
         \add_submenu_page(
             self::SLUG,
-            \__('Integrations and consent', 'conversion-tracking-for-openai-ads'),
-            \__('Integrations', 'conversion-tracking-for-openai-ads'),
+            \__('Integrations and consent', 'webaround-pixel-conversions-api-for-openai-ads'),
+            \__('Integrations', 'webaround-pixel-conversions-api-for-openai-ads'),
             self::CAPABILITY,
             self::INTEGRATIONS_SLUG,
             [$this, 'renderIntegrations'],
@@ -104,8 +148,8 @@ final class SettingsPage
 
         \add_submenu_page(
             self::SLUG,
-            \__('Tag manager endpoint', 'conversion-tracking-for-openai-ads'),
-            \__('Tag manager', 'conversion-tracking-for-openai-ads'),
+            \__('Tag manager endpoint', 'webaround-pixel-conversions-api-for-openai-ads'),
+            \__('Tag manager', 'webaround-pixel-conversions-api-for-openai-ads'),
             self::CAPABILITY,
             self::TAG_MANAGER_SLUG,
             [$this, 'renderTagManager'],
@@ -169,7 +213,7 @@ final class SettingsPage
         ?>
         <div class="wrap">
             <?php
-            $this->pageIntro(\__('Conversion Tracking for OpenAI Ads', 'conversion-tracking-for-openai-ads'));
+            $this->pageIntro(\__('Webaround Pixel and Conversions API for OpenAI Ads', 'webaround-pixel-conversions-api-for-openai-ads'));
 
         // The one thing a site owner must not have to go looking for.
         $this->renderUngatedNotice();
@@ -181,101 +225,101 @@ final class SettingsPage
         $this->declareFields($fields);
         ?>
 
-                <h2><?php echo \esc_html__('Measurement Pixel', 'conversion-tracking-for-openai-ads'); ?></h2>
+                <h2><?php echo \esc_html__('Measurement Pixel', 'webaround-pixel-conversions-api-for-openai-ads'); ?></h2>
                 <table class="form-table" role="presentation">
                     <tr>
-                        <th scope="row"><?php echo \esc_html__('Enable the Pixel', 'conversion-tracking-for-openai-ads'); ?></th>
+                        <th scope="row"><?php echo \esc_html__('Enable the Pixel', 'webaround-pixel-conversions-api-for-openai-ads'); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="<?php echo \esc_attr(Settings::OPTION); ?>[pixel_enabled]"
                                        value="1" <?php \checked($s->pixelEnabled()); ?>>
-                                <?php echo \esc_html__('Load the Pixel in the site head.', 'conversion-tracking-for-openai-ads'); ?>
+                                <?php echo \esc_html__('Load the Pixel in the site head.', 'webaround-pixel-conversions-api-for-openai-ads'); ?>
                             </label>
                         </td>
                     </tr>
                     <tr>
                         <th scope="row">
-                            <label for="openai-ads-pixel-id"><?php echo \esc_html__('Pixel ID', 'conversion-tracking-for-openai-ads'); ?></label>
+                            <label for="openai-ads-pixel-id"><?php echo \esc_html__('Pixel ID', 'webaround-pixel-conversions-api-for-openai-ads'); ?></label>
                         </th>
                         <td>
                             <input id="openai-ads-pixel-id" type="text" class="regular-text"
                                    name="<?php echo \esc_attr(Settings::OPTION); ?>[pixel_id]"
                                    value="<?php echo \esc_attr((string) $s->pixelId()); ?>">
                             <p class="description">
-                                <?php echo \esc_html__('Public. It appears in your pages, which is expected.', 'conversion-tracking-for-openai-ads'); ?>
+                                <?php echo \esc_html__('Public. It appears in your pages, which is expected.', 'webaround-pixel-conversions-api-for-openai-ads'); ?>
                             </p>
                         </td>
                     </tr>
                 </table>
 
-                <h2><?php echo \esc_html__('Conversions API', 'conversion-tracking-for-openai-ads'); ?></h2>
+                <h2><?php echo \esc_html__('Conversions API', 'webaround-pixel-conversions-api-for-openai-ads'); ?></h2>
                 <table class="form-table" role="presentation">
                     <tr>
-                        <th scope="row"><?php echo \esc_html__('Enable server-side events', 'conversion-tracking-for-openai-ads'); ?></th>
+                        <th scope="row"><?php echo \esc_html__('Enable server-side events', 'webaround-pixel-conversions-api-for-openai-ads'); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="<?php echo \esc_attr(Settings::OPTION); ?>[capi_enabled]"
                                        value="1" <?php \checked($s->capiEnabled()); ?>>
-                                <?php echo \esc_html__('Send conversions from the server as well as the browser.', 'conversion-tracking-for-openai-ads'); ?>
+                                <?php echo \esc_html__('Send conversions from the server as well as the browser.', 'webaround-pixel-conversions-api-for-openai-ads'); ?>
                             </label>
                         </td>
                     </tr>
                     <tr>
                         <th scope="row">
-                            <label for="openai-ads-key"><?php echo \esc_html__('API key', 'conversion-tracking-for-openai-ads'); ?></label>
+                            <label for="openai-ads-key"><?php echo \esc_html__('API key', 'webaround-pixel-conversions-api-for-openai-ads'); ?></label>
                         </th>
                         <td>
                             <?php if ($keyIsConstant) { ?>
                                 <p>
-                                    <strong><?php echo \esc_html__('Set in wp-config.php.', 'conversion-tracking-for-openai-ads'); ?></strong>
-                                    <?php echo \esc_html__('This is the safer place for it, and it cannot be edited here.', 'conversion-tracking-for-openai-ads'); ?>
+                                    <strong><?php echo \esc_html__('Set in wp-config.php.', 'webaround-pixel-conversions-api-for-openai-ads'); ?></strong>
+                                    <?php echo \esc_html__('This is the safer place for it, and it cannot be edited here.', 'webaround-pixel-conversions-api-for-openai-ads'); ?>
                                 </p>
                             <?php } else { ?>
                                 <input id="openai-ads-key" type="password" class="regular-text" autocomplete="off"
                                        name="<?php echo \esc_attr(Settings::OPTION); ?>[capi_key]"
                                        value=""
                                        placeholder="<?php echo $hasKey
-                                            ? \esc_attr__('Saved. Leave blank to keep it.', 'conversion-tracking-for-openai-ads')
-                                            : \esc_attr__('Paste your key', 'conversion-tracking-for-openai-ads'); ?>">
+                                            ? \esc_attr__('Saved. Leave blank to keep it.', 'webaround-pixel-conversions-api-for-openai-ads')
+                                            : \esc_attr__('Paste your key', 'webaround-pixel-conversions-api-for-openai-ads'); ?>">
                                 <p class="description">
                                     <?php echo \esc_html__(
                                         'Server-side only. Never rendered into a page, never written to a log.',
-                                        'conversion-tracking-for-openai-ads',
+                                        'webaround-pixel-conversions-api-for-openai-ads',
                                     ); ?>
                                 </p>
                             <?php } ?>
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php echo \esc_html__('Validation mode', 'conversion-tracking-for-openai-ads'); ?></th>
+                        <th scope="row"><?php echo \esc_html__('Validation mode', 'webaround-pixel-conversions-api-for-openai-ads'); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="<?php echo \esc_attr(Settings::OPTION); ?>[validate_only]"
                                        value="1" <?php \checked($s->validateOnly()); ?>>
-                                <?php echo \esc_html__('Check events against the API without recording them. Use on staging.', 'conversion-tracking-for-openai-ads'); ?>
+                                <?php echo \esc_html__('Check events against the API without recording them. Use on staging.', 'webaround-pixel-conversions-api-for-openai-ads'); ?>
                             </label>
                         </td>
                     </tr>
                 </table>
 
-                <h2><?php echo \esc_html__('Privacy and diagnostics', 'conversion-tracking-for-openai-ads'); ?></h2>
+                <h2><?php echo \esc_html__('Privacy and diagnostics', 'webaround-pixel-conversions-api-for-openai-ads'); ?></h2>
                 <table class="form-table" role="presentation">
                     <tr>
-                        <th scope="row"><?php echo \esc_html__('Strip query strings', 'conversion-tracking-for-openai-ads'); ?></th>
+                        <th scope="row"><?php echo \esc_html__('Strip query strings', 'webaround-pixel-conversions-api-for-openai-ads'); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="<?php echo \esc_attr(Settings::OPTION); ?>[strip_query_string]"
                                        value="1" <?php \checked($s->stripQueryString()); ?>>
                                 <?php echo \esc_html__(
                                     'Remove query strings from the page URL before sending it. Recommended: they often carry search terms, order keys and reset tokens.',
-                                    'conversion-tracking-for-openai-ads',
+                                    'webaround-pixel-conversions-api-for-openai-ads',
                                 ); ?>
                             </label>
                         </td>
                     </tr>
                     <tr>
                         <th scope="row">
-                            <label for="openai-ads-origin"><?php echo \esc_html__('Canonical origin', 'conversion-tracking-for-openai-ads'); ?></label>
+                            <label for="openai-ads-origin"><?php echo \esc_html__('Canonical origin', 'webaround-pixel-conversions-api-for-openai-ads'); ?></label>
                         </th>
                         <td>
                             <input id="openai-ads-origin" type="url" class="regular-text"
@@ -286,26 +330,26 @@ final class SettingsPage
                     </tr>
                     <?php if (function_exists('as_enqueue_async_action')) { ?>
                         <tr>
-                            <th scope="row"><?php echo \esc_html__('Deferred delivery', 'conversion-tracking-for-openai-ads'); ?></th>
+                            <th scope="row"><?php echo \esc_html__('Deferred delivery', 'webaround-pixel-conversions-api-for-openai-ads'); ?></th>
                             <td>
                                 <label>
                                     <input type="checkbox" name="<?php echo \esc_attr(Settings::OPTION); ?>[use_scheduler]"
                                            value="1" <?php \checked($s->useScheduler()); ?>>
                                     <?php echo \esc_html__(
                                         'Hand conversions to Action Scheduler so they survive the request that created them. Recommended. Turn off if this site has no working cron.',
-                                        'conversion-tracking-for-openai-ads',
+                                        'webaround-pixel-conversions-api-for-openai-ads',
                                     ); ?>
                                 </label>
                             </td>
                         </tr>
                     <?php } ?>
                     <tr>
-                        <th scope="row"><?php echo \esc_html__('Debug logging', 'conversion-tracking-for-openai-ads'); ?></th>
+                        <th scope="row"><?php echo \esc_html__('Debug logging', 'webaround-pixel-conversions-api-for-openai-ads'); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="<?php echo \esc_attr(Settings::OPTION); ?>[debug]"
                                        value="1" <?php \checked($s->debug()); ?>>
-                                <?php echo \esc_html__('Write failures to the PHP error log. Payloads are never logged.', 'conversion-tracking-for-openai-ads'); ?>
+                                <?php echo \esc_html__('Write failures to the PHP error log. Payloads are never logged.', 'webaround-pixel-conversions-api-for-openai-ads'); ?>
                             </label>
                         </td>
                     </tr>
@@ -314,34 +358,19 @@ final class SettingsPage
                 <?php \submit_button(); ?>
             </form>
 
-            <h2><?php echo \esc_html__('Test the connection', 'conversion-tracking-for-openai-ads'); ?></h2>
+            <h2><?php echo \esc_html__('Test the connection', 'webaround-pixel-conversions-api-for-openai-ads'); ?></h2>
             <p class="description">
                 <?php echo \esc_html__(
                     'Sends one event in the API\'s validation mode. Nothing is recorded, so this cannot create a fake conversion.',
-                    'conversion-tracking-for-openai-ads',
+                    'webaround-pixel-conversions-api-for-openai-ads',
                 ); ?>
             </p>
             <p>
                 <button type="button" class="button" id="openai-ads-test"><?php
-                    echo \esc_html__('Send a test event', 'conversion-tracking-for-openai-ads');
+                    echo \esc_html__('Send a test event', 'webaround-pixel-conversions-api-for-openai-ads');
         ?></button>
                 <span id="openai-ads-test-result"></span>
             </p>
-            <script>
-            document.getElementById('openai-ads-test')?.addEventListener('click', function () {
-                var out = document.getElementById('openai-ads-test-result');
-                out.textContent = <?php echo \wp_json_encode(\__('Testing…', 'conversion-tracking-for-openai-ads')); ?>;
-                var body = new FormData();
-                body.append('action', <?php echo \wp_json_encode(self::TEST_ACTION); ?>);
-                body.append('_wpnonce', <?php echo \wp_json_encode(\wp_create_nonce(self::TEST_ACTION)); ?>);
-                fetch(<?php echo \wp_json_encode(\admin_url('admin-ajax.php')); ?>, {
-                    method: 'POST', body: body, credentials: 'same-origin'
-                })
-                    .then(function (r) { return r.json(); })
-                    .then(function (r) { out.textContent = r.data && r.data.message ? r.data.message : ''; })
-                    .catch(function () { out.textContent = <?php echo \wp_json_encode(\__('The request failed.', 'conversion-tracking-for-openai-ads')); ?>; });
-            });
-            </script>
         </div>
         <?php
     }
@@ -356,7 +385,7 @@ final class SettingsPage
 
         ?>
         <div class="wrap">
-            <?php $this->pageIntro(\__('Integrations and consent', 'conversion-tracking-for-openai-ads')); ?>
+            <?php $this->pageIntro(\__('Integrations and consent', 'webaround-pixel-conversions-api-for-openai-ads')); ?>
 
             <form method="post" action="options.php">
                 <?php
@@ -364,19 +393,19 @@ final class SettingsPage
         $this->declareFields(['consent_mode']);
         ?>
 
-                <h2><?php echo \esc_html__('Integrations', 'conversion-tracking-for-openai-ads'); ?></h2>
+                <h2><?php echo \esc_html__('Integrations', 'webaround-pixel-conversions-api-for-openai-ads'); ?></h2>
                 <?php if ($available === []) { ?>
                     <p class="description">
                         <?php echo \esc_html__(
                             'None of the plugins this one integrates with are active here. Contact Form 7, Elementor Pro, Gravity Forms, WPForms, Fluent Forms, Ninja Forms, WooCommerce and Easy Digital Downloads are picked up automatically when they are.',
-                            'conversion-tracking-for-openai-ads',
+                            'webaround-pixel-conversions-api-for-openai-ads',
                         ); ?>
                     </p>
                 <?php } else { ?>
                     <p class="description">
                         <?php echo \esc_html__(
                             'Detected on this site. Each one measures its own confirmed success boundary - a lead is recorded when the submission is accepted, not when the button is clicked.',
-                            'conversion-tracking-for-openai-ads',
+                            'webaround-pixel-conversions-api-for-openai-ads',
                         ); ?>
                     </p>
                     <table class="form-table" role="presentation">
@@ -394,7 +423,7 @@ final class SettingsPage
                                         <input type="checkbox"
                                                name="<?php echo \esc_attr(Settings::OPTION); ?>[integrations][<?php echo \esc_attr($integration->id()); ?>]"
                                                value="1" <?php \checked($this->settings->integrationEnabled($integration->id())); ?>>
-                                        <?php echo \esc_html__('Measure conversions from this plugin.', 'conversion-tracking-for-openai-ads'); ?>
+                                        <?php echo \esc_html__('Measure conversions from this plugin.', 'webaround-pixel-conversions-api-for-openai-ads'); ?>
                                     </label>
                                 </td>
                             </tr>
@@ -402,13 +431,13 @@ final class SettingsPage
                     </table>
                 <?php } ?>
 
-                <h2><?php echo \esc_html__('Consent', 'conversion-tracking-for-openai-ads'); ?></h2>
+                <h2><?php echo \esc_html__('Consent', 'webaround-pixel-conversions-api-for-openai-ads'); ?></h2>
                 <?php $this->renderConsentStatus(); ?>
                 <table class="form-table" role="presentation">
                     <tr>
                         <th scope="row">
                             <label for="openai-ads-consent"><?php
-                                echo \esc_html__('How consent is decided', 'conversion-tracking-for-openai-ads');
+                                echo \esc_html__('How consent is decided', 'webaround-pixel-conversions-api-for-openai-ads');
         ?></label>
                         </th>
                         <td>
@@ -423,7 +452,7 @@ final class SettingsPage
                             <p class="description">
                                 <?php echo \esc_html__(
                                     'This plugin ships no cookie banner and makes no privacy decision for you. It asks yours. Nothing is collected and no Pixel is loaded when the answer is no.',
-                                    'conversion-tracking-for-openai-ads',
+                                    'webaround-pixel-conversions-api-for-openai-ads',
                                 ); ?>
                             </p>
                         </td>
@@ -445,7 +474,7 @@ final class SettingsPage
 
         ?>
         <div class="wrap">
-            <?php $this->pageIntro(\__('Tag manager endpoint', 'conversion-tracking-for-openai-ads')); ?>
+            <?php $this->pageIntro(\__('Tag manager endpoint', 'webaround-pixel-conversions-api-for-openai-ads')); ?>
 
             <form method="post" action="options.php">
                 <?php
@@ -456,48 +485,48 @@ final class SettingsPage
                 <p class="description">
                     <?php echo \esc_html__(
                         'Lets Google Tag Manager, or anything else, hand a conversion to this site and have it forwarded to OpenAI from your server. Useful when you want server-side tagging without paying for a server container: the API key stays here, and no ad blocker sees the request to OpenAI.',
-                        'conversion-tracking-for-openai-ads',
+                        'webaround-pixel-conversions-api-for-openai-ads',
                     ); ?>
                 </p>
                 <p class="description">
-                    <strong><?php echo \esc_html__('Leave this off unless you are using it.', 'conversion-tracking-for-openai-ads'); ?></strong>
+                    <strong><?php echo \esc_html__('Leave this off unless you are using it.', 'webaround-pixel-conversions-api-for-openai-ads'); ?></strong>
                     <?php echo \esc_html__(
                         'Anyone who can reach the endpoint and knows the secret can record conversions in your account. That does not cost you money directly, but it corrupts the figures your campaigns are optimized against.',
-                        'conversion-tracking-for-openai-ads',
+                        'webaround-pixel-conversions-api-for-openai-ads',
                     ); ?>
                 </p>
 
                 <table class="form-table" role="presentation">
                     <tr>
-                        <th scope="row"><?php echo \esc_html__('Accept events', 'conversion-tracking-for-openai-ads'); ?></th>
+                        <th scope="row"><?php echo \esc_html__('Accept events', 'webaround-pixel-conversions-api-for-openai-ads'); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="<?php echo \esc_attr(Settings::OPTION); ?>[ingest_enabled]"
                                        value="1" <?php \checked($s->ingestEnabled()); ?>>
-                                <?php echo \esc_html__('Open the collection endpoint.', 'conversion-tracking-for-openai-ads'); ?>
+                                <?php echo \esc_html__('Open the collection endpoint.', 'webaround-pixel-conversions-api-for-openai-ads'); ?>
                             </label>
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><?php echo \esc_html__('Endpoint URL', 'conversion-tracking-for-openai-ads'); ?></th>
+                        <th scope="row"><?php echo \esc_html__('Endpoint URL', 'webaround-pixel-conversions-api-for-openai-ads'); ?></th>
                         <td>
                             <input type="text" class="large-text code" readonly
                                    onfocus="this.select()"
                                    value="<?php echo \esc_attr($s->ingestUrl()); ?>">
                             <p class="description">
-                                <?php echo \esc_html__('POST JSON here. Public information; the secret below is not.', 'conversion-tracking-for-openai-ads'); ?>
+                                <?php echo \esc_html__('POST JSON here. Public information; the secret below is not.', 'webaround-pixel-conversions-api-for-openai-ads'); ?>
                             </p>
                         </td>
                     </tr>
                     <tr>
                         <th scope="row">
-                            <?php echo \esc_html__('Shared secret', 'conversion-tracking-for-openai-ads'); ?>
+                            <?php echo \esc_html__('Shared secret', 'webaround-pixel-conversions-api-for-openai-ads'); ?>
                         </th>
                         <td>
                             <?php if ($s->ingestSecretIsConstant()) { ?>
                                 <p>
-                                    <strong><?php echo \esc_html__('Set in wp-config.php.', 'conversion-tracking-for-openai-ads'); ?></strong>
-                                    <?php echo \esc_html__('That is the safer place for it.', 'conversion-tracking-for-openai-ads'); ?>
+                                    <strong><?php echo \esc_html__('Set in wp-config.php.', 'webaround-pixel-conversions-api-for-openai-ads'); ?></strong>
+                                    <?php echo \esc_html__('That is the safer place for it.', 'webaround-pixel-conversions-api-for-openai-ads'); ?>
                                 </p>
                             <?php } elseif ($s->ingestSecret() !== null) { ?>
                                 <input type="text" class="large-text code" readonly
@@ -506,7 +535,7 @@ final class SettingsPage
                                 <p class="description">
                                     <?php echo \esc_html__(
                                         'Send it as the X-OpenAI-Ads-Key header on every request. Treat it like a password.',
-                                        'conversion-tracking-for-openai-ads',
+                                        'webaround-pixel-conversions-api-for-openai-ads',
                                     ); ?>
                                 </p>
                                 <p>
@@ -514,13 +543,13 @@ final class SettingsPage
                                         <input type="checkbox" name="<?php echo \esc_attr(Settings::OPTION); ?>[ingest_rotate]" value="1">
                                         <?php echo \esc_html__(
                                             'Replace it when I save. Anything still using the old one stops working.',
-                                            'conversion-tracking-for-openai-ads',
+                                            'webaround-pixel-conversions-api-for-openai-ads',
                                         ); ?>
                                     </label>
                                 </p>
                             <?php } else { ?>
                                 <p class="description">
-                                    <?php echo \esc_html__('One is generated when you switch the endpoint on and save.', 'conversion-tracking-for-openai-ads'); ?>
+                                    <?php echo \esc_html__('One is generated when you switch the endpoint on and save.', 'webaround-pixel-conversions-api-for-openai-ads'); ?>
                                 </p>
                             <?php } ?>
                         </td>
@@ -531,7 +560,7 @@ final class SettingsPage
                     <p class="description">
                         <?php echo \esc_html__(
                             'Sending from a server rather than a browser? Include source_url, oppref, obref, ip_address and user_agent in the payload. Without them the conversion is attributed to the machine that called this endpoint, not to the visitor.',
-                            'conversion-tracking-for-openai-ads',
+                            'webaround-pixel-conversions-api-for-openai-ads',
                         ); ?>
                     </p>
                     <pre class="code" style="overflow:auto;padding:1em;background:#f6f7f7;"><?php
@@ -616,7 +645,7 @@ final class SettingsPage
     private function guard(): void
     {
         if (!\current_user_can(self::CAPABILITY)) {
-            \wp_die(\esc_html__('You do not have permission to manage these settings.', 'conversion-tracking-for-openai-ads'));
+            \wp_die(\esc_html__('You do not have permission to manage these settings.', 'webaround-pixel-conversions-api-for-openai-ads'));
         }
     }
 
@@ -628,7 +657,7 @@ final class SettingsPage
         <p class="description">
             <?php echo \esc_html__(
                 'An independent community integration. Not created, certified, endorsed or supported by OpenAI.',
-                'conversion-tracking-for-openai-ads',
+                'webaround-pixel-conversions-api-for-openai-ads',
             ); ?>
         </p>
         <?php
@@ -666,14 +695,14 @@ final class SettingsPage
     {
         // Authorization and request authenticity, checked separately from input.
         if (!\current_user_can(self::CAPABILITY)) {
-            \wp_send_json_error(['message' => \__('You are not allowed to do this.', 'conversion-tracking-for-openai-ads')], 403);
+            \wp_send_json_error(['message' => \__('You are not allowed to do this.', 'webaround-pixel-conversions-api-for-openai-ads')], 403);
         }
 
         \check_ajax_referer(self::TEST_ACTION);
 
         if ($this->settings->pixelId() === null || $this->settings->capiKey() === null) {
             \wp_send_json_error([
-                'message' => \__('Add a Pixel ID and an API key first.', 'conversion-tracking-for-openai-ads'),
+                'message' => \__('Add a Pixel ID and an API key first.', 'webaround-pixel-conversions-api-for-openai-ads'),
             ]);
         }
 
@@ -693,20 +722,20 @@ final class SettingsPage
 
         if ($response === null) {
             \wp_send_json_error([
-                'message' => \__('The API could not be reached. Check the site can make outbound requests.', 'conversion-tracking-for-openai-ads'),
+                'message' => \__('The API could not be reached. Check the site can make outbound requests.', 'webaround-pixel-conversions-api-for-openai-ads'),
             ]);
         }
 
         if ($response->isSuccessful()) {
             \wp_send_json_success([
-                'message' => \__('Success. The credentials work and the event validated.', 'conversion-tracking-for-openai-ads'),
+                'message' => \__('Success. The credentials work and the event validated.', 'webaround-pixel-conversions-api-for-openai-ads'),
             ]);
         }
 
         \wp_send_json_error([
             'message' => sprintf(
                 /* translators: %d: HTTP status code */
-                \__('The API returned HTTP %d. Check the Pixel ID and API key.', 'conversion-tracking-for-openai-ads'),
+                \__('The API returned HTTP %d. Check the Pixel ID and API key.', 'webaround-pixel-conversions-api-for-openai-ads'),
                 $response->statusCode,
             ),
         ]);
@@ -730,21 +759,21 @@ final class SettingsPage
         $stored = \get_option(Ingest::LOG_OPTION, []);
         $log = is_array($stored) ? $stored : [];
 
-        echo '<h2>' . \esc_html__('Recent events received', 'conversion-tracking-for-openai-ads') . '</h2>';
+        echo '<h2>' . \esc_html__('Recent events received', 'webaround-pixel-conversions-api-for-openai-ads') . '</h2>';
 
         if ($log === []) {
             echo '<p class="description">'
-                . \esc_html__('Nothing yet. Send one and reload this page.', 'conversion-tracking-for-openai-ads')
+                . \esc_html__('Nothing yet. Send one and reload this page.', 'webaround-pixel-conversions-api-for-openai-ads')
                 . '</p>';
 
             return;
         }
 
         echo '<table class="widefat striped"><thead><tr>';
-        echo '<th>' . \esc_html__('When (UTC)', 'conversion-tracking-for-openai-ads') . '</th>';
-        echo '<th>' . \esc_html__('Event', 'conversion-tracking-for-openai-ads') . '</th>';
-        echo '<th>' . \esc_html__('Outcome', 'conversion-tracking-for-openai-ads') . '</th>';
-        echo '<th>' . \esc_html__('Reason', 'conversion-tracking-for-openai-ads') . '</th>';
+        echo '<th>' . \esc_html__('When (UTC)', 'webaround-pixel-conversions-api-for-openai-ads') . '</th>';
+        echo '<th>' . \esc_html__('Event', 'webaround-pixel-conversions-api-for-openai-ads') . '</th>';
+        echo '<th>' . \esc_html__('Outcome', 'webaround-pixel-conversions-api-for-openai-ads') . '</th>';
+        echo '<th>' . \esc_html__('Reason', 'webaround-pixel-conversions-api-for-openai-ads') . '</th>';
         echo '</tr></thead><tbody>';
 
         foreach ($log as $entry) {
@@ -782,7 +811,7 @@ final class SettingsPage
 
         foreach ($this->consent()->availableProviders() as $id => $label) {
             /* translators: %s: the name of a consent plugin, such as Complianz */
-            $choices[$id] = sprintf(\__('Always ask %s', 'conversion-tracking-for-openai-ads'), $label);
+            $choices[$id] = sprintf(\__('Always ask %s', 'webaround-pixel-conversions-api-for-openai-ads'), $label);
         }
 
         return $choices;
@@ -805,7 +834,7 @@ final class SettingsPage
                 '<div class="notice notice-success inline"><p>%s</p></div>',
                 \esc_html(sprintf(
                     /* translators: %s: the name of a consent plugin */
-                    \__('Asking %s for marketing consent. Nothing is measured without it.', 'conversion-tracking-for-openai-ads'),
+                    \__('Asking %s for marketing consent. Nothing is measured without it.', 'webaround-pixel-conversions-api-for-openai-ads'),
                     $consent->label($active),
                 )),
             );
@@ -822,7 +851,7 @@ final class SettingsPage
                     /* translators: %s: a comma-separated list of consent plugin names */
                     \__(
                         'Found %s, but this plugin cannot read it directly. Enable its WP Consent API support and it will be used automatically. Guessing at its internals instead would produce a consent check that answers confidently and wrongly.',
-                        'conversion-tracking-for-openai-ads',
+                        'webaround-pixel-conversions-api-for-openai-ads',
                     ),
                     implode(', ', $unreadable),
                 )),
@@ -851,26 +880,26 @@ final class SettingsPage
         if ($onConsentScreen) {
             $advice = \esc_html__(
                 'Every visitor is measured. That may be exactly what you want. If you have visitors in the EU or the UK, it probably is not - install a consent plugin that supports the WP Consent API, or choose one of the other options below.',
-                'conversion-tracking-for-openai-ads',
+                'webaround-pixel-conversions-api-for-openai-ads',
             );
         } else {
             $advice = sprintf(
                 /* translators: %s: a link reading "Integrations and consent" */
                 \esc_html__(
                     'Every visitor is measured. That may be exactly what you want. If you have visitors in the EU or the UK, it probably is not - install a consent plugin that supports the WP Consent API, or decide it yourself under %s.',
-                    'conversion-tracking-for-openai-ads',
+                    'webaround-pixel-conversions-api-for-openai-ads',
                 ),
                 sprintf(
                     '<a href="%s">%s</a>',
                     \esc_url(\admin_url('admin.php?page=' . self::INTEGRATIONS_SLUG)),
-                    \esc_html__('Integrations and consent', 'conversion-tracking-for-openai-ads'),
+                    \esc_html__('Integrations and consent', 'webaround-pixel-conversions-api-for-openai-ads'),
                 ),
             );
         }
 
         printf(
             '<div class="notice notice-warning inline"><p><strong>%s</strong> %s</p></div>',
-            \esc_html__('No consent mechanism was found.', 'conversion-tracking-for-openai-ads'),
+            \esc_html__('No consent mechanism was found.', 'webaround-pixel-conversions-api-for-openai-ads'),
             // Every part of $advice is escaped above, field by field, and the
             // only markup in it is the link built here. wp_kses_post() keeps
             // that link and would strip anything else, which is what a static

@@ -163,7 +163,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: openai-ads-wordpress-plugin
-          path: build/conversion-tracking-for-openai-ads.zip
+          path: build/webaround-pixel-conversions-api-for-openai-ads.zip
           if-no-files-found: error
           retention-days: 14
 
@@ -191,4 +191,4 @@ jobs:
             --draft \
             --title "$GITHUB_REF_NAME" \
             --notes "See CHANGELOG.md for what changed in this release." \
-            build/conversion-tracking-for-openai-ads.zip
+            build/webaround-pixel-conversions-api-for-openai-ads.zip

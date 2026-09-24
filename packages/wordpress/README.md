@@ -1,4 +1,4 @@
-# Conversion Tracking for OpenAI Ads — WordPress
+# Webaround Pixel and Conversions API for OpenAI Ads — WordPress
 
 The WordPress plugin, built on the shared toolkit. Measurement Pixel, Conversions
 API, and the deduplication between them.
@@ -87,6 +87,30 @@ flows with no stable id — mint once, use on both sides, never regenerate.
 | `openai_ads_sent` | After a batch is delivered |
 | `openai_ads_failed` | On a delivery or validation failure |
 | `openai_ads_invalid_event` | When a caller passed something the API cannot accept |
+
+### Script handles
+
+Everything the plugin puts in a page goes through WordPress's queue, so a site
+can see it, reorder it or remove it:
+
+| Handle | What it is |
+|---|---|
+| `openai-ads-pixel` | OpenAI's SDK, `async`, in the head. The queue stub and `oaiq("init", …)` ride it as `before` inline scripts. |
+| `openai-ads-pixel-events` | A `src`-less footer handle carrying the browser half of each confirmed conversion. |
+| `openai-ads-forms` | The AJAX bridge above, enqueued only when an integration registered. |
+| `openai-ads-admin` | The settings screen's test-connection button, on that screen only. |
+
+`wp_dequeue_script( 'openai-ads-pixel' )` is the supported way to stop the Pixel
+loading on a particular page.
+
+Two details are load-bearing rather than stylistic, and both are pinned by tests.
+The init call is attached `before` and never `after`: a handle carrying an
+`after` inline script is ineligible for a delayed strategy, and WordPress answers
+that by moving the script to the footer — so `after` would cost the `async`
+attribute and the head position at once. And `openai-ads-pixel-events` declares
+no dependency on `openai-ads-pixel`, because eligibility recurses over a handle's
+dependents and a blocking dependent would take `async` off the SDK. Ordering is
+guaranteed by the document instead, and by the `window.oaiq &&` guard.
 
 ## Form integrations
 
@@ -372,23 +396,25 @@ cannot run Composer. Build the zip with `composer install --no-dev` first.
 
 ## Translations
 
-The plugin ships catalogues for Bulgarian, Dutch, French, German, Greek,
-Hungarian, Polish, Portuguese, Romanian and Spanish, alongside the English
-source. A site installing from the plugin directory takes its translations from
-translate.wordpress.org; these are what the bundled copies and the zip carry
-until GlotPress has them.
+The plugin ships no catalogues. Translations reach a site from
+translate.wordpress.org, which the plugin directory asks every hosted plugin to
+use and which WordPress has loaded on demand since 4.6 — so there is no
+`load_plugin_textdomain()` call either.
+
+What the repository keeps is the English `.pot` in [`languages/`](languages),
+which does ship, and hand-made catalogues for Bulgarian, Dutch, French, German,
+Greek, Hungarian, Polish, Portuguese, Romanian and Spanish in
+[`translations-source/`](translations-source), which do not. They are there to be
+imported into GlotPress rather than retyped.
 
 ```bash
-python ../../scripts/make-pot.py        # after any string changes
-python ../../scripts/make-mo.py         # compile every .po next to it
-python ../../scripts/make-mo.py --check # what CI runs
+python ../../scripts/make-pot.py           # after any string changes
+python ../../scripts/check-translations.py # what CI runs
 ```
 
-WordPress reads `.mo`, so a `.po` edited without a rebuild is a screen that
-silently stays English. `--check` refuses that, along with a msgid that has
-drifted from the `.pot`, an empty translation, and a `printf` placeholder lost in
-translation — the last one being the one that breaks a page rather than merely
-reading oddly.
+The check refuses a msgid that has drifted from the `.pot`, an empty
+translation, and a `printf` placeholder lost in translation — the last one being
+the one that breaks a page rather than merely reading oddly.
 
 Product names stay untranslated on purpose: `Measurement Pixel`, `Conversions
 API` and `Pixel ID` are what OpenAI's own documentation calls them, and a

@@ -350,7 +350,7 @@ final class IngestTest extends TestCase
 
     private function ingest(): Ingest
     {
-        return Plugin::boot(__DIR__ . '/../conversion-tracking-for-openai-ads.php', '0.1.0')->ingest();
+        return Plugin::boot(__DIR__ . '/../webaround-pixel-conversions-api-for-openai-ads.php', '0.1.0')->ingest();
     }
 
     /**

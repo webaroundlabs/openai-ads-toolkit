@@ -1,16 +1,16 @@
 <?php
 /**
- * Plugin Name:       Conversion Tracking for OpenAI Ads
+ * Plugin Name:       Webaround Pixel and Conversions API for OpenAI Ads
  * Plugin URI:        https://github.com/webaroundlabs/openai-ads-toolkit
  * Description:       Measurement Pixel and Conversions API for OpenAI Ads, with browser/server deduplication. An independent community integration, not affiliated with OpenAI.
- * Version:           0.2.1
+ * Version:           0.3.0
  * Requires at least: 6.4
  * Requires PHP:      8.2
  * Author:            Webaround
  * Author URI:        https://webaround.ro
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       conversion-tracking-for-openai-ads
+ * Text Domain:       webaround-pixel-conversions-api-for-openai-ads
  * Domain Path:       /languages
  *
  * @package WebaroundLabs\OpenAIAds\WordPress
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-const OPENAI_ADS_VERSION = '0.2.1';
+const OPENAI_ADS_VERSION = '0.3.0';
 
 $openai_ads_autoloader = __DIR__ . '/vendor/autoload.php';
 
@@ -30,8 +30,8 @@ if (!is_readable($openai_ads_autoloader)) {
     add_action('admin_notices', static function (): void {
         echo '<div class="notice notice-error"><p>';
         echo esc_html__(
-            'Conversion Tracking for OpenAI Ads is missing its dependencies. Run "composer install" in the plugin directory.',
-            'conversion-tracking-for-openai-ads',
+            'Webaround Pixel and Conversions API for OpenAI Ads is missing its dependencies. Run "composer install" in the plugin directory.',
+            'webaround-pixel-conversions-api-for-openai-ads',
         );
         echo '</p></div>';
     });

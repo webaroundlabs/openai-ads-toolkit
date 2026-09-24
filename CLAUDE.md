@@ -68,11 +68,26 @@ bash   scripts/build-plugin.sh                    # the installable WordPress pl
 python scripts/mirror-gtm.py --into build/gtm-mirrors   # what the GTM gallery would receive
 ```
 
-The WordPress plugin's slug is **`conversion-tracking-for-openai-ads`**, not
-`openai-ads`. The plugin directory refuses a slug beginning with somebody else's
-trademark. The text domain matches the slug, because translations from
-translate.wordpress.org are keyed on it; the `openai_ads_*` function and hook
+The WordPress plugin's slug is **`webaround-pixel-conversions-api-for-openai-ads`**,
+and its display name is **Webaround Pixel and Conversions API for OpenAI Ads**.
+Three rules shaped that, all from the plugin directory's review: a slug may not
+begin with somebody else's trademark, a name may not begin with a generic
+description of what it does, and a name must be distinguishable from the plugins
+already listed — there are several doing this same job for OpenAI Ads. The
+answer to all three is the same shape: the distinctive term first, the trademark
+last after "for". The earlier `conversion-tracking-for-openai-ads` failed the
+second and third.
+
+The text domain matches the slug, because translations from
+translate.wordpress.org are keyed on it. The `openai_ads_*` function and hook
 prefixes are unrelated to the slug and stay as they are.
+
+The plugin ships **no `.po`/`.mo` catalogues** and calls no
+`load_plugin_textdomain()` — both are things the directory asks a hosted plugin
+not to do. The ten hand-made catalogues live in
+`packages/wordpress/translations-source/`, outside the plugin, to be imported
+into GlotPress; `scripts/check-translations.py` keeps them honest against the
+`.pot`.
 
 PHPStan runs at **level 9 over `packages/php/src`** and level 8 over the adapters, with test suites one level lower; each `phpstan.neon.dist` records why. WordPress and WooCommerce arrive as stubs, so the analysis is of the integration rather than of WordPress's existence.
 

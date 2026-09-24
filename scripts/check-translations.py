@@ -1,14 +1,15 @@
-"""Check the WordPress translation catalogues, and compile them to .mo.
+"""Check the WordPress translation catalogues against the .pot.
 
-WordPress reads `.mo`, not `.po`. A site installing from the plugin directory
-gets its translations from translate.wordpress.org, but the copies installed by
-hand - and this repository's own plugin zip - carry the compiled files, so a
-`.po` edited without a rebuild is a translation nobody sees.
+The plugin does not ship these. Translations reach a site from
+translate.wordpress.org, which the plugin directory asks every hosted plugin to
+use, and WordPress has loaded them on demand since 4.6. What lives in
+`packages/wordpress/translations-source/` is the ten hand-made catalogues,
+kept so they can be imported into GlotPress rather than retyped.
 
-    python scripts/make-mo.py            # verify, then write every .mo
-    python scripts/make-mo.py --check    # verify only; fails if a .mo is stale
+    python scripts/check-translations.py
 
-What is verified, per catalogue:
+Kept honest because an import is only worth as much as the file behind it. Per
+catalogue:
 
 * every string in the catalogue still exists in the .pot, and every string in
   the .pot is in the catalogue - a msgid that drifted is a screen that silently
@@ -19,26 +20,25 @@ What is verified, per catalogue:
   it exists to carry, and a swapped `%d` for `%s` is a TypeError on a settings
   screen.
 
-`gettext` itself is not needed - msgfmt is a few hundred bytes of struct
-packing, and requiring a toolchain to rebuild a translation is how translations
-stop being rebuilt.
+`gettext` is not needed, and neither is a `.mo`: nothing compiled is shipped or
+read any more.
 """
 
 import os
 import re
-import struct
 import sys
 
-DOMAIN = 'conversion-tracking-for-openai-ads'
+DOMAIN = 'webaround-pixel-conversions-api-for-openai-ads'
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-LANGUAGES = os.path.join(ROOT, 'packages', 'wordpress', 'languages')
-POT = os.path.join(LANGUAGES, DOMAIN + '.pot')
+PLUGIN = os.path.join(ROOT, 'packages', 'wordpress')
+CATALOGUES = os.path.join(PLUGIN, 'translations-source')
+POT = os.path.join(PLUGIN, 'languages', DOMAIN + '.pot')
 
 PLACEHOLDER = re.compile(r'%(?:\d+\$)?[sdf]')
 
 
 class Failure(Exception):
-    """A catalogue that must not ship as it stands."""
+    """A catalogue that is not fit to be imported as it stands."""
 
 
 def unescape(text):
@@ -101,7 +101,7 @@ def placeholders(text):
 
 
 def verify(locale, catalogue, source):
-    """Everything that makes a catalogue unfit to ship, reported at once."""
+    """Everything that makes a catalogue unfit to import, reported at once."""
     problems = []
 
     missing = set(source) - set(catalogue)
@@ -131,102 +131,35 @@ def verify(locale, catalogue, source):
         raise Failure('%s\n  %s' % (locale, '\n  '.join(problems)))
 
 
-def compile_mo(entries):
-    """The .mo binary, as msgfmt writes it.
-
-    The empty msgid carries the headers, and WordPress reads the charset from
-    them, so it is written like any other entry rather than dropped.
-    """
-    items = sorted((k, v) for k, v in entries.items() if v != '')
-
-    originals = b''
-    translations = b''
-    original_table = []
-    translation_table = []
-
-    for msgid, msgstr in items:
-        original = msgid.encode('utf-8')
-        translated = msgstr.encode('utf-8')
-
-        original_table.append((len(original), len(originals)))
-        translation_table.append((len(translated), len(translations)))
-
-        originals += original + b'\x00'
-        translations += translated + b'\x00'
-
-    count = len(items)
-    header_size = 28
-    original_offset = header_size
-    translation_offset = original_offset + count * 8
-    strings_offset = translation_offset + count * 8
-
-    out = struct.pack(
-        '<Iiiiiii',
-        0x950412DE,  # magic, little-endian
-        0,           # revision
-        count,
-        original_offset,
-        translation_offset,
-        0,           # no hash table; every reader this targets scans the tables
-        strings_offset,
-    )
-
-    for length, offset in original_table:
-        out += struct.pack('<ii', length, strings_offset + offset)
-
-    for length, offset in translation_table:
-        out += struct.pack('<ii', length, strings_offset + len(originals) + offset)
-
-    return out + originals + translations
-
-
-def main(argv):
-    check_only = '--check' in argv[1:]
-
+def main():
     if not os.path.exists(POT):
         raise Failure('%s is missing. Run scripts/make-pot.py first.' % POT)
 
     source = {k: v for k, v in parse(POT).items() if k != ''}
 
     catalogues = sorted(
-        name for name in os.listdir(LANGUAGES)
+        name for name in os.listdir(CATALOGUES)
         if name.startswith(DOMAIN + '-') and name.endswith('.po')
-    )
+    ) if os.path.isdir(CATALOGUES) else []
 
+    # A hard failure rather than a shrug. Finding nothing used to mean the
+    # domain had been renamed without the catalogues, and the run passed
+    # silently - which is how a rename ships with ten dead translations.
     if not catalogues:
-        print('no .po catalogues in %s' % LANGUAGES)
-        return 0
+        raise Failure(
+            'no .po catalogues in %s. Has the text domain changed without them?' % CATALOGUES
+        )
 
     failures = []
-    written = 0
 
     for name in catalogues:
         locale = name[len(DOMAIN) + 1:-3]
-        po = os.path.join(LANGUAGES, name)
-        mo = po[:-3] + '.mo'
 
         try:
-            entries = parse(po)
+            entries = parse(os.path.join(CATALOGUES, name))
             verify(locale, {k: v for k, v in entries.items() if k != ''}, source)
         except Failure as failure:
             failures.append(str(failure))
-            continue
-
-        compiled = compile_mo(entries)
-
-        if check_only:
-            current = open(mo, 'rb').read() if os.path.exists(mo) else None
-
-            if current != compiled:
-                failures.append('%s: %s is stale. Run scripts/make-mo.py.' % (locale, os.path.basename(mo)))
-
-            continue
-
-        with open(mo, 'wb') as handle:
-            handle.write(compiled)
-
-        written += 1
-        print('%s -> %s (%d strings)' % (locale, os.path.basename(mo), len(entries) - 1))
 
     if failures:
         raise Failure('\n'.join(failures))
@@ -234,8 +167,6 @@ def main(argv):
     print(
         'PASS: %d catalogues, %d strings each, placeholders intact'
         % (len(catalogues), len(source))
-        if check_only else
-        'wrote %d catalogues' % written
     )
 
     return 0
@@ -243,7 +174,7 @@ def main(argv):
 
 if __name__ == '__main__':
     try:
-        sys.exit(main(sys.argv))
+        sys.exit(main())
     except Failure as failure:
         print('FAIL: %s' % failure, file=sys.stderr)
         sys.exit(1)

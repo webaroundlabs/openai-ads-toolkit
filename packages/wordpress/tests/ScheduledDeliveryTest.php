@@ -205,7 +205,7 @@ final class ScheduledDeliveryTest extends TestCase
     #[Test]
     public function booting_the_plugin_registers_the_callback_action_scheduler_will_run(): void
     {
-        Plugin::boot(__DIR__ . '/../conversion-tracking-for-openai-ads.php', '0.1.0');
+        Plugin::boot(__DIR__ . '/../webaround-pixel-conversions-api-for-openai-ads.php', '0.1.0');
 
         $listeners = WpStubs::$filters[ScheduledDelivery::HOOK] ?? [];
         self::assertCount(1, $listeners, 'Nothing would ever deliver a queued batch.');

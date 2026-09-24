@@ -10,21 +10,44 @@ namespace WebaroundLabs\OpenAIAds\WordPress;
 defined('ABSPATH') || exit;
 
 /**
- * Renders the Measurement Pixel into the page head.
+ * Puts the Measurement Pixel on WordPress's script queue.
  *
- * Presentation only: it receives a Pixel ID and already-hashed identity and
- * prints them. It queries nothing, decides no business rules, and never has
- * access to the Conversions API key.
+ * Presentation only: it receives a Pixel ID and an already-hashed identity and
+ * hands them to WordPress. It queries nothing, decides no business rules, and
+ * never has access to the Conversions API key.
  */
 final class Pixel
 {
+    /** The handle the SDK is registered under, so a site can dequeue it. */
+    public const HANDLE = 'openai-ads-pixel';
+
+    /** The footer handle every confirmed conversion's browser half rides. */
+    public const EVENTS_HANDLE = 'openai-ads-pixel-events';
+
+    private const SDK = 'https://bzrcdn.openai.com/sdk/oaiq.min.js';
+
+    /**
+     * OpenAI's own queue stub, minus the DOM injection WordPress now performs.
+     *
+     * It is what lets init and measure be called before the SDK has finished
+     * loading: the calls queue up, and the SDK replays them once it arrives.
+     */
+    private const LOADER = <<<'JS'
+        (function (w) {
+            if (w.oaiq) { return; }
+            var q = function () { q.q.push(arguments); };
+            q.q = [];
+            w.oaiq = q;
+        })(window);
+        JS;
+
     public function __construct(
         private readonly Settings $settings,
         private readonly Measurement $measurement,
     ) {
     }
 
-    public function render(): void
+    public function enqueue(): void
     {
         if (!$this->settings->pixelEnabled() || !$this->measurement->consented()) {
             return;
@@ -72,7 +95,9 @@ final class Pixel
             $config['debug'] = true;
         }
 
-        // wp_json_encode escapes for a <script> context. Never build this by
+        // wp_json_encode escapes for a script context, and is also what keeps
+        // the payload clear of the literal closing script tag that
+        // wp_add_inline_script() refuses to carry. Never build this by
         // concatenating strings.
         $encoded = \wp_json_encode($config);
 
@@ -80,24 +105,24 @@ final class Pixel
             return;
         }
 
-        echo "<script>\n";
-        echo "(function (w, d, s, u) {\n";
-        echo "  if (w.oaiq) return;\n";
-        echo "  var q = function () { q.q.push(arguments); };\n";
-        echo "  q.q = [];\n";
-        echo "  w.oaiq = q;\n";
-        echo "  var js = d.createElement(s); js.async = true; js.src = u;\n";
-        echo "  var f = d.getElementsByTagName(s)[0];\n";
-        echo "  f.parentNode.insertBefore(js, f);\n";
-        echo "})(window, document, \"script\", \"https://bzrcdn.openai.com/sdk/oaiq.min.js\");\n";
+        // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- a null version on purpose: the URL is OpenAI's CDN, not ours, and appending our plugin version to it would rewrite a third party's cache key every time this plugin is released.
+        \wp_enqueue_script(self::HANDLE, self::SDK, [], null, ['strategy' => 'async', 'in_footer' => false]);
 
-        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode() above is the escaping for a <script> context; esc_html() here would emit entities into JavaScript and break the call.
-        echo 'oaiq("init", ' . $encoded . ");\n";
-        echo "</script>\n";
+        /*
+         * Both blocks go 'before', which is not a formatting preference. A
+         * handle carrying an 'after' inline script is ineligible for any delayed
+         * strategy (WP_Scripts::filter_eligible_strategies()), and WordPress
+         * then moves the whole script to the footer (WP_Scripts::do_item()) - so
+         * 'after' would cost the async attribute and the head position at once.
+         * It is also what the hand-written snippet did: the stub and the init
+         * call both ran before the SDK tag existed.
+         */
+        \wp_add_inline_script(self::HANDLE, self::LOADER, 'before');
+        \wp_add_inline_script(self::HANDLE, 'oaiq("init", ' . $encoded . ');', 'before');
     }
 
     /**
-     * Emit a browser event for a conversion the server has just confirmed.
+     * Queue a browser event for a conversion the server has just confirmed.
      *
      * The bridge that makes deduplication work: the server has already sent, or
      * is about to send, the same event id through the Conversions API, so the
@@ -105,7 +130,7 @@ final class Pixel
      *
      * @param array<string, mixed> $data
      */
-    public function renderEvent(string $eventName, string $eventId, array $data = [], ?string $customEventName = null): void
+    public function enqueueEvent(string $eventName, string $eventId, array $data = [], ?string $customEventName = null): void
     {
         if (!$this->settings->pixelEnabled() || !$this->measurement->consented()) {
             return;
@@ -125,10 +150,37 @@ final class Pixel
             return;
         }
 
-        echo "<script>\n";
+        $js = 'window.oaiq && oaiq("measure", ' . $encodedName . ', ' . $encodedData . ', ' . $encodedOptions . ');';
 
-        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- all three are wp_json_encode() output, which is the escaping a <script> context takes; HTML escaping them would corrupt the payload.
-        echo 'window.oaiq && oaiq("measure", ' . $encodedName . ', ' . $encodedData . ', ' . $encodedOptions . ");\n";
-        echo "</script>\n";
+        /*
+         * Callers fire from the body - woocommerce_thankyou, a theme template -
+         * which is always after WordPress has printed the head queue, and an
+         * inline script added to a handle already printed is discarded in
+         * silence (WP_Dependencies::do_items() keeps a done list). So the event
+         * rides a footer handle of its own.
+         *
+         * That handle deliberately does not depend on self::HANDLE: eligibility
+         * for a delayed strategy recurses over a handle's dependents, so a
+         * blocking dependent would take the async attribute off the SDK. Order
+         * is guaranteed by the document instead - init in the head, this in the
+         * footer - and by the window.oaiq guard for the cases where it is not.
+         * Re-registering a registered handle is a no-op, so a second event on
+         * the same page needs no bookkeeping here.
+         */
+        if (\did_action('wp_print_footer_scripts') === 0) {
+            // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- the handle carries inline code and has no src, so there is no URL for a version to appear in.
+            \wp_register_script(self::EVENTS_HANDLE, false, [], null, ['in_footer' => true]);
+            \wp_enqueue_script(self::EVENTS_HANDLE);
+            \wp_add_inline_script(self::EVENTS_HANDLE, $js);
+
+            return;
+        }
+
+        // The footer queue has already been flushed - a late wp_footer callback,
+        // or a template printing past wp_footer(). Nothing added to the queue
+        // now would ever be printed, and losing a confirmed conversion in
+        // silence is the worse failure, so this one tag goes out through core's
+        // own inline-script API.
+        \wp_print_inline_script_tag($js);
     }
 }

@@ -1,10 +1,10 @@
-=== Conversion Tracking for OpenAI Ads ===
+=== Webaround Pixel and Conversions API for OpenAI Ads ===
 Contributors: webaround
 Tags: openai, conversion tracking, analytics, pixel, conversions api
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 0.2.1
+Stable tag: 0.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -211,6 +211,14 @@ suite asserts this.
 3. Tag manager endpoint - an address your tag manager can post to.
 
 == Changelog ==
+
+= 0.3.0 =
+* Renamed to Webaround Pixel and Conversions API for OpenAI Ads. Your settings,
+  and anything built on the openai_ads_* functions and hooks, are unaffected -
+  but the address of the settings screen changed, so update a bookmark.
+* Scripts are now registered with WordPress rather than printed into the page,
+  which lets caching and optimisation plugins see them.
+* Translations now come from translate.wordpress.org instead of being bundled.
 
 = 0.2.1 =
 * Fixed: the three consent-mode labels on the settings screen were never

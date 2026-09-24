@@ -1,9 +1,9 @@
-# French translation of Conversion Tracking for OpenAI Ads.
+# French translation of Webaround Pixel and Conversions API for OpenAI Ads.
 # Copyright (C) 2026 Webaround
 # This file is distributed under the GPL-2.0-or-later license.
 msgid ""
 msgstr ""
-"Project-Id-Version: Conversion Tracking for OpenAI Ads\n"
+"Project-Id-Version: Webaround Pixel and Conversions API for OpenAI Ads\n"
 "Report-Msgid-Bugs-To: https://github.com/webaroundlabs/openai-ads-toolkit/issues\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -13,7 +13,7 @@ msgstr ""
 "Language: fr\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Generator: scripts/make-mo.py\n"
-"X-Domain: conversion-tracking-for-openai-ads\n"
+"X-Domain: webaround-pixel-conversions-api-for-openai-ads\n"
 
 
 msgid "API key"
@@ -51,11 +51,11 @@ msgstr "Vérifie les événements auprès de l'API sans les enregistrer. À util
 msgid "Consent"
 msgstr "Consentement"
 
-msgid "Conversion Tracking for OpenAI Ads"
-msgstr "Conversion Tracking for OpenAI Ads"
+msgid "Webaround Pixel and Conversions API for OpenAI Ads"
+msgstr "Webaround Pixel and Conversions API for OpenAI Ads"
 
-msgid "Conversion Tracking for OpenAI Ads is missing its dependencies. Run \"composer install\" in the plugin directory."
-msgstr "Les dépendances de Conversion Tracking for OpenAI Ads sont absentes. Exécutez « composer install » dans le dossier de l'extension."
+msgid "Webaround Pixel and Conversions API for OpenAI Ads is missing its dependencies. Run \"composer install\" in the plugin directory."
+msgstr "Les dépendances de Webaround Pixel and Conversions API for OpenAI Ads sont absentes. Exécutez « composer install » dans le dossier de l'extension."
 
 msgid "Conversions API"
 msgstr "Conversions API"

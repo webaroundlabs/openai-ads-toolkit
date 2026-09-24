@@ -212,15 +212,15 @@ final class Consent
         return [
             self::MODE_AUTO => \__(
                 'Detect a consent plugin automatically',
-                'conversion-tracking-for-openai-ads',
+                'webaround-pixel-conversions-api-for-openai-ads',
             ),
             self::MODE_FILTER => \__(
                 'I answer through the openai_ads_consent filter',
-                'conversion-tracking-for-openai-ads',
+                'webaround-pixel-conversions-api-for-openai-ads',
             ),
             self::MODE_OFF => \__(
                 'Do not gate on consent here',
-                'conversion-tracking-for-openai-ads',
+                'webaround-pixel-conversions-api-for-openai-ads',
             ),
         ];
     }
