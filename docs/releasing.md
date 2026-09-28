@@ -207,13 +207,25 @@ Removing the asterisk makes the published Laravel package impossible to install.
 
 ## The WordPress plugin directory
 
-Not wired into the workflow, because the plugin has not been approved there yet
-and a deploy step pointing at an SVN repository that does not exist is worse
-than no step at all.
+The plugin was approved in September 2026 and the slug is now assigned and
+permanent. Approval is not publication: it creates the SVN repository and grants
+commit access, and the public listing appears only once something is committed
+to `trunk` and tagged there. Nothing is live until that happens.
 
-Once it is approved, add a job using `10up/action-wordpress-plugin-deploy` with
-`SVN_USERNAME` / `SVN_PASSWORD` secrets, `BUILD_DIR: build/webaround-pixel-conversions-api-for-openai-ads`, and
-`.distignore` honoured. Until then, upload `build/webaround-pixel-conversions-api-for-openai-ads.zip` by hand.
+An SVN commit has two halves that do not travel together. The contents of
+`build/webaround-pixel-conversions-api-for-openai-ads/` go to `trunk/` and then
+to `tags/<version>/`; the banner and icon in
+`packages/wordpress/.wordpress-org/` go to `assets/`, which is a sibling of
+`trunk` and is never part of the zip - `build-plugin.sh` leaves that directory
+out deliberately. The screenshots there still show the plugin's former name and
+have to be retaken on a live site before they are uploaded.
+
+Deployment stays manual for now. A job using
+`10up/action-wordpress-plugin-deploy` with `SVN_USERNAME` / `SVN_PASSWORD`
+secrets and `BUILD_DIR: build/webaround-pixel-conversions-api-for-openai-ads`
+would automate it, and is worth adding once one hand-made release has shown what
+SVN actually expects - wiring a deploy step before anyone has done the thing by
+hand is how a first release goes out wrong to every installed site at once.
 
 Build it locally with:
 
