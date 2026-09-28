@@ -26,7 +26,6 @@ machine happened to hold. Retaking them means standing a site up again.
 
 from __future__ import annotations
 
-import re
 import shutil
 import subprocess
 import sys
@@ -109,34 +108,6 @@ def render(browser: Path, target: Path, width: int, height: int, **params) -> No
         Image.open(big).convert("RGB").resize((width, height), Image.LANCZOS).save(target, optimize=True)
 
 
-def render_svg(browser: Path, target: Path) -> None:
-    """The same mark as a vector, taken from the page rather than rewritten.
-
-    Dumped from the rendered DOM so the file cannot drift away from what the
-    PNGs show: there is one description of this mark, and it is frame.html.
-    """
-    result = subprocess.run(
-        [str(browser), "--headless=new", "--disable-gpu", "--dump-dom", url(mode="icon", w=256, h=256, static=1)],
-        check=True,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    )
-
-    match = re.search(r"<svg\b.*?</svg>", result.stdout, re.DOTALL)
-
-    if not match:
-        sys.exit("No <svg> in the dumped DOM")
-
-    svg = match.group(0)
-
-    if 'xmlns=' not in svg:
-        svg = svg.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"', 1)
-
-    target.write_text(svg + "\n", encoding="utf-8")
-
-
 def check_fonts(browser: Path) -> None:
     """Refuse to build a banner set in the fallback face.
 
@@ -158,7 +129,7 @@ def check_fonts(browser: Path) -> None:
         sys.exit("Sora and JetBrains Mono did not load. Check the network, then rebuild.")
 
 
-def animate(browser: Path, target: Path) -> None:
+def animate(browser: Path, target: Path, size: int = 256) -> None:
     """The loop, as a GIF.
 
     ffmpeg rather than Pillow: a glow over a gradient is exactly the case where
@@ -174,7 +145,7 @@ def animate(browser: Path, target: Path) -> None:
         tmp = Path(tmp)
 
         for i in range(FRAMES):
-            render(browser, tmp / f"f{i:03d}.png", 256, 256, mode="icon", t=round(i / FRAMES, 5))
+            render(browser, tmp / f"f{i:03d}.png", size, size, mode="icon", t=round(i / FRAMES, 5))
 
         palette = tmp / "palette.png"
         rate = 1000 / FRAME_MS
@@ -200,9 +171,18 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     written = []
 
+    # The icon is the animated mark. The directory takes
+    # icon-{128,256}x{128,256}.(png|jpg|gif) and caps icons at 1MB, which this
+    # is comfortably inside; anywhere the animation does not run, the first
+    # frame shows, and that frame is the mark at rest.
+    #
+    # Nothing else icon-named is written, and that is the point: an icon.svg
+    # would take precedence over this, and a same-size .png sitting beside it
+    # leaves which one wins undefined. This directory is exactly what SVN's
+    # assets/ holds, so a file here that must not be uploaded is a trap.
     for size in (256, 128):
-        path = OUT / f"icon-{size}x{size}.png"
-        render(browser, path, size, size, mode="icon")
+        path = OUT / f"icon-{size}x{size}.gif"
+        animate(browser, path, size)
         written.append(path)
 
     check_fonts(browser)
@@ -213,16 +193,6 @@ def main() -> None:
         # square one of its own and sit in a visible card.
         render(browser, path, width, height, mode="banner", bare=1)
         written.append(path)
-
-    path = OUT / "icon.svg"
-    render_svg(browser, path)
-    written.append(path)
-
-    # Not a plugin-directory format - it takes PNG, JPG and SVG only - so this
-    # is for the readme on GitHub and anywhere else that renders a GIF.
-    path = OUT / "mark-animated.gif"
-    animate(browser, path)
-    written.append(path)
 
     for item in written:
         print(f"{item.relative_to(ROOT)}  {item.stat().st_size / 1024:.0f} KB")
