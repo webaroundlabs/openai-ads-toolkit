@@ -1,6 +1,6 @@
 === Webaround Pixel and Conversions API for OpenAI Ads ===
 Contributors: webaround
-Tags: openai, conversion tracking, analytics, pixel, conversions api
+Tags: openai, chatgpt, conversion tracking, conversions api, woocommerce
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.2
@@ -8,13 +8,17 @@ Stable tag: 0.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Measurement Pixel and Conversions API for OpenAI Ads, with browser/server deduplication.
+OpenAI Ads Measurement Pixel and Conversions API (CAPI) for WordPress and WooCommerce, deduplicated so a conversion counts once.
 
 == Description ==
 
 Adds the OpenAI Ads Measurement Pixel to your site and sends the same conversions
-from your server through the Conversions API, so a conversion measured in both
-places is counted once rather than twice.
+from your server through the Conversions API (CAPI), so a conversion measured in
+both places is counted once rather than twice.
+
+OpenAI Ads are the ads that run in ChatGPT. If you buy them, this is how your
+site tells OpenAI which visits turned into leads, orders or registrations - in
+the browser, on the server, or both.
 
 **This is an independent community integration.** It is not created, certified,
 endorsed or supported by OpenAI. "OpenAI" and "ChatGPT" are trademarks of OpenAI.
@@ -28,7 +32,8 @@ endorsed or supported by OpenAI. "OpenAI" and "ChatGPT" are trademarks of OpenAI
   your server, using the normalization OpenAI documents.
 * Strips query strings from the page address, so search terms and password-reset
   tokens do not reach an ad platform.
-* Defers to your existing consent mechanism. It ships no cookie banner.
+* Defers to your existing consent mechanism, so GDPR and ePrivacy choices your
+  site already collects are the ones that decide. It ships no cookie banner.
 * Never makes the visitor wait: conversions go out after the page does, handed to
   Action Scheduler where the site has it.
 
@@ -39,10 +44,11 @@ Forms are detected automatically. A lead is recorded when the submission is
 accepted, never when the button is clicked. Contact Form 7 and Elementor also fire
 the matching browser event, sharing one event id.
 
-**WooCommerce** measures product views, add to cart, checkout start and paid
-orders. A purchase is reported only once payment is confirmed - never for a
-pending, failed or cancelled order - and never twice, however many times the
-gateway or a webhook triggers it. Amounts use the currency's own minor unit.
+For ecommerce, **WooCommerce** measures product views, add to cart, checkout
+start and paid orders. A purchase is reported only once payment is confirmed -
+never for a pending, failed or cancelled order - and never twice, however many
+times the gateway or a webhook triggers it. Amounts use the currency's own minor
+unit.
 
 **Easy Digital Downloads** reports a purchase once payment completes.
 **WooCommerce Subscriptions** reports trial_started or subscription_created.
