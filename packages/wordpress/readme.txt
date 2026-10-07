@@ -4,7 +4,7 @@ Tags: openai, chatgpt, conversion tracking, conversions api, woocommerce
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 0.3.0
+Stable tag: 0.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -217,6 +217,10 @@ suite asserts this.
 3. Tag manager endpoint - an address your tag manager can post to.
 
 == Changelog ==
+
+= 0.3.1 =
+* Fixed: the Pixel now reports page_viewed on every page it loads on. Before,
+  OpenAI Ads received only the Pixel's own initialization, never a page view.
 
 = 0.3.0 =
 * Renamed to Webaround Pixel and Conversions API for OpenAI Ads. Your settings,

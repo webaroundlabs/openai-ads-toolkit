@@ -10,6 +10,8 @@ While the version is `0.x` the public API may change in any release. See
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-08
+
 ### Fixed
 
 - **The WordPress Pixel now measures `page_viewed` on every page it loads on.**
