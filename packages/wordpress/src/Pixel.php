@@ -41,6 +41,20 @@ final class Pixel
         })(window);
         JS;
 
+    /**
+     * The page view itself.
+     *
+     * init sends only the SDK's own "Pixel Initialization" record: OpenAI's
+     * Pixel does not measure page views by itself, so without this call a site
+     * with the Pixel switched on reports no page_viewed at all.
+     *
+     * No event_id, on purpose. A page view has no server-side counterpart to be
+     * deduplicated against, and an id minted here would be baked into the HTML
+     * a page cache serves to every visitor - collapsing all of their page views
+     * into one.
+     */
+    private const PAGE_VIEW = 'oaiq("measure", "page_viewed", {"type":"contents"});';
+
     public function __construct(
         private readonly Settings $settings,
         private readonly Measurement $measurement,
@@ -109,16 +123,18 @@ final class Pixel
         \wp_enqueue_script(self::HANDLE, self::SDK, [], null, ['strategy' => 'async', 'in_footer' => false]);
 
         /*
-         * Both blocks go 'before', which is not a formatting preference. A
+         * Every block goes 'before', which is not a formatting preference. A
          * handle carrying an 'after' inline script is ineligible for any delayed
          * strategy (WP_Scripts::filter_eligible_strategies()), and WordPress
          * then moves the whole script to the footer (WP_Scripts::do_item()) - so
          * 'after' would cost the async attribute and the head position at once.
-         * It is also what the hand-written snippet did: the stub and the init
-         * call both ran before the SDK tag existed.
+         * It is also what the hand-written snippet did: the stub, init and the
+         * first measure all ran before the SDK tag existed, and the SDK replays
+         * the queue in order once it arrives.
          */
         \wp_add_inline_script(self::HANDLE, self::LOADER, 'before');
         \wp_add_inline_script(self::HANDLE, 'oaiq("init", ' . $encoded . ');', 'before');
+        \wp_add_inline_script(self::HANDLE, self::PAGE_VIEW, 'before');
     }
 
     /**

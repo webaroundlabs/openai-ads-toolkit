@@ -10,6 +10,21 @@ While the version is `0.x` the public API may change in any release. See
 
 ## [Unreleased]
 
+### Fixed
+
+- **The WordPress Pixel now measures `page_viewed` on every page it loads on.**
+  It used to queue `oaiq("init", …)` and nothing else, on the assumption that
+  the SDK reports page views by itself. It does not: init sends only the SDK's
+  own "Pixel Initialization" record, so Ads Manager's event stream showed that
+  and no page view at all. The page view rides the same `'before'` inline block
+  as init, so the SDK keeps its `async` attribute and its place in the head. It
+  carries no `event_id`. There is no server-side page view to deduplicate
+  against, and an id minted on the server would end up in the HTML a page cache
+  serves to every visitor, collapsing all their page views into one. Sites that
+  already send `page_viewed` themselves, for example from Google Tag Manager
+  alongside this plugin's Pixel, will now count each view twice and should
+  remove their own call.
+
 ## [0.3.0] - 2026-09-23
 
 Everything here answers the WordPress plugin directory's review of the first

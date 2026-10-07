@@ -75,6 +75,30 @@ final class PixelTest extends TestCase
         self::assertSame([], $script['after']);
     }
 
+    /**
+     * The SDK reports only its own initialization on init. Without an explicit
+     * measure call a site with the Pixel on sends no page_viewed at all - which
+     * is what a live install showed in Ads Manager's event stream.
+     */
+    #[Test]
+    public function it_measures_a_page_view_after_init(): void
+    {
+        $this->enqueue();
+
+        $before = self::inline(Pixel::HANDLE);
+
+        self::assertStringContainsString('oaiq("measure", "page_viewed", {"type":"contents"});', $before);
+        self::assertGreaterThan(
+            strpos($before, 'oaiq("init"'),
+            strpos($before, 'oaiq("measure", "page_viewed"'),
+            'The SDK replays the queue in order, and a measure before init has no pixel to go to.',
+        );
+
+        // A page cache serves this HTML to every visitor, so an id minted here
+        // would be shared by all of them and deduplicate their views into one.
+        self::assertStringNotContainsString('event_id', $before);
+    }
+
     #[Test]
     public function it_enqueues_nothing_without_a_pixel_id(): void
     {
