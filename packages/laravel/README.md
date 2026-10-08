@@ -18,6 +18,10 @@ OpenAI Ads wire format.
 
 ## Install
 
+Laravel 11 or later, with no upper bound, on PHP 8.2 or later (Laravel 13 itself
+needs PHP 8.3). Guzzle 7 and Guzzle 8 both work, so a Laravel 13 application that
+already locked Guzzle 8 installs this without a downgrade.
+
 ```bash
 composer require webaround/openai-ads-laravel
 php artisan vendor:publish --tag=openai-ads-config

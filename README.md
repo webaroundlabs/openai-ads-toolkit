@@ -174,7 +174,7 @@ cd packages/wordpress && composer install && composer check
 
 `check` is style, then static analysis, then tests — the order that fails fastest.
 
-CI runs all of that across PHP 8.2–8.4, Laravel 12, and Node 22, and scans the **built**
+CI runs all of that across PHP 8.2–8.4, Laravel 12 and 13, and Node 22, and scans the **built**
 JavaScript bundle for anything credential-shaped — the artefact browsers actually receive.
 PHPStan runs at level 9 over the core and level 8 over the adapters, with WordPress and
 WooCommerce stubs loaded so it analyses the integration rather than reporting that WordPress

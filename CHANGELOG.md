@@ -10,6 +10,27 @@ While the version is `0.x` the public API may change in any release. See
 
 ## [Unreleased]
 
+### Added
+
+- **The Laravel adapter installs on Laravel 13, and on every later major.** It
+  required `illuminate/*` `^11.0|^12.0`, so Composer refused it on Laravel 13.
+  It now requires `>=11.0` with no upper bound, the same open-ended shape as its
+  `php` requirement. Nothing it uses moved in Laravel 13 (a service provider, a
+  facade, a queued job, a Blade directive, the request), and that surface has
+  not moved across many majors, so a ceiling would only turn the next release
+  into another refused install. CI now runs the adapter on Laravel 13 as well
+  as 12, and a new major gets its own leg when it ships.
+- **The Laravel adapter accepts Guzzle 8 and `guzzlehttp/psr7` 3.** Widening
+  the Laravel constraint alone would not have been enough: a fresh Laravel 13
+  application locks Guzzle 8, and the adapter's `^7.8` made `composer require`
+  fail on a version nobody would think to look at. Guzzle 7 still works and is
+  still what Laravel 12 resolves. Guzzle 8's breaking changes miss the three
+  options the adapter sets (`timeout`, `connect_timeout`, `http_errors`) and the
+  PSR-18 and PSR-17 interfaces it calls everything through. Guzzle keeps a
+  ceiling, unlike Laravel: it is the transport every Conversions API request
+  travels through, and a major there changed timeout semantics this time, so
+  the next one is something to try, not to accept unseen.
+
 ## [0.3.1] - 2026-10-08
 
 ### Fixed
