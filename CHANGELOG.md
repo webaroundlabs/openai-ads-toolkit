@@ -10,6 +10,11 @@ While the version is `0.x` the public API may change in any release. See
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-10-08
+
+Only the Laravel adapter changed. The WordPress plugin and the npm package
+carry the new version number and nothing else.
+
 ### Added
 
 - **The Laravel adapter installs on Laravel 13, and on every later major.** It
@@ -566,7 +571,8 @@ accident.
   Pixel documentation lists `postal_code`, which is what both runtimes already
   emitted. The `UNRESOLVED` note in `packages/spec/user.json` is closed.
 
-[Unreleased]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.2.1...main
+[Unreleased]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.3.2...main
+[0.3.2]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.2.1...v0.3.2
 [0.2.1]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/webaroundlabs/openai-ads-toolkit/compare/v0.1.1...v0.1.2
