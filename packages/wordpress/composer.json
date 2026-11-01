@@ -21,7 +21,7 @@
         "friendsofphp/php-cs-fixer": "^3.64",
         "php-stubs/woocommerce-stubs": "^11.1",
         "phpstan/phpstan": "^2.0",
-        "phpunit/phpunit": "^11.0",
+        "phpunit/phpunit": "^13.4",
         "szepeviktor/phpstan-wordpress": "^2.0"
     },
     "repositories": [
